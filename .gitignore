@@ -1,0 +1,5 @@
+# files created from C and C++ compilers that produce dependencies for makefiles
+*.d
+*.d.new
+# executables
+*.exe
