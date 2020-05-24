@@ -1,10 +1,6 @@
 name: c-cpp
 
-on:
-  push:
-    branches: [ ci-remote ]
-  pull_request:
-    branches: [ ci-remote ]
+on: push
 
 jobs:
   build:
