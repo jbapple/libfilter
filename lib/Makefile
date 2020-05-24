@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-all: libfilter.so
+all: libfilter.so libfilter.a
 
 # TODO: without c11 compiled in, aligned_alloc is never used. But if
 # it is compiled in, how can systems without a libc that cupposts
@@ -18,5 +18,8 @@ memory.o: memory.c ../include/memory.h Makefile
 libfilter.so: util.o memory.o Makefile
 	$(CC) -fPIC -shared -o libfilter.so util.o memory.o ../pcg-c/src/libpcg_random.a
 
+libfilter.a: util.o memory.o Makefile
+	ar rcs libfilter.a util.o memory.o ../pcg-c/src/libpcg_random.a
+
 clean:
-	rm -f libfilter.so memory.o util.o
+	rm -f libfilter.so libfilter.a memory.o util.o
