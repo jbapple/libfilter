@@ -5,6 +5,8 @@ on:
     branches: [ ci ]
   pull_request:
     branches: [ ci ]
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build:
