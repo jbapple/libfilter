@@ -444,7 +444,7 @@ DECL_SCALAR_BOTH(4, 32)
 #define libfilter_block_4x32_size_in_bytes libfilter_block_scalar_4x32_size_in_bytes
 #define libfilter_block_16_size_in_bytes libfilter_block_scalar_4x32_size_in_bytes
 
-#if defined(__SSE2__) && defined(__SSE4_1__)
+#if defined(__SSE2__) && defined(__SSE4_1__) && defined(__AVX2__)
 #define LIBFILTER_SIMD_5_128
 // SSE2
 __m128i _mm128_set1_epi32(int a) { return _mm_set1_epi32(a); }
@@ -452,7 +452,9 @@ void _mm128_store_si128(__m128i* mem_addr, __m128i a) {
   return _mm_store_si128(mem_addr, a);
 }
 __m128i _mm128_or_si128(__m128i a, __m128i b) { return _mm_or_si128(a, b); }
-__m128i _mm128_sllv_epi32(__m128i a, __m128i count) { return _mm_sll_epi32(a, count); }
+// TODO: just do sllv in scalar, the rest in SIMD?
+// AVX2
+__m128i _mm128_sllv_epi32(__m128i a, __m128i count) { return _mm_sllv_epi32(a, count); }
 __m128i _mm128_srli_epi32(__m128i a, int imm8) { return _mm_srli_epi32(a, imm8); }
 #define _mm128_loadu_si128 _mm_loadu_si128
 #define _mm128_storeu_si128 _mm_storeu_si128
