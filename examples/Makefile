@@ -1,3 +1,6 @@
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
+
 .PHONY: all clean
 
 all: c-example cpp-example
