@@ -1,3 +1,6 @@
+https://github.com/jbapple/libfilter/workflows/c-cpp/badge.svg
+
+
 This repository provides an implementation of blocked Bloom filters
 for C and C++, which use slightly more space than traditional Bloom
 filters but are much faster.
