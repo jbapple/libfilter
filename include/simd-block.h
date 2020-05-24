@@ -172,63 +172,63 @@
     return (here->num_buckets_) * (BUCKET_BYTES(ARITY, WORD_BITS));                     \
   }
 
-#define DECL_SCALAR_SHINGLE(ARITY, WORD_BITS, STRIDE)                                 \
-  typedef struct {                                                                    \
-    alignas(STRIDE) char payload[BUCKET_BYTES(ARITY, WORD_BITS)];                     \
-  } SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE);                             \
-                                                                                      \
-  static __attribute__((always_inline)) inline void SCALAR_SHINGLE_METHOD(            \
-      ARITY, WORD_BITS, STRIDE, add_hash_raw)(                                        \
-      const uint64_t hash, const uint64_t num_buckets, char* const block) {           \
-    const uint64_t bucket_idx = libfilter_block_index(hash, num_buckets);             \
-    const SCALAR_BUCKET_TYPE(ARITY, WORD_BITS) mask =                                 \
-        SCALAR_METHOD(ARITY, WORD_BITS, make_mask)(hash);                             \
-    SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)* const bucket =              \
-        (SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)*)(block +               \
-                                                                bucket_idx * STRIDE); \
-    for (unsigned i = 0; i < ARITY; ++i) {                                            \
-      WORD_TYPE(WORD_BITS) payload_i;                                                 \
-      memcpy(&payload_i, &bucket->payload[i], sizeof(payload_i));                     \
-      payload_i = mask.payload[i] | payload_i;                                        \
-      memcpy(&bucket->payload[i], &payload_i, sizeof(payload_i));                     \
-    }                                                                                 \
-  }                                                                                   \
-                                                                                      \
-  static __attribute__((always_inline)) inline bool SCALAR_SHINGLE_METHOD(            \
-      ARITY, WORD_BITS, STRIDE, find_hash_raw)(                                       \
-      const uint64_t hash, const uint64_t num_buckets, const char* const block) {     \
-    const uint64_t bucket_idx = libfilter_block_index(hash, num_buckets);             \
-    const SCALAR_BUCKET_TYPE(ARITY, WORD_BITS) mask =                                 \
-        SCALAR_METHOD(ARITY, WORD_BITS, make_mask)(hash);                             \
-    const SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)* bucket =              \
-        (SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)*)(block +               \
-                                                                bucket_idx * STRIDE); \
-    for (unsigned i = 0; i < ARITY; ++i) {                                            \
-      WORD_TYPE(WORD_BITS) payload_i;                                                 \
-      memcpy(&payload_i, &bucket->payload[i], sizeof(payload_i));                     \
-      if (0 == (payload_i & mask.payload[i])) return false;                           \
-    }                                                                                 \
-    return true;                                                                      \
-  }                                                                                   \
-                                                                                      \
-  static __attribute__((always_inline)) inline void SCALAR_SHINGLE_METHOD(            \
-      ARITY, WORD_BITS, STRIDE, add_hash)(const uint64_t hash,                        \
-                                          SimdBlockBloomFilter* const here) {         \
-    return SCALAR_SHINGLE_METHOD(ARITY, WORD_BITS, STRIDE, add_hash_raw)(             \
-        hash,                                                                         \
-        here->num_buckets_ * ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE) -            \
-            ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE - 1),                          \
-        (char*)here->block_.block);                                                   \
-  }                                                                                   \
-                                                                                      \
-  static __attribute__((always_inline)) inline bool SCALAR_SHINGLE_METHOD(            \
-      ARITY, WORD_BITS, STRIDE, find_hash)(const uint64_t hash,                       \
-                                           const SimdBlockBloomFilter* const here) {  \
-    return SCALAR_SHINGLE_METHOD(ARITY, WORD_BITS, STRIDE, find_hash_raw)(            \
-        hash,                                                                         \
-        here->num_buckets_ * ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE) -            \
-            ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE - 1),                          \
-        (const char*)here->block_.block);                                             \
+#define DECL_SCALAR_SHINGLE(ARITY, WORD_BITS, STRIDE)                                    \
+  typedef struct {                                                                       \
+    alignas(STRIDE) char payload[BUCKET_BYTES(ARITY, WORD_BITS)];                        \
+  } SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE);                                \
+                                                                                         \
+  static __attribute__((always_inline)) inline void SCALAR_SHINGLE_METHOD(               \
+      ARITY, WORD_BITS, STRIDE, add_hash_raw)(                                           \
+      const uint64_t hash, const uint64_t num_buckets, char* const block) {              \
+    const uint64_t bucket_idx = libfilter_block_index(hash, num_buckets);                \
+    const SCALAR_BUCKET_TYPE(ARITY, WORD_BITS) mask =                                    \
+        SCALAR_METHOD(ARITY, WORD_BITS, make_mask)(hash);                                \
+    SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)* const bucket =                 \
+        (SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)*)(block +                  \
+                                                                bucket_idx * STRIDE);    \
+    for (unsigned i = 0; i < ARITY; ++i) {                                               \
+      WORD_TYPE(WORD_BITS) payload_i;                                                    \
+      memcpy(&payload_i, &bucket->payload[i * WORD_BITS / CHAR_BIT], sizeof(payload_i)); \
+      payload_i = mask.payload[i] | payload_i;                                           \
+      memcpy(&bucket->payload[i * WORD_BITS / CHAR_BIT], &payload_i, sizeof(payload_i)); \
+    }                                                                                    \
+  }                                                                                      \
+                                                                                         \
+  static __attribute__((always_inline)) inline bool SCALAR_SHINGLE_METHOD(               \
+      ARITY, WORD_BITS, STRIDE, find_hash_raw)(                                          \
+      const uint64_t hash, const uint64_t num_buckets, const char* const block) {        \
+    const uint64_t bucket_idx = libfilter_block_index(hash, num_buckets);                \
+    const SCALAR_BUCKET_TYPE(ARITY, WORD_BITS) mask =                                    \
+        SCALAR_METHOD(ARITY, WORD_BITS, make_mask)(hash);                                \
+    const SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)* bucket =                 \
+        (SCALAR_SHINGLE_BUCKET_TYPE(ARITY, WORD_BITS, STRIDE)*)(block +                  \
+                                                                bucket_idx * STRIDE);    \
+    for (unsigned i = 0; i < ARITY; ++i) {                                               \
+      WORD_TYPE(WORD_BITS) payload_i;                                                    \
+      memcpy(&payload_i, &bucket->payload[i * WORD_BITS / CHAR_BIT], sizeof(payload_i)); \
+      if (0 == (payload_i & mask.payload[i])) return false;                              \
+    }                                                                                    \
+    return true;                                                                         \
+  }                                                                                      \
+                                                                                         \
+  static __attribute__((always_inline)) inline void SCALAR_SHINGLE_METHOD(               \
+      ARITY, WORD_BITS, STRIDE, add_hash)(const uint64_t hash,                           \
+                                          SimdBlockBloomFilter* const here) {            \
+    return SCALAR_SHINGLE_METHOD(ARITY, WORD_BITS, STRIDE, add_hash_raw)(                \
+        hash,                                                                            \
+        here->num_buckets_ * ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE) -               \
+            ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE - 1),                             \
+        (char*)here->block_.block);                                                      \
+  }                                                                                      \
+                                                                                         \
+  static __attribute__((always_inline)) inline bool SCALAR_SHINGLE_METHOD(               \
+      ARITY, WORD_BITS, STRIDE, find_hash)(const uint64_t hash,                          \
+                                           const SimdBlockBloomFilter* const here) {     \
+    return SCALAR_SHINGLE_METHOD(ARITY, WORD_BITS, STRIDE, find_hash_raw)(               \
+        hash,                                                                            \
+        here->num_buckets_ * ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE) -               \
+            ((BUCKET_BYTES(ARITY, WORD_BITS)) / STRIDE - 1),                             \
+        (const char*)here->block_.block);                                                \
   }
 
 #define DECL_ALIGNED(ARITY, WORD_BITS)                                                   \
