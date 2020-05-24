@@ -1,4 +1,4 @@
-https://github.com/jbapple/libfilter/workflows/c-cpp/badge.svg
+![](https://github.com/jbapple/libfilter/workflows/c-cpp/badge.svg?branch=ci-remote)
 
 
 This repository provides an implementation of blocked Bloom filters
