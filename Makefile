@@ -18,7 +18,7 @@ clean:
 	$(MAKE) -C lib clean
 	$(MAKE) -C examples clean
 	$(MAKE) -C pcg-c clean
-	$(MAKE) -c benchmarks clean
+	$(MAKE) -C benchmarks clean
 
 install: lib libpcg_random include/memory.h include/simd-block.h include/simd-block.hpp include/util.h
 	$(MAKE) -C pcg-c install
