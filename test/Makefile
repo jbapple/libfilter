@@ -1,0 +1,15 @@
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
+
+.PHONY: all clean
+
+all: block
+
+# gtest_main.o: ../googletest/googletest/src/gtest_main.cc Makefile
+# 	$(CXX) -std=c++17 -O0 -W -Wall -Wextra -I../googletest/googletest/include -ggdb3 ../googletest/googletest/src/gtest_main.cc -o gtest_main.o
+
+block: block.cpp ../include/simd-block.hpp ../include/simd-block.h ../include/memory.h ../include/util.h ../lib/libfilter.a ../googletest/build/lib/libgtest_main.a ../googletest/build/lib/libgtest.a Makefile
+	$(CXX) -std=c++17 -march=native -mtune=native -O3 -W -Wall -Wextra -I../include -I../googletest/googletest/include -ggdb3 block.cpp ../googletest/build/lib/libgtest_main.a ../lib/libfilter.a ../googletest/build/lib/libgtest.a -o block -lm -lpthread
+
+clean:
+	rm -f block
