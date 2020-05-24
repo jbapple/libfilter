@@ -1,9 +1,9 @@
-.PHONY: all lib examples clean install libpcg_random benchmarks
+.PHONY: world lib examples clean install libpcg_random benchmarks
 
 lib: libpcg_random
 	$(MAKE) -C lib
 
-all: lib examples Makefile benchmarks
+world: lib examples Makefile benchmarks
 
 examples: lib libpcg_random
 	$(MAKE) -C examples
