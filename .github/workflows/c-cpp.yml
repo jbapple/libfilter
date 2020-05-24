@@ -2,11 +2,9 @@ name: c-cpp
 
 on:
   push:
-    branches: [ ci ]
+    branches: [ ci-remote ]
   pull_request:
-    branches: [ ci ]
-  schedule:
-    - cron: '0 0 * * *'
+    branches: [ ci-remote ]
 
 jobs:
   build:
