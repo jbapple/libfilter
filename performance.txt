@@ -14,6 +14,10 @@ export NONCE=1.25
 sudo ls
 echo 0 | sudo tee /sys/devices/system/cpu/cpufreq/boost
 sudo cpupower frequency-set -g performance
-taskset -c 4 sudo nice -n -20 ./bench --ndv 1000000 --reps 20 --bytes 1000000 --print_header 2>/dev/null | tee -a kv-1m-8b.csv
+taskset -c 4 sudo nice -n -20 ./benchmarks/bench --ndv 1000000 --reps 1 --bytes 1000000 --print_header 2>/dev/null >/tmp/a.csv
+while true
+do
+  taskset -c 4 sudo nice -n -20 ./benchmarks/bench --ndv 1000000 --reps 20 --bytes 1000000 2>/dev/null >>/tmp/a.csv
+done &
 echo 1 | sudo tee /sys/devices/system/cpu/cpufreq/boost
 sudo cpupower frequency-set -g ondemand
