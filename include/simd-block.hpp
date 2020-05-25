@@ -209,7 +209,11 @@ template <int Arity, int WordBits>
 using SimdBlockFilter = detail::SpecificBF<detail::SimdBlockFilterP<Arity, WordBits>>;
 
 template <int Arity, int WordBits>
-struct BlockFilter : ScalarBlockFilter<Arity, WordBits> {};
+struct BlockFilter : ScalarBlockFilter<Arity, WordBits> {
+  static constexpr bool is_simd = false;
+  using Scalar = ScalarBlockFilter<Arity, WordBits>;
+  using Simd = SimdBlockFilter<Arity, WordBits>;
+};
 
 template <int Arity, int WordBits, int Stride>
 using SimdShingleBlockFilter =
@@ -220,41 +224,85 @@ using ScalarShingleBlockFilter =
     detail::GenericBF<detail::ScalarShingleBlockFilterP<Arity, WordBits, Stride>>;
 
 template <int Arity, int WordBits, int Stride>
-struct ShingleBlockFilter : ScalarShingleBlockFilter<Arity, WordBits, Stride> {};
+struct ShingleBlockFilter : ScalarShingleBlockFilter<Arity, WordBits, Stride> {
+  static constexpr bool is_simd = false;
+  using Scalar = ScalarShingleBlockFilter<Arity, WordBits, Stride>;
+  using Simd = SimdShingleBlockFilter<Arity, WordBits, Stride>;
+};
 
 #if defined(LIBFILTER_SIMD_5_256)
 template <>
-struct BlockFilter<8, 32> : SimdBlockFilter<8, 32> {};
+struct BlockFilter<8, 32> : SimdBlockFilter<8, 32> {
+  static constexpr bool is_simd = false;
+  using Scalar = ScalarBlockFilter<8, 32>;
+  using Simd = SimdBlockFilter<8, 32>;
+};
 template <int Stride>
-struct ShingleBlockFilter<8, 32, Stride> : SimdShingleBlockFilter<8, 32, Stride> {};
+struct ShingleBlockFilter<8, 32, Stride> : SimdShingleBlockFilter<8, 32, Stride> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarShingleBlockFilter<8, 32, Stride>;
+  using Simd = SimdShingleBlockFilter<8, 32, Stride>;
+};
 #endif
 
 #if defined(LIBFILTER_SIMD_5_512)
 template <>
-struct BlockFilter<16, 32> : SimdBlockFilter<16, 32> {};
+struct BlockFilter<16, 32> : SimdBlockFilter<16, 32> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarBlockFilter<16, 32>;
+  using Simd = SimdBlockFilter<16, 32>;
+};
 template <int Stride>
-struct ShingleBlockFilter<16, 32, Stride> : SimdShingleBlockFilter<16, 32, Stride> {};
+struct ShingleBlockFilter<16, 32, Stride> : SimdShingleBlockFilter<16, 32, Stride> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarShingleBlockFilter<16, 32, Stride>;
+  using Simd = SimdShingleBlockFilter<16, 32, Stride>;
+};
 #endif
 
 #if defined(LIBFILTER_SIMD_5_128)
 template <>
-struct BlockFilter<4, 32> : SimdBlockFilter<4, 32> {};
+struct BlockFilter<4, 32> : SimdBlockFilter<4, 32> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarBlockFilter<4, 32>;
+  using Simd = SimdBlockFilter<4, 32>;
+};
 template <int Stride>
-struct ShingleBlockFilter<4, 32, Stride> : SimdShingleBlockFilter<4, 32, Stride> {};
+struct ShingleBlockFilter<4, 32, Stride> : SimdShingleBlockFilter<4, 32, Stride> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarShingleBlockFilter<4, 32, Stride>;
+  using Simd = SimdShingleBlockFilter<4, 32, Stride>;
+};
 #endif
 
 #if defined(LIBFILTER_SIMD_6_256)
 template <>
-struct BlockFilter<4, 64> : SimdBlockFilter<4, 64> {};
+struct BlockFilter<4, 64> : SimdBlockFilter<4, 64> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarBlockFilter<4, 64>;
+  using Simd = SimdBlockFilter<4, 64>;
+};
 template <int Stride>
-struct ShingleBlockFilter<4, 64, Stride> : SimdShingleBlockFilter<4, 64, Stride> {};
+struct ShingleBlockFilter<4, 64, Stride> : SimdShingleBlockFilter<4, 64, Stride> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarShingleBlockFilter<4, 64, Stride>;
+  using Simd = SimdShingleBlockFilter<4, 64, Stride>;
+};
 #endif
 
 #if defined(LIBFILTER_SIMD_6_512)
 template <>
-struct BlockFilter<8, 64> : SimdBlockFilter<8, 64> {};
+struct BlockFilter<8, 64> : SimdBlockFilter<8, 64> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarBlockFilter<8, 64>;
+  using Simd = SimdBlockFilter<8,64>;
+};
 template <int Stride>
-struct ShingleBlockFilter<8, 64, Stride> : SimdShingleBlockFilter<8, 64, Stride> {};
+struct ShingleBlockFilter<8, 64, Stride> : SimdShingleBlockFilter<8, 64, Stride> {
+  static constexpr bool is_simd = true;
+  using Scalar = ScalarShingleBlockFilter<8, 64, Stride>;
+  using Simd = SimdShingleBlockFilter<8, 64, Stride>;
+};
 #endif
 
 }  // namespace filter
