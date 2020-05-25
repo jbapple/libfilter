@@ -17,3 +17,7 @@ jobs:
         submodules: 'recursive'
     - name: make
       run: make world
+    - name: make test
+      run: make test
+    - name: run tests
+      run test/block
