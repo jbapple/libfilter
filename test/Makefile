@@ -5,8 +5,8 @@ MAKEFLAGS += --no-builtin-rules
 
 all: block
 
-block: block.cpp ../include/simd-block.hpp ../include/simd-block.h ../include/memory.h ../include/util.h ../lib/libfilter.a ../googletest/build/lib/libgtest_main.a ../googletest/build/lib/libgtest.a Makefile
-	$(CXX) -std=c++17 -march=native -mtune=native -O3 -W -Wall -Wextra -I../include -I../googletest/googletest/include -ggdb3 block.cpp ../googletest/build/lib/libgtest_main.a ../lib/libfilter.a ../googletest/build/lib/libgtest.a -o block -lm -lpthread
+block: block.cpp ../include/simd-block.hpp ../include/simd-block.h ../include/memory.h ../include/util.h ../lib/libfilter.a ../googletest/build/lib/libgtest_main.a ../googletest/build/lib/libgtest.a ../cpp/util.hpp Makefile
+	$(CXX) -std=c++17 -march=native -mtune=native -O3 -W -Wall -Wextra -I../cpp -I../include -I../googletest/googletest/include -ggdb3 block.cpp ../googletest/build/lib/libgtest_main.a ../lib/libfilter.a ../googletest/build/lib/libgtest.a -o block -lm -lpthread
 
 clean:
 	rm -f block
