@@ -18,7 +18,7 @@ test: lib googletest
 	$(MAKE) -C test
 
 googletest:
-	cd googletest && mkdir -p build && cd build && cmake ..
+	cd googletest && mkdir -p build && cd build && cmake -E env CXXFLAGS=--std=c++11 cmake ..
 	$(MAKE) -C googletest/build
 
 clean:
