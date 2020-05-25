@@ -1,6 +1,5 @@
-// This is a benchmark of insert time, find time, and false positive probability. The
-// results are printed to stdout and some dummy output is printed to stderr to prevent the
-// compiler from eliding certain parts of the benchmark.
+// This is a benchmark of insert time, find time, (both in nanoseconds) and false positive
+// probability. The results are printed to stdout.
 //
 // The output is CSV. Each line has the form
 //
@@ -115,6 +114,7 @@ vector<Sample> Bench(uint64_t reps, uint64_t bytes, const vector<uint64_t>& to_i
 
   // Force the FindHash value to be calculated:
   if (found) {
+    // do something nilpotent:
     result.push_back(base);
     result.pop_back();
   }
