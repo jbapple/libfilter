@@ -93,95 +93,58 @@ class SimdShingleBlockFilterP;
               FILTER_TYPE_STRING(PREFIX, ARITY, WORD_BITS));                        \
   }
 
-DECL_SBFP(Scalar, libfilter_block_scalar_, 4, 32);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 32, 1);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 32, 2);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 32, 4);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 32, 8);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 32, 16);
+#define DECL_MOST(FLAVOR, BASE, ARITY, WORD_BITS) \
+  DECL_SBFP(FLAVOR, BASE, ARITY, WORD_BITS);      \
+  DECL_SSBFP(FLAVOR, BASE, ARITY, WORD_BITS, 1);  \
+  DECL_SSBFP(FLAVOR, BASE, ARITY, WORD_BITS, 2);  \
+  DECL_SSBFP(FLAVOR, BASE, ARITY, WORD_BITS, 4);  \
+  DECL_SSBFP(FLAVOR, BASE, ARITY, WORD_BITS, 8);  \
+  DECL_SSBFP(FLAVOR, BASE, ARITY, WORD_BITS, 16)
 
-#if defined(LIBFILTER_SIMD_5_256)
-DECL_SBFP(Simd, libfilter_block_simd_, 4, 32);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 32, 1);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 32, 2);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 32, 4);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 32, 8);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 32, 16);
+#define DECL_MOST_SCALAR(ARITY, WORD_BITS) \
+  DECL_MOST(Scalar, libfilter_block_scalar_, ARITY, WORD_BITS)
+#define DECL_MOST_SIMD(ARITY, WORD_BITS) \
+  DECL_MOST(Simd, libfilter_block_simd_, ARITY, WORD_BITS)
+
+DECL_MOST_SCALAR(4, 32);
+
+#if defined(LIBFILTER_SIMD_5_128)
+DECL_MOST_SIMD(4, 32);
 #endif
 
-DECL_SBFP(Scalar, libfilter_block_scalar_, 8, 32);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 32, 1);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 32, 2);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 32, 4);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 32, 8);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 32, 16);
+DECL_MOST_SCALAR(8, 32);
 DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 32, 32);
 
 #if defined(LIBFILTER_SIMD_5_256)
-DECL_SBFP(Simd, libfilter_block_simd_, 8, 32);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 32, 1);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 32, 2);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 32, 4);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 32, 8);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 32, 16);
+DECL_MOST_SIMD(8, 32);
 DECL_SSBFP(Simd, libfilter_block_simd_, 8, 32, 32);
 #endif
 
-DECL_SBFP(Scalar, libfilter_block_scalar_, 16, 32);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 16, 32, 1);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 16, 32, 2);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 16, 32, 4);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 16, 32, 8);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 16, 32, 16);
+DECL_MOST_SCALAR(16, 32);
 DECL_SSBFP(Scalar, libfilter_block_scalar_, 16, 32, 32);
 DECL_SSBFP(Scalar, libfilter_block_scalar_, 16, 32, 64);
 
 #if defined(LIBFILTER_SIMD_5_512)
-DECL_SBFP(Simd, libfilter_block_simd_, 16, 32);
-DECL_SSBFP(Simd, libfilter_block_simd_, 16, 32, 1);
-DECL_SSBFP(Simd, libfilter_block_simd_, 16, 32, 2);
-DECL_SSBFP(Simd, libfilter_block_simd_, 16, 32, 4);
-DECL_SSBFP(Simd, libfilter_block_simd_, 16, 32, 8);
-DECL_SSBFP(Simd, libfilter_block_simd_, 16, 32, 16);
+DECL_MOST_SIMD(16, 32);
 DECL_SSBFP(Simd, libfilter_block_simd_, 16, 32, 32);
 DECL_SSBFP(Simd, libfilter_block_simd_, 16, 32, 64);
 #endif
 
-DECL_SBFP(Scalar, libfilter_block_scalar_, 8, 64);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 64, 1);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 64, 2);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 64, 4);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 64, 8);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 64, 16);
+DECL_MOST_SCALAR(8, 64);
 DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 64, 32);
 DECL_SSBFP(Scalar, libfilter_block_scalar_, 8, 64, 64);
 
 #if defined(LIBFILTER_SIMD_6_512)
-DECL_SBFP(Simd, libfilter_block_simd_, 8, 64);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 64, 1);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 64, 2);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 64, 4);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 64, 8);
-DECL_SSBFP(Simd, libfilter_block_simd_, 8, 64, 16);
+DECL_MOST_SIMD(8, 64);
 DECL_SSBFP(Simd, libfilter_block_simd_, 8, 64, 32);
 DECL_SSBFP(Simd, libfilter_block_simd_, 8, 64, 64);
 #endif
 
-DECL_SBFP(Scalar, libfilter_block_scalar_, 4, 64);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 64, 1);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 64, 2);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 64, 4);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 64, 8);
-DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 64, 16);
+DECL_MOST_SCALAR(4, 64);
 DECL_SSBFP(Scalar, libfilter_block_scalar_, 4, 64, 32);
 
 #if defined(LIBFILTER_SIMD_6_256)
-DECL_SBFP(Simd, libfilter_block_simd_, 4, 64);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 64, 1);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 64, 2);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 64, 4);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 64, 8);
-DECL_SSBFP(Simd, libfilter_block_simd_, 4, 64, 16);
+DECL_MOST_SIMD(4, 64);
 DECL_SSBFP(Simd, libfilter_block_simd_, 4, 64, 32);
 #endif
 
@@ -293,13 +256,5 @@ struct BlockFilter<8, 64> : SimdBlockFilter<8, 64> {};
 template <int Stride>
 struct ShingleBlockFilter<8, 64, Stride> : SimdShingleBlockFilter<8, 64, Stride> {};
 #endif
-
-// template <>
-// struct BlockFilter<6, 512> : SimdBlockFilter<6, 512> {};
-
-// template <int LogWordBits, int BucketBits, int Stride>
-// using ShingleBlockFilter =
-//     detail::GenericBF<detail::ShingleSimdBlockFilterP<LogWordBits, BucketBits,
-//     Stride>>;
 
 }  // namespace filter
