@@ -20,4 +20,4 @@ jobs:
     - name: make test
       run: make test
     - name: run tests
-      run test/block
+      run: test/block
