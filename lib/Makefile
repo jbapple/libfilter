@@ -12,11 +12,20 @@ all: libfilter.so libfilter.a
 # Same with gnu and mmap, although probably header, object, and
 # program all have the same answer to that one. Still need a way to test
 
-util.o: util.c ../include/util.h ../include/memory.h ../pcg-c/include/pcg_variants.h Makefile
-	$(CC) -std=gnu11 -O3 -fPIC -I../include -I../pcg-c/include/ util.c -c -o util.o
+INCLUDES=-I../include -I../pcg-c/include
+WARN=-W -Wall -Wextra
+RELEASE=-fPIC -O3
+CFLAGS=-std=gnu11 $(INCLUDES) $(WARN) $(RELEASE)
 
-memory.o: memory.c ../include/memory.h Makefile
-	$(CC) -std=gnu11 -O3 -fPIC -I../include memory.c -c -o memory.o
+%.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM $*.c -o new-$*.d
+	if ! diff -q $*.d new-$*.d 2>/dev/null; then cp new-$*.d $*.d; fi
+
+include util.d
+include memory.d
+
+%.o: %.c Makefile
+	$(CC) $(CFLAGS) $*.c -o $*.o -c
 
 libfilter.so: util.o memory.o Makefile
 	$(CC) -fPIC -shared -o libfilter.so util.o memory.o ../pcg-c/src/libpcg_random.a
