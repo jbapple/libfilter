@@ -42,7 +42,7 @@ int libfilter_block_destruct(libfilter_block *);
 // Adds a hash value to the filter. The hash value is expected to be pseudorandom. Passing
 // non pseudorandom values can increase the false positive probability to 100%. Do not do
 // this.
-inline void libfilter_block_add_hash(uint64_t hash, libfilter_block *);
+inline void libfilter_block_add_hash(uint64_t hash, const libfilter_block *);
 // Find a hash value to the filter, returning true if the value was added earlier, and, if
 // the value was not added earlier, false with a probability dictated by the heap space
 // usage and the number of distinct hash values that have been added. As in
@@ -57,14 +57,17 @@ inline bool libfilter_block_find_hash_external(uint64_t hash, uint64_t num_bucke
 double libfilter_block_fpp(double ndv, double bytes);
 uint64_t libfilter_block_capacity(uint64_t bytes, double fpp);
 void libfilter_block_zero_out(libfilter_block *);
-inline void libfilter_block_scalar_add_hash(uint64_t hash, libfilter_block *);
+inline void libfilter_block_scalar_add_hash(uint64_t hash, const libfilter_block *);
 inline bool libfilter_block_scalar_find_hash(uint64_t hash, const libfilter_block *);
-inline void libfilter_block_scalar_add_hash_external(uint64_t hash, uint64_t num_buckets, uint32_t *);
-inline bool libfilter_block_scalar_find_hash_external(uint64_t hash, uint64_t num_buckets, const uint32_t *);
+inline void libfilter_block_scalar_add_hash_external(uint64_t hash, uint64_t num_buckets,
+                                                     uint32_t *);
+inline bool libfilter_block_scalar_find_hash_external(uint64_t hash, uint64_t num_buckets,
+                                                      const uint32_t *);
 #if defined(__AVX2__)
-inline void libfilter_block_simd_add_hash(uint64_t hash, libfilter_block *);
+inline void libfilter_block_simd_add_hash(uint64_t hash, const libfilter_block *);
 inline bool libfilter_block_simd_find_hash(uint64_t hash, const libfilter_block *);
-inline void libfilter_block_simd_add_hash_external(uint64_t hash, uint64_t num_buckets, uint32_t *);
+inline void libfilter_block_simd_add_hash_external(uint64_t hash, uint64_t num_buckets,
+                                                   uint32_t *);
 inline bool libfilter_block_simd_find_hash_external(uint64_t hash, uint64_t num_buckets, const uint32_t *);
 #endif  // __AVX2__
 
@@ -133,7 +136,7 @@ __attribute__((always_inline)) inline void libfilter_block_scalar_add_hash_exter
 }
 
 __attribute__((always_inline)) inline void libfilter_block_scalar_add_hash(
-    uint64_t hash, libfilter_block *here) {
+    uint64_t hash, const libfilter_block *here) {
   return libfilter_block_scalar_add_hash_external(hash, here->num_buckets_,
                                                   here->block_.block);
 }
@@ -193,7 +196,7 @@ __attribute__((always_inline)) inline void libfilter_block_simd_add_hash_externa
 }
 
 __attribute__((always_inline)) inline void libfilter_block_simd_add_hash(
-    uint64_t hash, libfilter_block *here) {
+    uint64_t hash, const libfilter_block *here) {
   const uint64_t bucket_idx = libfilter_block_index(hash, here->num_buckets_);
   const __m256i mask = libfilter_block_simd_make_mask(hash);
   __m256i *bucket = (__m256i *)here->block_.block;
@@ -246,7 +249,7 @@ __attribute__((always_inline)) inline bool libfilter_block_find_hash_external(
 #endif
 
 __attribute__((always_inline)) inline void libfilter_block_add_hash(
-    uint64_t hash, libfilter_block *here) {
+    uint64_t hash, const libfilter_block *here) {
   return libfilter_block_add_hash_external(hash, here->num_buckets_, here->block_.block);
 }
 

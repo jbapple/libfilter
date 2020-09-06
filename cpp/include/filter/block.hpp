@@ -81,7 +81,7 @@ class GenericBF {
   }
 };
 
-template <void (*INSERT_HASH)(uint64_t, libfilter_block*),
+template <void (*INSERT_HASH)(uint64_t, const libfilter_block*),
           bool (*FIND_HASH)(uint64_t, const libfilter_block*)>
 struct SpecificBF : GenericBF {
  public:

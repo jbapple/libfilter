@@ -6,7 +6,7 @@ import java.nio.*;
 
 public class Library {
   private ByteBuffer memory;
-  static { System.loadLibrary("native"); }
+  static { System.loadLibrary("Library"); }
   private native void doNothing();
   private native boolean Allocate(ByteBuffer bb, int bytes);
   private native boolean FindDetail(ByteBuffer bb, long hashval);

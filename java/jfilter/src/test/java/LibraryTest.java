@@ -13,5 +13,6 @@ public class LibraryTest {
     System.out.println("Before Add");
     classUnderTest.Add(867-5309);
     assertTrue("found 867-5309", classUnderTest.Find(867-5309));
+    //assertTrue("found 42", classUnderTest.Find(42));
   }
 }
