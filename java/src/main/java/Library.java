@@ -7,7 +7,7 @@ import java.nio.*;
 public class Library {
   private ByteBuffer memory;
   static {
-    System.load("/home/jbapple/code/bloom/c/lib/libfilter.so");
+    //System.load("/home/jbapple/code/bloom/c/lib/libfilter.so");
     //System.loadLibrary("filter");
     System.loadLibrary("jni-bridge");
   }
