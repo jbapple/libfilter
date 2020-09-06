@@ -12,8 +12,8 @@ repositories {
 }
 
 test {
-    systemProperty "java.library.path", (file("../c/lib").absolutePath + ":" + file("${project(":jni-bridge").buildDir}/lib/main/debug").absolutePath)
-    environment "LD_LIBRARY_PATH", file("../c/lib").absolutePath
+    systemProperty "java.library.path", file("${project(":jni-bridge").buildDir}/lib/main/debug").absolutePath
+    environment "LD_LIBRARY_PATH", file("${project(":jni-bridge").projectDir}/lib").absolutePath
     dependencies {
         implementation group: 'junit', name: 'junit', version: '4.12'
     }
