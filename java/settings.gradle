@@ -16,4 +16,4 @@ include 'services:webservice'
 */
 
 rootProject.name = 'java'
-include 'cfilter', 'jfilter'
+include 'jni-bridge'

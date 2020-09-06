@@ -6,85 +6,111 @@
  * user guide available at https://docs.gradle.org/4.4.1/userguide/java_library_plugin.html
  */
 
-import org.gradle.internal.jvm.Jvm
-
 plugins {
-    //id 'cpp-library'
-    //jq 'java-library'
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
 
-    project(':cfilter') {
-
-    apply plugin: 'cpp-library'
-
-    //group 'org.example'
-    //version '1.0-SNAPSHOT'
-
-    library {
-        binaries.configureEach { CppBinary binary ->
-            def compileTask = binary.compileTask.get()
-            compileTask.includes.from("${Jvm.current().javaHome}/include")
-
-            def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
-            if (osFamily.macOs) {
-                compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
-            } else if (osFamily.linux) {
-                compileTask.includes.from("${Jvm.current().javaHome}/include/linux")
-            } else if (osFamily.windows) {
-                compileTask.includes.from("${Jvm.current().javaHome}/include/win32")
-            }
-
-            compileTask.includes.from("../c/include")
-
-            compileTask.source.from fileTree(dir: "./", include: "**/*.c")
-
-            def toolChain = binary.toolChain
-            if (toolChain instanceof VisualCpp) {
-                compileTask.compilerArgs.addAll(["/TC"])
-            } else if (toolChain instanceof GccCompatibleToolChain) {
-                compileTask.compilerArgs.addAll(["-x", "c", "-std=c11"])
-            }
-        }
-    }
-
-    // configurations.named("unspecified").configure {
-        // attributes {
-            // attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-        // }
-    // }
-
+test {
+    systemProperty "java.library.path", (file("../c/lib").absolutePath + ":" + file("${project(":jni-bridge").buildDir}/lib/main/debug").absolutePath)
+    environment "LD_LIBRARY_PATH", file("../c/lib").absolutePath
 }
 
+test.dependsOn  ':jni-bridge:linkDebug'
 
-//project(':jfilter') {
 
-    // Apply the java-library plugin to add support for Java Library
-    apply plugin: 'java-library'
-    //apply plugin: 'cpp-library'
+// import org.gradle.internal.jvm.Jvm
 
-    // In this section you declare where to find the dependencies of your project
-    repositories {
-        // Use jcenter for resolving your dependencies.
-        // You can declare any Maven/Ivy/file repository here.
-        jcenter()
-    }
+// plugins {
+//     //id 'cpp-library'
+//     //jq 'java-library'
+// }
 
-    dependencies {
-        // This dependency is exported to consumers, that is to say found on their compile classpath.
-        api 'org.apache.commons:commons-math3:3.6.1'
 
-        // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-        implementation 'com.google.guava:guava:23.0'
+//     project(':cfilter') {
 
-        //implementation project(':cfilter')
-        // Use JUnit test framework
-        testImplementation 'junit:junit:4.12'
-    }
-    //    tasks.withType(Test) {
-    test {
-        systemProperty "java.library.path", file("${project(":cfilter").buildDir}/lib/main/debug").absolutePath
-    }
+//     apply plugin: 'cpp-library'
 
-    test.dependsOn 'cfilterSharedLibrary'
-//}
+//     //group 'org.example'
+//     //version '1.0-SNAPSHOT'
+
+//     library {
+//         binaries.configureEach { CppBinary binary ->
+//             def compileTask = binary.compileTask.get()
+//             compileTask.includes.from("${Jvm.current().javaHome}/include")
+
+//             def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
+//             if (osFamily.macOs) {
+//                 compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
+//             } else if (osFamily.linux) {
+//                 compileTask.includes.from("${Jvm.current().javaHome}/include/linux")
+//             } else if (osFamily.windows) {
+//                 compileTask.includes.from("${Jvm.current().javaHome}/include/win32")
+//             }
+
+//             compileTask.includes.from("../c/include")
+
+//             compileTask.source.from fileTree(dir: "./", include: "**/*.c")
+
+//             def toolChain = binary.toolChain
+//             if (toolChain instanceof VisualCpp) {
+//                 compileTask.compilerArgs.addAll(["/TC"])
+//             } else if (toolChain instanceof GccCompatibleToolChain) {
+//                 compileTask.compilerArgs.addAll(["-x", "c", "-std=c11"])
+//             }
+//         }
+//     }
+
+//     // configurations.named("unspecified").configure {
+//         // attributes {
+//             // attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+//         // }
+//     // }
+
+// }
+
+
+// //project(':jfilter') {
+
+//     // Apply the java-library plugin to add support for Java Library
+//     apply plugin: 'java-library'
+//     //apply plugin: 'cpp-library'
+
+//     // In this section you declare where to find the dependencies of your project
+//     repositories {
+//         // Use jcenter for resolving your dependencies.
+//         // You can declare any Maven/Ivy/file repository here.
+//         jcenter()
+//     }
+
+//     dependencies {
+//         // This dependency is exported to consumers, that is to say found on their compile classpath.
+//         api 'org.apache.commons:commons-math3:3.6.1'
+
+//         // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+//         implementation 'com.google.guava:guava:23.0'
+
+//         //implementation project(':cfilter')
+//         // Use JUnit test framework
+//         testImplementation 'junit:junit:4.12'
+//     }
+//     //    tasks.withType(Test) {
+//     test {
+//         systemProperty "java.library.path", file("${project(":cfilter").buildDir}/lib/main/debug").absolutePath
+//     }
+
+//     test.dependsOn 'cfilterSharedLibrary'
+// //}

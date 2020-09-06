@@ -6,7 +6,11 @@ import java.nio.*;
 
 public class Library {
   private ByteBuffer memory;
-  static { System.loadLibrary("Library"); }
+  static {
+    System.load("/home/jbapple/code/bloom/c/lib/libfilter.so");
+    //System.loadLibrary("filter");
+    System.loadLibrary("jni-bridge");
+  }
   private native void doNothing();
   private native boolean Allocate(ByteBuffer bb, int bytes);
   private native boolean FindDetail(ByteBuffer bb, long hashval);

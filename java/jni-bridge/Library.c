@@ -17,7 +17,6 @@ jboolean JNICALL Java_Library_Allocate(JNIEnv* a, jobject obj, jobject bb, jint 
 
 JNIEXPORT jboolean JNICALL Java_Library_FindDetail(JNIEnv* a, jobject obj, jobject bb,
                                                    jlong hashval) {
-  return false;
   const libfilter_block* me = (*a)->GetDirectBufferAddress(a, bb);
   return libfilter_block_find_hash(hashval, me);
 }
