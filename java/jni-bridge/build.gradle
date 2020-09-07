@@ -1,0 +1,36 @@
+import org.gradle.internal.jvm.Jvm
+
+apply plugin: 'cpp-library'
+
+library {
+
+    binaries.configureEach { CppBinary binary ->
+        for (File f : source) {
+            f.print()
+        }
+        def compileTask = binary.compileTask.get()
+        compileTask.includes.from("${Jvm.current().javaHome}/include")
+
+        def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
+        if (osFamily.macOs) {
+            compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
+        } else if (osFamily.linux) {
+            compileTask.includes.from("${Jvm.current().javaHome}/include/linux")
+        }
+
+        compileTask.includes.from("include")
+
+        compileTask.source.from fileTree(dir: "./", include: "*.cpp")
+
+        compileTask.compilerArgs.addAll(["-x", "c", "-std=c11"])
+
+        def linkTask = binary.linkTask.get()
+        linkTask.linkerArgs.addAll(["-L", "lib", "-lfilter"])
+    }
+}
+
+// configurations.named("cppApiElements").configure {
+//     attributes {
+//         attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+//     }
+// }

@@ -1,4 +1,4 @@
-.PHONY: default clean install uninstall lib world c-world cpp-world
+.PHONY: default clean install uninstall lib world c-world cpp-world java-world
 
 default: lib
 
@@ -26,3 +26,6 @@ c-world: lib
 
 cpp-world: lib
 	$(MAKE) -C cpp world
+
+java-world: lib
+	cd java && ./gradlew test
