@@ -1,6 +1,6 @@
-.PHONY: all libjni-bridge jar clean test
+.PHONY: world libjni-bridge clean test
 
-all: jar
+world: libfilter.jar
 
 libjni-bridge: Makefile
 	$(MAKE) -C jni-bridge
@@ -8,8 +8,8 @@ libjni-bridge: Makefile
 Library.class: Library.java Makefile
 	javac Library.java
 
-# libfilter.jar: src/main/java/Library.class Makefile
-# 	jar cf libfilter.jar src/main/java/Library.class
+libfilter.jar: Library.class Makefile
+	jar cf libfilter.jar Library.class
 
 LibraryTest.class: LibraryTest.java Makefile
 	javac -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" LibraryTest.java
