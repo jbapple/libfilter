@@ -1,5 +1,6 @@
-//package libfilterTest;
+//package libfilter;
 
+import libfilter.Library;
 import org.junit.Test;
 import static org.junit.Assert.*;
 //import com.jbapple.libfilter.Library;
@@ -8,7 +9,7 @@ import static org.junit.Assert.*;
 public class LibraryTest {
   @Test
   public void testSomeLibraryMethod() {
-    Library classUnderTest = new Library(123456);
+    libfilter.Library classUnderTest = new Library(123456);
     assertTrue(
         "someLibraryMethod should return 'true'", classUnderTest.someLibraryMethod());
     System.out.println("Before Add");

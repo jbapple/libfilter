@@ -1,4 +1,4 @@
-//package libfilter;
+package libfilter;
 
 import java.nio.*;
 
