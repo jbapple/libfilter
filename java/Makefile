@@ -11,14 +11,14 @@ libfilter/Library.class: libfilter/Library.java Makefile
 libfilter.jar: libfilter/Library.class Makefile
 	jar cf libfilter.jar libfilter/Library.class
 
-LibraryTest.class: LibraryTest.java Makefile
-	javac -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" LibraryTest.java
+libfilter/LibraryTest.class: libfilter/LibraryTest.java Makefile
+	javac -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" libfilter/LibraryTest.java
 
-test: libfilter/Library.class LibraryTest.class libjni-bridge
-	java -Djava.library.path=jni-bridge -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" org.junit.runner.JUnitCore LibraryTest
+test: libfilter/Library.class libfilter/LibraryTest.class libjni-bridge
+	java -Djava.library.path=jni-bridge -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" org.junit.runner.JUnitCore libfilter.LibraryTest
 
 clean:
 	$(MAKE) -C jni-bridge clean
 	rm -f libfilter/Library.class
-	rm -f LibraryTest.class
+	rm -f libfilter/LibraryTest.class
 	rm -f libfilter.jar

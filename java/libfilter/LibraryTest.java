@@ -1,4 +1,4 @@
-//package libfilter;
+package libfilter;
 
 import libfilter.Library;
 import org.junit.Test;
