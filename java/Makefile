@@ -6,7 +6,7 @@ libfilter/Block.class: libfilter/Block.java Makefile
 	javac libfilter/Block.java
 
 libfilter.jar: libfilter/Block.class Makefile
-	jar cf libfilter.jar libfilter/Library.class
+	jar cf libfilter.jar libfilter/Block.class
 
 libfilter/test/BlockTest.class: libfilter/test/BlockTest.java Makefile
 	javac -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" libfilter/test/BlockTest.java

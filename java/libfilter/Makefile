@@ -10,10 +10,10 @@ INCLUDES=-I ../../c/include -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/linu
 CFLAGS=-std=c99 -march=native -mtune=native $(INCLUDES) $(WARN) $(RELEASE)
 LINKS=
 
-include Library.d
+include jni-bridge.d
 
-libjni-bridge.so: Library.o Makefile
-	$(CC) -fPIC -shared -o libjni-bridge.so Library.o libfilter.so -Wl,-rpath=$$ORIGIN
+libjni-bridge.so: jni-bridge.o Makefile
+	$(CC) -fPIC -shared -o libjni-bridge.so jni-bridge.o libfilter.so -Wl,-rpath=$$ORIGIN
 
 clean: Makefile
 	rm -f Library.o libjni-bridge.so Library.d

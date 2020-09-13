@@ -9,7 +9,7 @@ public class Block {
     try {
       System.loadLibrary("jni-bridge");
     } catch (UnsatisfiedLinkError e) {
-      File f = new File(Library.class.getClassLoader().getResource("libfilter").getPath()
+      File f = new File(Block.class.getClassLoader().getResource("libfilter").getPath()
           + "/" + System.mapLibraryName("jni-bridge"));
       System.load(f.getAbsolutePath());
     }
