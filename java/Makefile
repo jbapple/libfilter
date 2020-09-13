@@ -2,21 +2,21 @@
 
 world: libfilter.jar test
 
-libfilter/Library.class: libfilter/Library.java Makefile
-	javac libfilter/Library.java
+libfilter/Block.class: libfilter/Block.java Makefile
+	javac libfilter/Block.java
 
-libfilter.jar: libfilter/Library.class Makefile
+libfilter.jar: libfilter/Block.class Makefile
 	jar cf libfilter.jar libfilter/Library.class
 
-libfilter/LibraryTest.class: libfilter/LibraryTest.java Makefile
-	javac -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" libfilter/LibraryTest.java
+libfilter/test/BlockTest.class: libfilter/test/BlockTest.java Makefile
+	javac -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" libfilter/test/BlockTest.java
 
-test: libfilter/Library.class libfilter/LibraryTest.class
+test: libfilter/Block.class libfilter/test/BlockTest.class
 	$(MAKE) -C libfilter
-	java -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" org.junit.runner.JUnitCore libfilter.LibraryTest
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:./libfilter/ java -cp ".:/usr/share/java/junit4.jar:/usr/share/java/hamcrest-core-1.3.jar" org.junit.runner.JUnitCore libfilter.test.BlockTest
 
 clean:
 	$(MAKE) -C libfilter clean
-	rm -f libfilter/Library.class
-	rm -f libfilter/LibraryTest.class
+	rm -f libfilter/Block.class
+	rm -f libfilter/test/BlockTest.class
 	rm -f libfilter.jar

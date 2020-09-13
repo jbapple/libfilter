@@ -3,7 +3,7 @@ package libfilter;
 import java.io.File;
 import java.nio.*;
 
-public class Library {
+public class Block {
   private ByteBuffer memory;
   static {
     try {
@@ -22,7 +22,7 @@ public class Library {
   public void Add(long hashval) { AddDetail(memory, hashval); }
   private native boolean Deallocate(ByteBuffer bb);
   public boolean someLibraryMethod() { return true; }
-  public Library(int bytes) {
+  public Block(int bytes) {
     this.memory = ByteBuffer.allocateDirect(24);
     Allocate(memory, bytes);
   }
