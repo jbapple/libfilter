@@ -1,11 +1,18 @@
 package libfilter;
 
+import java.io.File;
 import java.nio.*;
 
 public class Library {
   private ByteBuffer memory;
   static {
-    System.loadLibrary("jni-bridge");
+    try {
+      System.loadLibrary("jni-bridge");
+    } catch (UnsatisfiedLinkError e) {
+      File f = new File(Library.class.getClassLoader().getResource("libfilter").getPath()
+          + "/" + System.mapLibraryName("jni-bridge"));
+      System.load(f.getAbsolutePath());
+    }
   }
   private native void doNothing();
   private native boolean Allocate(ByteBuffer bb, int bytes);
