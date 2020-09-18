@@ -48,6 +48,7 @@ inline void libfilter_block_add_hash(uint64_t hash, const libfilter_block *);
 // usage and the number of distinct hash values that have been added. As in
 // libfilter_block_add_hash, the hash value is expected to be pseudorandom.
 inline bool libfilter_block_find_hash(uint64_t hash, const libfilter_block *);
+//bool libfilter_block_clone(const libfilter_block *from, libfilter_block *to);
 
 // Lower-level operations:
 inline void libfilter_block_add_hash_external(uint64_t hash, uint64_t num_buckets,

@@ -73,13 +73,15 @@ libfilter_guarantee(uint64_t max_bytes, uint64_t alignment) {
 }
 #endif
 
+// How many bytes should be requested to guarantee at least exact_bytes of space is
+// available
 uint64_t __attribute__((visibility("hidden")))
 libfilter_new_alloc_request(uint64_t exact_bytes, uint64_t alignment) {
 #ifdef MMAP
   if (0 == (exact_bytes & (HUGE_PAGE_SIZE - 1))) return exact_bytes;
 #endif
 #ifdef UNALIGNED
-  return exact_bytes + 2*alignment - 2;
+  return exact_bytes + 2 * alignment - 2;
 #else
   (void)alignment;
   return exact_bytes;
@@ -187,9 +189,12 @@ libfilter_do_free(libfilter_region r, uint64_t bytes, uint64_t alignment) {
   return 0;
 }
 
-
 void __attribute__((visibility("hidden")))
 libfilter_clear_region(libfilter_region* here) {
   here->block = NULL;
   here->to_free = NULL;
 }
+
+// bool libfilter_region_clone(const libfilter_region* from, libfilter_region* to) {
+//  libfilter
+// }

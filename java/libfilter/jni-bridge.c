@@ -29,8 +29,21 @@ JNIEXPORT void JNICALL Java_libfilter_Block_AddDetail(JNIEnv* a, jobject obj, jo
   libfilter_block_add_hash(hashval, me);
 }
 
-JNIEXPORT jboolean JNICALL Java_libfilter_Block_Deallocate
-(JNIEnv * env, jobject obj, jobject bb) {
+JNIEXPORT jboolean JNICALL Java_libfilter_Block_Deallocate(JNIEnv* env, jobject obj,
+                                                           jobject bb) {
   libfilter_block* me = (*env)->GetDirectBufferAddress(env, bb);
   return libfilter_block_destruct(me) >= 0;
+}
+
+JNIEXPORT jlong JNICALL Java_libfilter_Block_SizeInBytesDetail(JNIEnv* env, jobject obj,
+                                                               jobject bb) {
+  libfilter_block* me = (*env)->GetDirectBufferAddress(env, bb);
+  return libfilter_block_size_in_bytes(me);
+}
+
+JNIEXPORT jboolean JNICALL Java_libfilter_Block_CloneDetail(JNIEnv* env, jobject obj, jobject near, jobject far) {
+  libfilter_block* me = (*env)->GetDirectBufferAddress(env, near);
+  libfilter_block* you = (*env)->GetDirectBufferAddress(env, far);
+  *you = libfilter_block_clone(me);
+  return true;
 }

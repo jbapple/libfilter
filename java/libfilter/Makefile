@@ -16,4 +16,4 @@ libjni-bridge.so: jni-bridge.o Makefile
 	$(CC) -fPIC -shared -o libjni-bridge.so jni-bridge.o libfilter.so -Wl,-rpath=$$ORIGIN
 
 clean: Makefile
-	rm -f Library.o libjni-bridge.so Library.d
+	rm -f libjni-bridge.so jni-bridge.o jni-bridge.d jni-bridge.d.new
