@@ -28,13 +28,24 @@ double experimental_fpp(double ndv, double bytes) {
 
 int main() {
   const double ndv = 1e6;
-  const double m_over_n = 8 / log(2);
-  const double bytes = m_over_n * ndv / CHAR_BIT;
-
-  cout << "Bloom would be:\t\t" << exp(-m_over_n * log(2) * log(2)) << endl;
-  cout << "Expected fpp for block:\t" << BlockFilter::FalsePositiveProbability(ndv, bytes) << endl;
-  cout << BlockFilter::Name() << "\t\t" << experimental_fpp<BlockFilter>(ndv, bytes)
-       << endl;
-  cout << ScalarBlockFilter::Name() << "\t"
-       << experimental_fpp<ScalarBlockFilter>(ndv, bytes) << endl;
+  // m is size in bits, n is ndv
+  // so m / CHAR_BIT is size in bytes
+  // and m/ 256 is size in buckets
+  // so n/buckets = 256.0/m_over_n
+  for (double n_over_buckets = 18; n_over_buckets < 61.5; ++n_over_buckets) {
+    const double m_over_n = 256.0 / n_over_buckets;
+    const double bytes = m_over_n * ndv / CHAR_BIT;
+    cout << "n_over_buckets: " << n_over_buckets << endl;
+    cout << "Bloom would be:\t\t" << exp(-m_over_n * log(2) * log(2)) << endl;
+    cout << "Expected fpp for block:\t"
+         << BlockFilter::FalsePositiveProbability(ndv, bytes) << endl;
+    // cout << BlockFilter::Name() << "\t\t" << experimental_fpp<BlockFilter>(ndv, bytes)
+    //      << endl;
+    cout << "ratio:\t\t"
+         << BlockFilter::FalsePositiveProbability(ndv, bytes) /
+                exp(-m_over_n * log(2) * log(2))
+         << endl;
+  }
+  // cout << ScalarBlockFilter::Name() << "\t"
+  //      << experimental_fpp<ScalarBlockFilter>(ndv, bytes) << endl;
 }

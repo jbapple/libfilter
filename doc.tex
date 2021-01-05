@@ -1,7 +1,7 @@
 \documentclass[letterpaper, 11pt]{article}
 
 \usepackage[pdfusetitle]{hyperref}
-\usepackage[margin=1in, top = 0.5in, bottom = 0.5in]{geometry}
+\usepackage[margin=1in, top = 0.5in, bottom = 1in]{geometry}
 \usepackage{framed}
 
 \pagestyle{empty}
@@ -19,18 +19,18 @@
 
 \begin{document}
 
-\title{Constant-time Bloom filters}
+\title{Split block Bloom filters}
 \author{Jim Apple \\
   jbapple@apache.org}
 \maketitle
 \thispagestyle{empty}
 
-Bloom filters and other approximate membership query structures (including quotient filters and cuckoo filters) typically have worst-case operation costs that are $\omega(1)$.~\cite{cuckoo-filter,quotient-filter}
-In Bloom filters, this driven by the $\lg (1/\varepsilon)$ hash functions to be evaluated.\footnote{And the same number of bits to access after hashing.}
+Bloom filters and other approximate membership query structures (including quotient filters and cuckoo filters) typically have worst-case operation costs that are linear (or worse) in $\lg (1/\varepsilon)$. \cite{cuckoo-filter,quotient-filter}
+In Bloom filters, this is driven by the $\lg (1/\varepsilon)$ hash functions to be evaluated.\footnote{And the same number of bits to access after hashing.}
 In dictionary-based filters like cuckoo filters and quotient filters, this is from searching through a near-full table for an open slot to write a fingerprint in.
 
-This note describes a Bloom filter with worst-case $O(1)$ operations, first created for Apache Impala in early 2016.\footnote{\url{https://github.com/apache/impala/commit/b35f6d070c8e6b51079f962b448ecc2b0eb74c1a}}
-The price paid for this performance is that these filters use a pre-determined number of hash functions, limiting their utility for false positive probabilities outside of $[0.5\%, 5\%]$.
+This brief note describes a Bloom filter in which all operations scale independently of $1/\varepsilon$, with worst-case $O(1)$ operations, first created for Apache Impala in early 2016.\footnote{\url{https://github.com/apache/impala/commit/b35f6d070c8e6b51079f962b448ecc2b0eb74c1a}}
+The price paid for this performance is that these filters use a pre-determined number of hash functions, limiting their utility for false positive probabilities outside of $[0.4\%, 19\%]$.
 The central ideas are:
 
 \begin{enumerate}
@@ -39,36 +39,52 @@ The central ideas are:
 \item Use eight hash functions to use in order to fit cleanly into SIMD lanes.\footnote{Four or sixteen would work, too.}
 \end{enumerate}
 
-To insert a value in a constant-time Bloom filter, select one 256-bit block from the filter by hashing the key once.
+To insert a value in a split block Bloom filter, select one 256-bit block from the filter by hashing the key once.
 Then hash the key eight more times to a range of $[0,32)$ using SIMD instructions and multiply-shift universal hashing: $h_{s_i}(x) = \lfloor(s_i \cdot x) / 2^{27}\rfloor$, where $s_i$ are odd seeds.~\cite{multiply-shift}
 Set one bit in each of eight contiguous 32-bit lanes within the 256-bit block using the results of the eight hash functions.
 Lookup is symmetric; deletions are not supported; code is available at the end of this document.
 
-Each of the central ideas of constant-time Bloom filters can negatively affect $\varepsilon$, but the result is very high speed.
-For instance, comparing against the 8-bit version of cuckoo filters\footnote{This test is replicable from the original cuckoo filter repo, \url{https://github.com/efficient/cuckoofilter}}:
+Each of the central ideas of split block Bloom filters can negatively affect $\varepsilon$ compared to standard Bloom filters.
+For instance, in the same space it takes for a split block Bloom filter to support $\varepsilon = 1.0\%$, a standard Bloom filter achieves a false positive rate of $0.63\%$
+The false positive rate of split block Bloom filters can be approximated from \cite[Equation 3]{block} and \cite[Section 2.1]{split-bloom}
+
+\[
+\sum_{i=0}^\infty P_{256/(m/n)}(i) (1 - (1-8/256)^i)^8
+= \sum_{i=0}^\infty P_a(i) (1 - (1-1/32)^i)^8
+\]
+
+where $P$ is the Poisson distibution, $n$ is the number of distinct hash values, $m$ is the size of the filter in bits, and $a$ is the average number of distinct hash values per block.
+As long as $a \in [20,52]$ ($\varepsilon \in [0.40\%, 19\%]$), the false positive probability of split block Bloom filters is no more than twice that of a standard Bloom filter with the same $n$ and $m$.
+
+In tradeoff for this increased $\varepsilon$, we get very high speed.
+For instance, comparing against the 8-bit version of cuckoo filters\footnote{This test is replicable from the original cuckoo filter repo, \url{https://github.com/efficient/cuckoofilter}}\footnote{More benchmarks are also shown in \cite{lemire-xor-filter}.}:
 
 \begin{tabular}{|r|r|r|r|}
   \hline  & {\bf 100k elements} & {\bf 1M elements} & {\bf 100M elements} \\
   \hline {\bf Size} & 131KB & 1MB & 134M \\
   \hline {\bf Cuckoo insert (M/s)} & 71 & 33 & 14 \\
-  \hline {\bf $O(1)$BF insert (M/s)} & 416 & 182 & 32 \\
+  \hline {\bf SBBF insert (M/s)} & 416 & 182 & 32 \\
   \hline {\bf Cuckoo lookup (M/s)} & 281 & 139 & 23 \\
-  \hline {\bf $O(1)$BF lookup (M/s)} & 400 & 186 & 43 \\
+  \hline {\bf SBBF lookup (M/s)} & 400 & 186 & 43 \\
   \hline {\bf Cuckoo $\varepsilon$} & 2.37\% & 2.97\% & 2.33\% \\
-  \hline {\bf $O(1)$BF $\varepsilon$} & 1.03\% & 2.74\% & 0.91\% \\
+  \hline {\bf SBBF $\varepsilon$} & 1.03\% & 2.74\% & 0.91\% \\
   \hline
 \end{tabular}
 
 Because of their per-slot metadata, cuckoo filters and quotient filters mainly shine at false positive probabilities less than 0.5\%.
-For higher probabilities like those in this table, which are in the target range for Impala's use cases, constant-time Bloom filters are appropriate, even if not the theoretically optimal.
-Constant-time Bloom filters are now also used in Apache Arrow, Apache Kudu, and Apache Parquet.
+For higher probabilities like those in this table, which are in the target range for Impala's use cases, split block Bloom filters are appropriate, even if not the theoretically optimal.
+Split block Bloom filters are now also used in Apache Arrow, Apache Kudu, and Apache Parquet.
 The filter is available in a standalone package at \url{https://github.com/jbapple/libfilter}.
 
-See the figure below for a cut-down but working C version of constant-time Bloom filters.
+See the figure below for a cut-down but working C version of split block Bloom filters.
 
-\bibliographystyle{plain}
+\section*{Acknowledgements}
+Thank you to Daniel Lemire for helpful discussions and inspiring questions.
+
+\bibliographystyle{alpha}
 \bibliography{doc}
 
+\appendix{}
 \begin{figure}
   \begin{framed}
 \begin{verbatim}
