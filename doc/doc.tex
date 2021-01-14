@@ -128,8 +128,8 @@ _Bool find_hash(uint64_t hash, uint64_t num_buckets, const __m256i filter[]) {
   const uint64_t bucket_idx = block_index(hash, num_buckets);
   const __m256i mask = make_mask(hash);
   const __m256i *bucket = &filter[bucket_idx];
-  // checks if all the bits in mask are also set in *bucket. Scalar equivalent:
-  // (~bucket & mask) == 0
+  // checks if all the bits in mask are also set in *bucket. Scalar
+  // equivalent: (~bucket & mask) == 0
   return _mm256_testc_si256(*bucket, mask);
 }
 \end{verbatim}
