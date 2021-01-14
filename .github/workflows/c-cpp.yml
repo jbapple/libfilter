@@ -15,8 +15,9 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: 'recursive'
-    - name: make
+    - name: diagnostics
       run: cc --version
+    - name: make
       run: make world
     - name: run tests
       run: cpp/extras/test/block.exe
