@@ -24,6 +24,10 @@ class GenericBF {
  public:
   uint64_t SizeInBytes() const { return libfilter_block_size_in_bytes(&payload_); }
 
+  uint64_t SaltedHash(const uint64_t* salt) const {
+    return libfilter_block_hash(&payload_, salt);
+  }
+
  public:
   ~GenericBF() {
     // TODO: this swallows an error when return value is negative
