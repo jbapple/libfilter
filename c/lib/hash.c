@@ -403,7 +403,7 @@ inline void libfilter_hash_ehc(const char input[7 * 3 * sizeof(libfilter_u64x2)]
   libfilter_hash_ehc_combine(tmpout, output);
 }
 
-inline void libfilter_hash_tree(const char* data, size_t block_group_length,
+ void libfilter_hash_tree(const char* data, size_t block_group_length,
                                 libfilter_u64x2 stack[][8][3], int stack_lengths[],
                                 const uint64_t* entropy) {
   const uint64_t(*entropy_matrix)[3] = (const uint64_t(*)[3])entropy;
