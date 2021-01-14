@@ -5,6 +5,7 @@ all: lib
 include memory.d
 include util.d
 include block.d
+include hash.d
 
 lib: libfilter.a libfilter.so Makefile
 
@@ -22,14 +23,14 @@ LINKS=
 
 include $(DEFAULT_RECIPE)
 
-libfilter.so: util.o memory.o block.o Makefile
-	$(CC) -fPIC -shared -o libfilter.so util.o memory.o block.o
+libfilter.so: util.o memory.o block.o hash.o Makefile
+	$(CC) -fPIC -shared -o libfilter.so util.o memory.o block.o hash.o
 
-libfilter.a: util.o memory.o block.o Makefile
-	ar rcs libfilter.a util.o memory.o block.o
+libfilter.a: util.o memory.o block.o hash.o Makefile
+	ar rcs libfilter.a util.o memory.o block.o hash.o
 
 clean:
 	rm -f libfilter.so libfilter.a
-	rm -f memory.o util.o block.o
-	rm -f util.d.new memory.d.new block.d.new
-	rm -f util.d memory.d block.d
+	rm -f memory.o util.o block.o hash.o
+	rm -f util.d.new memory.d.new block.d.new hash.d.new
+	rm -f util.d memory.d block.d hash.d

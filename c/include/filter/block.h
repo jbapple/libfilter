@@ -20,6 +20,7 @@
 
 #include <immintrin.h>
 
+#include "hash.h"
 #include "memory.h"             // for libfilter_region
 
 
@@ -48,7 +49,6 @@ inline void libfilter_block_add_hash(uint64_t hash, libfilter_block *);
 // usage and the number of distinct hash values that have been added. As in
 // libfilter_block_add_hash, the hash value is expected to be pseudorandom.
 inline bool libfilter_block_find_hash(uint64_t hash, const libfilter_block *);
-
 
 // Lower-level operations:
 double libfilter_block_fpp(double ndv, double bytes);
@@ -80,6 +80,12 @@ struct libfilter_block_struct {
   uint64_t num_buckets_;
   libfilter_region block_;
 };
+
+inline uint64_t libfilter_block_hash(const libfilter_block *here,
+                                     const uint64_t entropy[]) {
+  return libfilter_hash_tabulate(entropy, (const char *)here->block_.block,
+                                 here->num_buckets_ * 32);
+}
 
 // TODO: write docs for this
 libfilter_block libfilter_block_clone(const libfilter_block *);
