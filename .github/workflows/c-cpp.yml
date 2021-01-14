@@ -18,6 +18,6 @@ jobs:
     - name: diagnostics
       run: cc --version
     - name: make
-      run: make world
+      run: make -k world
     - name: run tests
       run: cpp/extras/test/block.exe
