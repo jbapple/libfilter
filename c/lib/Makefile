@@ -7,7 +7,7 @@ include util.d
 include block.d
 include hash.d
 
-lib: libfilter.a libfilter.so Makefile
+lib: libfilter.a Makefile #libfilter.so Makefile
 
 # TODO: without c11 compiled in, aligned_alloc is never used. But if
 # it is compiled in, how can systems without a libc that cupposts
