@@ -53,9 +53,7 @@ TYPED_TEST(BlockTest, HashChanges) {
     hashes[i] = r();
   }
   unordered_set<uint64_t> old_hashes;
-  unsigned i = 0;
   for (auto h : hashes) {
-    ++i;
     if (x.FindHash(h)) continue;
     x.InsertHash(h);
     auto after = x.SaltedHash(entropy.data());
