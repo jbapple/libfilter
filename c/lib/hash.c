@@ -356,14 +356,18 @@ inline void libfilter_hash_upper(const libfilter_u64x2 input[8][3],
 inline void libfilter_hash_ehc_load(const char input[7 * 3 * sizeof(libfilter_u64x2)],
                                     libfilter_u64x2 output[7][3]) {
   static_assert(7 * 3 <= 28, "");
-#ifndef __clang__ && defined(__GNUC__) && __GNUC__ >= 8
+#if !defined(__clang__)
+#if defined(__GNUC__) && __GNUC__ >= 8
 #pragma GCC unroll 28
+#endif
 #else
 #pragma unroll
 #endif
   for (unsigned i = 0; i < 7; ++i) {
-#ifndef __clang__ && defined(__GNUC__) && __GNUC__ >= 8
+#if !defined(__clang__)
+#if defined(__GNUC__) && __GNUC__ >= 8
 #pragma GCC unroll 28
+#endif
 #else
 #pragma unroll
 #endif
