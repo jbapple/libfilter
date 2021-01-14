@@ -42,7 +42,8 @@ TYPED_TEST(BlockTest, InsertPersists) {
 TYPED_TEST(BlockTest, HashChanges) {
   auto ndv = 40000;
   auto x = TypeParam::CreateWithBytes(ndv);
-  vector<uint64_t> entropy(libfilter_hash_entropy_bytes / sizeof(uint64_t));
+  // TODO: tabulation hashing needs to be included here
+  vector<uint64_t> entropy(libfilter_hash_tabulate_entropy_bytes / sizeof(uint64_t));
   vector<uint64_t> hashes(ndv);
   Rand r;
   for (unsigned i = 0; i < entropy.size(); ++i) {
@@ -52,8 +53,11 @@ TYPED_TEST(BlockTest, HashChanges) {
     hashes[i] = r();
   }
   unordered_set<uint64_t> old_hashes;
-  for (int i = 0; i < ndv; ++i) {
-    x.InsertHash(hashes[i]);
+  unsigned i = 0;
+  for (auto h : hashes) {
+    ++i;
+    if (x.FindHash(h)) continue;
+    x.InsertHash(h);
     auto after = x.SaltedHash(entropy.data());
     EXPECT_EQ(old_hashes.find(after), old_hashes.end());
     old_hashes.insert(after);
