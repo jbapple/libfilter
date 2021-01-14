@@ -315,10 +315,6 @@ static inline void libfilter_hash_ehc_combine(const libfilter_u64x2 input[9],
   output[2] = libfilter_hash_plus(output[2], libfilter_hash_leftshift(input[8], 1));
 }
 
-static inline uint64_t FloorLog(uint64_t a, uint64_t b) {
-  return (0 == a) ? 0 : ((b < a) ? 0 : (1 + (FloorLog(a, b / a))));
-}
-
 static inline libfilter_u64x2 libfilter_hash_mix(libfilter_u64x2 accum, libfilter_u64x2 input,
                                           libfilter_u64x2 entropy) {
   libfilter_u64x2 output = libfilter_hash_plus32(entropy, input);
