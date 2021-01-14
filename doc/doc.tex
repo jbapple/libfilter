@@ -29,7 +29,7 @@ Bloom filters and other approximate membership query structures (including quoti
 In Bloom filters, this is driven by the $\lg (1/\varepsilon)$ hash functions to be evaluated.\footnote{And the same number of bits to access after hashing.}
 In dictionary-based filters like cuckoo filters and quotient filters, this is from searching through a near-full table for an open slot to write a fingerprint in.
 
-This brief note describes a Bloom filter in which all operations scale independently of $1/\varepsilon$, with worst-case $O(1)$ operations, first created for Apache Impala in early 2016.\footnote{\url{https://github.com/apache/impala/commit/b35f6d070c8e6b51079f962b448ecc2b0eb74c1a}}
+This brief note describes a Bloom filter in which all operations scale independently of $1/\varepsilon$, with worst-case $O(1)$ operations, first created for Apache Impala in early 2016.\footnote{\url{https://github.com/apache/impala/commit/b35f6d070c8e6b51079f962b448ecc2b0eb74c1a}}\footnote{Rediscovered in 2018 by \cite{ultra-fast}.}
 The price paid for this performance is that these filters use a pre-determined number of hash functions, limiting their utility for false positive probabilities outside of $[0.4\%, 19\%]$.
 The central ideas are:
 
