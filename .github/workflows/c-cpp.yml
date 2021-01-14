@@ -16,6 +16,7 @@ jobs:
       with:
         submodules: 'recursive'
     - name: make
+      run: cc --version
       run: make world
     - name: run tests
       run: cpp/extras/test/block.exe
