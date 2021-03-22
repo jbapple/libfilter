@@ -39,5 +39,7 @@ libfilter_do_free(libfilter_region r, uint64_t bytes, uint64_t alignment);
 void __attribute__((visibility("hidden")))
 libfilter_clear_region(libfilter_region* here);
 
+// How many bytes should be requested to guarantee at least exact_bytes of space is
+// available
 uint64_t __attribute__((visibility("hidden")))
 libfilter_new_alloc_request(uint64_t exact_bytes, uint64_t alignment);
