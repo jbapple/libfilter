@@ -62,6 +62,10 @@ class GenericBF {
     return *this;
   }
 
+  bool operator==(const GenericBF& that) const {
+    return libfilter_block_equals(&this->payload_, &that.payload_);
+  }
+
   // TODO: why passing hash bits twice?
   static double FalsePositiveProbability(uint64_t ndv, uint64_t bytes) {
     return libfilter_block_fpp(ndv, bytes);

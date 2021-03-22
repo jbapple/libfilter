@@ -54,6 +54,8 @@ inline bool libfilter_block_find_hash(uint64_t hash, const libfilter_block *);
 double libfilter_block_fpp(double ndv, double bytes);
 uint64_t libfilter_block_capacity(uint64_t bytes, double fpp);
 void libfilter_block_zero_out(libfilter_block *);
+bool libfilter_block_equals(const libfilter_block *, const libfilter_block *);
+
 inline void libfilter_block_scalar_add_hash(uint64_t hash, libfilter_block *);
 inline bool libfilter_block_scalar_find_hash(uint64_t hash, const libfilter_block *);
 #if defined(__AVX2__)

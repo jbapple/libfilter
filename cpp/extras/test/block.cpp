@@ -91,3 +91,23 @@ TYPED_TEST(BlockTest, Buddy) {
     }
   }
 }
+
+// Test eqaulity operator
+TYPED_TEST(BlockTest, EqualStayEqual) {
+  auto ndv = 160000;
+  auto x = TypeParam::CreateWithBytes(ndv);
+  auto y = TypeParam::CreateWithBytes(ndv);
+  vector<uint64_t> hashes(ndv);
+  Rand r;
+  for (int i = 0; i < ndv; ++i) {
+    hashes[i] = r();
+  }
+  for (int i = 0; i < ndv; ++i) {
+    x.InsertHash(hashes[i]);
+    y.InsertHash(hashes[i]);
+    auto z = x;
+    EXPECT_TRUE(x == y);
+    EXPECT_TRUE(y == z);
+    EXPECT_TRUE(z == x);
+  }
+}

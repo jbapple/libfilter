@@ -57,3 +57,8 @@ libfilter_block libfilter_block_clone(const libfilter_block * here) {
   libfilter_block result = {.num_buckets_ = here->num_buckets_, .block_ = r.region};
   return result;
 }
+
+bool libfilter_block_equals(const libfilter_block* here, const libfilter_block* there) {
+  if (here->num_buckets_ != there->num_buckets_) return false;
+  return 0 == memcmp(here->block_.block, there->block_.block, here->num_buckets_ * 32);
+}
