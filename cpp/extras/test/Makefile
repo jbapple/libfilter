@@ -6,6 +6,7 @@ world: default
 
 clean:
 	rm -f block.exe block.o block.d block.d.new
+	rm -rf googletest/build
 
 LINKS += googletest/build/lib/libgtest_main.a googletest/build/lib/libgtest.a -lpthread
 INCLUDES += -I googletest/googletest/include
