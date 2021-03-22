@@ -2,9 +2,6 @@
 #include <math.h>               // for log, exp, lgamma, pow
 #include <stdint.h>             // for uint64_t
 
-//#include "filter/block.h"
-//#include "memory-internal.h"             // for libfilter_region_alloc_result
-
 double libfilter_block_fpp_detail(double ndv, double bytes, double word_bits,
                                   double bucket_words, double hash_bits) {
   // From equation 3 of Putze et al.
