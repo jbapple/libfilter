@@ -172,6 +172,7 @@ libfilter_alloc_at_most(uint64_t max_bytes, uint64_t alignment) {
 #ifdef MMAP
 int __attribute__((visibility("hidden")))
 libfilter_do_unmap(libfilter_region r, size_t bytes) {
+  if (r.block == NULL) return 0;
   return munmap(r.block, bytes);
 }
 #endif
