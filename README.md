@@ -60,4 +60,5 @@ make install
 Block filters are most space-efficient at around 11.5 bits per
 distinct value, which produces a false positive probability of
 0.65%. A traditional Bloom filter would only need 10.5 bits per
-distinct value to achieve that same false positive probability.
+distinct value to achieve that same false positive probability, while
+a cuckoo filter would need 10.7 bits per distinct value.
