@@ -1,8 +1,8 @@
 ![](https://github.com/jbapple/libfilter/workflows/c-cpp/badge.svg?branch=master)
 
-This repository provides an implementation of blocked Bloom filters
-for C and C++. These filters use slightly more space than traditional
-Bloom filters but are much faster.
+This repository provides implementations of blocked Bloom filters for
+C, C++, and Java. These filters use slightly more space than
+traditional Bloom filters but are much faster.
 
 Example usage in C:
 
@@ -36,6 +36,19 @@ filter.InsertHash(hash);
 assert(filter.FindHash(hash));
 ```
 
+in Java
+
+```Java
+import com.github.jbapple.libfilter.BlockFilter;
+
+int ndv = 1000000;
+double fpp = 0.0065;
+long hash = (((long) 0xfeedbadb) << 32) | (long) 0xee52b055;
+
+BlockFilter = BlockFilter.CreateWithNdvFpp(ndv, fpp);
+filter.AddHash64(hash);
+assert filter.FindHash64(hash)
+```
 To install:
 
 ```shell

@@ -92,8 +92,8 @@ libfilter_block libfilter_block_clone(const libfilter_block *);
 
 __attribute__((visibility("hidden")))
 __attribute__((always_inline)) inline uint64_t libfilter_block_index(
-    const uint64_t hash, const uint64_t num_buckets) {
-  return (((unsigned __int128)hash) * ((unsigned __int128)num_buckets)) >> 64;
+    const uint64_t hash, const uint32_t num_buckets) {
+  return ((hash >> 32) * ((uint64_t)num_buckets)) >> 32;
 }
 
 typedef struct {

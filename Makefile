@@ -1,4 +1,4 @@
-.PHONY: default clean install uninstall lib world c-world cpp-world
+.PHONY: default clean install uninstall lib world c-world cpp-world java-world
 
 default: lib
 
@@ -19,10 +19,15 @@ clean:
 	$(MAKE) -C c clean
 	$(MAKE) -C cpp clean
 
-world: c-world cpp-world
+# TODO: clean up for java & gradle
+
+world: c-world cpp-world java-world
 
 c-world: lib
 	$(MAKE) -C c world
 
 cpp-world: lib
 	$(MAKE) -C cpp world
+
+java-world:
+	java/gradlew -p java jar
