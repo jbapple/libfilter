@@ -57,7 +57,8 @@ make
 # probably needs a sudo:
 make install
 make java-world
-[now copy java/target/libfilter-*.jar to your classpath]
+mvn -f ./java/ install -Dmaven.test.skip=true
+[optional: copy java/target/libfilter-*.jar to your classpath]
 ```
 
 Block filters are most space-efficient at around 11.5 bits per
