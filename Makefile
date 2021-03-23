@@ -30,4 +30,4 @@ cpp-world: lib
 	$(MAKE) -C cpp world
 
 java-world:
-	java/gradlew -p java jar
+	mvn -f java/ test package
