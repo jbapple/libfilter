@@ -19,3 +19,4 @@ jobs:
       run: make world
     - name: run tests
       run: cpp/extras/test/block.exe
+      run: mvn -f ./java/ test

@@ -30,4 +30,4 @@ cpp-world: lib
 	$(MAKE) -C cpp world
 
 java-world:
-	mvn -f java/ test package
+	mvn -f ./java/ package -Dmaven.test.skip=true
