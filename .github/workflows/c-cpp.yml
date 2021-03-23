@@ -17,6 +17,7 @@ jobs:
         submodules: 'recursive'
     - name: make
       run: make world
-    - name: run tests
+    - name: run C++ tests
       run: cpp/extras/test/block.exe
+    - name: run Java tests
       run: mvn -f ./java/ test
