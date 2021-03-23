@@ -49,12 +49,15 @@ BlockFilter = BlockFilter.CreateWithNdvFpp(ndv, fpp);
 filter.AddHash64(hash);
 assert filter.FindHash64(hash)
 ```
+
 To install:
 
 ```shell
 make
 # probably needs a sudo:
 make install
+make java-world
+[now copy java/target/libfilter-*.jar to your classpath]
 ```
 
 Block filters are most space-efficient at around 11.5 bits per
