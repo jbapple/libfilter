@@ -1,7 +1,7 @@
 \documentclass[letterpaper, 11pt]{article}
 
 \usepackage[pdfusetitle]{hyperref}
-\usepackage[margin=1in, top = 0.5in, bottom = 1in]{geometry}
+\usepackage[margin=1in, top = 0.5in, bottom = 0.5in]{geometry}
 \usepackage{framed}
 
 \pagestyle{empty}
@@ -57,7 +57,7 @@ where $P$ is the Poisson distibution, $n$ is the number of distinct hash values,
 As long as $a \in [20,52]$ ($\varepsilon \in [0.40\%, 19\%]$), the false positive probability of split block Bloom filters is no more than twice that of a standard Bloom filter with the same $n$ and $m$.
 
 In tradeoff for this increased $\varepsilon$, we get very high speed.
-For instance, comparing against the 8-bit version of cuckoo filters\footnote{This test is replicable from the original cuckoo filter repo, \url{https://github.com/efficient/cuckoofilter}}\footnote{More benchmarks are also shown in \cite{lemire-xor-filter}.}:
+For instance, comparing against the 8-bit version of cuckoo filters\footnote{This test is replicable from the original cuckoo filter repo, \url{https://github.com/efficient/cuckoofilter}}\footnote{More benchmarks are also shown in \cite{lemire-xor-filter,ribbon-filter,bloom-overtakes}.}:
 
 \begin{tabular}{|r|r|r|r|}
   \hline  & {\bf 100k elements} & {\bf 1M elements} & {\bf 100M elements} \\
