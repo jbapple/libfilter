@@ -93,13 +93,13 @@ Thank you to Daniel Lemire for helpful discussions and inspiring questions.
 
 // Take a hash value and get the block to access within a filter with
 // num_buckets buckets.
-uint64_t block_index(const uint64_t hash, const uint64_t num_buckets) {
-  return (((unsigned __int128)hash) * ((unsigned __int128)num_buckets)) >> 64;
+uint64_t block_index(const uint64_t hash, const uint32_t num_buckets) {
+  return ((hash >> 32) * (num_buckets)) >> 32;
 }
 
 // Takes a hash value and creates a mask with one bit set in each 32-bit lane.
 // These are the bits to set or check when accessing the block.
-__m256i make_mask(uint64_t hash) {
+__m256i make_mask(uint32_t hash) {
   const __m256i ones = _mm256_set1_epi32(1);
   // Set eight odd constants for multiply-shift hashing
   const __m256i rehash = {INT64_C(0x47b6137b) << 32 | 0x44974d91,
@@ -116,7 +116,7 @@ __m256i make_mask(uint64_t hash) {
 }
 
 
-void add_hash(uint64_t hash, uint64_t num_buckets, __m256i filter[]) {
+void add_hash(uint64_t hash, uint32_t num_buckets, __m256i filter[]) {
   const uint64_t bucket_idx = block_index(hash, num_buckets);
   const __m256i mask = make_mask(hash);
   __m256i *bucket = &filter[bucket_idx];
@@ -124,7 +124,7 @@ void add_hash(uint64_t hash, uint64_t num_buckets, __m256i filter[]) {
   _mm256_store_si256(bucket, _mm256_or_si256(*bucket, mask));
 }
 
-_Bool find_hash(uint64_t hash, uint64_t num_buckets, const __m256i filter[]) {
+_Bool find_hash(uint64_t hash, uint32_t num_buckets, const __m256i filter[]) {
   const uint64_t bucket_idx = block_index(hash, num_buckets);
   const __m256i mask = make_mask(hash);
   const __m256i *bucket = &filter[bucket_idx];
