@@ -1,8 +1,10 @@
 ![](https://github.com/jbapple/libfilter/workflows/c-cpp/badge.svg?branch=master)
 
-This repository provides implementations of blocked Bloom filters for
-C, C++, and Java. These filters use slightly more space than
-traditional Bloom filters but are much faster.
+This repository provides implementations of blocked Bloom filters and
+elastic filters for C, C++, and Java. Blocked filters use slightly
+more space than traditional Bloom filters but are much fasterm while
+elastic filters can scale to any size, even if the final size is not
+known in advance.
 
 Example usage in C:
 

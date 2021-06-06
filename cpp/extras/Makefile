@@ -13,8 +13,8 @@ clean: Makefile
 export EXTRAS_ROOT := $(CURDIR)
 export INCLUDES := $(INCLUDES) -I $(EXTRAS_ROOT)/include -I $(EXTRAS_ROOT)/googletest/googletest/include
 export WARN=-W -Wall -Wextra
-export RELEASE=-march=native -mtune=native -O3 # -ggdb3
-export CXXFLAGS := -std=c++11 $(INCLUDES) $(WARN) $(RELEASE)
+export RELEASE=-march=native -mtune=native -O3 -DNDEBUG # -ggdb3
+export CXXFLAGS := -std=c++14 $(INCLUDES) $(WARN) $(RELEASE)
 
 examples: Makefile
 	$(MAKE) -C examples
