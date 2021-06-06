@@ -26,17 +26,13 @@ namespace filter {
 
 namespace detail {
 
-INLINE uint64_t Mask(int w, uint64_t x) {
-  return x & ((1ul << w) - 1);
-}
+INLINE uint64_t Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
 
 // A permutation hash function based on 2-independent multiply-shift
 struct Feistel {
   uint64_t keys[3][2];
 
-  INLINE uint64_t Lo(int, int, int w, uint64_t x) const {
-    return Mask(w, x);
-  }
+  INLINE uint64_t Lo(int, int, int w, uint64_t x) const { return Mask(w, x); }
   INLINE uint64_t Hi(int s, int t, int w, uint64_t x) const {
     return Mask(w, x >> (s + t - w));
   }
@@ -155,7 +151,6 @@ INLINE bool IsPrefixOf(uint16_t x, uint16_t y) {
   auto i = (a == 0) ? 32 : __builtin_clz(a);
 #endif
   return (c >= h) && (i >= 31 - c);
-
 }
 
 // static_assert(IsPrefixOf(2, 1), "IsPrefixOf(2, 1)");
@@ -176,7 +171,6 @@ INLINE bool IsPrefixOf(uint16_t x, uint16_t y) {
 // static_assert(not IsPrefixOf(2, 7), "IsPrefixOf(2, 7)");
 
 // static_assert(IsPrefixOf(16384, 1), "IsPrefixOf(16384, 1)");
-
 
 // Return true (and the combined value) if x and y are the same except for their last
 // digit.
@@ -199,7 +193,6 @@ static_assert(Combinable(1, 6).first == false, "Combinable(1, 6)");
 
 thread_local constexpr bool kDebug = false;
 
-
 thread_local const constexpr int kHeadSize = 10;
 thread_local const constexpr int kTailSize = 5;
 static_assert(kHeadSize + kTailSize == 15, "kHeadSize + kTailSize == 15");
@@ -221,7 +214,8 @@ struct Path : public Slot {
   uint64_t bucket;
 
   INLINE void Print() const {
-    std::cout << "{" << std::dec << bucket << ", {" << std::hex << fingerprint << ", " << tail << "}}";
+    std::cout << "{" << std::dec << bucket << ", {" << std::hex << fingerprint << ", "
+              << tail << "}}";
   }
 
   INLINE bool operator==(const Path& that) const {
@@ -237,7 +231,8 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, uint64_t log_side_size) {
   Path p;
   p.bucket = index;
   p.fingerprint = hashed_index_and_fp;
-  uint64_t pre_hash_index_fp_and_tail = raw >> (64 - log_side_size - kHeadSize - kTailSize);
+  uint64_t pre_hash_index_fp_and_tail =
+      raw >> (64 - log_side_size - kHeadSize - kTailSize);
   uint64_t raw_tail = pre_hash_index_fp_and_tail & ((1ul << kTailSize) - 1);
   uint64_t encoded_tail = raw_tail * 2 + 1;
   p.tail = encoded_tail;
@@ -245,7 +240,7 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, uint64_t log_side_size) {
     std::cout << std::hex << raw << " to ";
     p.Print();
     std::cout << " via " << std::dec << log_side_size + kHeadSize << " and " << std::hex
-         << pre_hash_index_and_fp << std::endl;
+              << pre_hash_index_and_fp << std::endl;
   }
   return p;
 }
@@ -257,8 +252,8 @@ INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t log_side_size)
   uint64_t shifted_up = pre_hashed_index_and_fp << (64 - log_side_size - kHeadSize);
   if (kDebug) {
     p.Print();
-    std::cout << std::hex << " to " << shifted_up << " via " << std::dec << log_side_size + kHeadSize
-         << std::endl;
+    std::cout << std::hex << " to " << shifted_up << " via " << std::dec
+              << log_side_size + kHeadSize << std::endl;
   }
   return shifted_up;
 }
@@ -321,14 +316,14 @@ struct Side {
       stash.Print();
       std::cout << std::endl;
     }
-    if (p.bucket == stash.bucket && p.fingerprint == stash.fingerprint ) return true;
+    if (p.bucket == stash.bucket && p.fingerprint == stash.fingerprint) return true;
     Bucket& b = data[p.bucket];
     for (int i = 0; i < kBuckets; ++i) {
       if (kDebug && b[i].tail != 0) {
-        std::cout << "{" << p.bucket << ", {" << b[i].fingerprint << ", " << b[i].tail << "}}"
-             << std::endl;
+        std::cout << "{" << p.bucket << ", {" << b[i].fingerprint << ", " << b[i].tail
+                  << "}}" << std::endl;
       }
-      //if (b[i].tail == 0) break;
+      // if (b[i].tail == 0) break;
       if (b[i].fingerprint == p.fingerprint && IsPrefixOf(b[i].tail, p.tail)) {
         return true;
       }
@@ -344,7 +339,7 @@ namespace std {
 INLINE void swap(filter::detail::Side& x, filter::detail::Side& y) {
   using std::swap;
   swap(x.f, y.f);
-  auto * tmp = x.data;
+  auto* tmp = x.data;
   x.data = y.data;
   y.data = tmp;
   swap(x.stash, y.stash);
@@ -373,7 +368,7 @@ struct ElasticFilter {
     uint64_t result = 0;
     for (auto s : {&left, &right}) {
       if (s->stash.tail != 0) ++result;
-      for (uint64_t i = 0; i < 1ull  << log_side_size; ++i){
+      for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
           if ((*s)[i][j].tail != 0) ++result;
         }
@@ -383,10 +378,10 @@ struct ElasticFilter {
   }
 
   INLINE void Print() const {
-    for (auto &s : {&left, &right}) {
+    for (auto& s : {&left, &right}) {
       s->stash.Print();
       std::cout << std::endl;
-      for (uint64_t i = 0; i < 1ull  << log_side_size; ++i){
+      for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
           (*s)[i][j].Print();
           std::cout << std::endl;
@@ -423,13 +418,13 @@ struct ElasticFilter {
       Upsize();
     }
     auto result = Insert(detail::ToPath(k, left.f, log_side_size));
-    //if (result == InsertResult::Ok) assert(Find(k));
+    // if (result == InsertResult::Ok) assert(Find(k));
     return result;
   }
 
   INLINE InsertResult Insert(detail::Path q) {
     int ttl = 32;
-    //assert(occupied == Count());
+    // assert(occupied == Count());
     while (left.stash.tail != 0 && right.stash.tail != 0) {
       ttl = 2 * ttl;
       detail::Path p = left.stash;
@@ -456,25 +451,25 @@ struct ElasticFilter {
       // p = ToPath(FromPathNoTail(left.stash, left.f, log_side_size), right.f,
       //            log_side_size);
       p = detail::ToPath(detail::FromPathNoTail(p, right.f, log_side_size), left.f,
-                 log_side_size);
+                         log_side_size);
       p.tail = tail;
       result = Insert(p, ttl);
       assert(result != InsertResult::Failed);
       if (result == InsertResult::Ok) break;
-      //assert(occupied == Count());
+      // assert(occupied == Count());
       if (detail::kDebug) {
         Print();
         std::cout << "ttl " << std::dec << ttl << " with " << occupied << " / "
-             << (2 * detail::kBuckets << log_side_size) << std::endl;
+                  << (2 * detail::kBuckets << log_side_size) << std::endl;
       }
     }
-    //assert(occupied == Count());
+    // assert(occupied == Count());
     return Insert(q, 1);
   }
 
   // TODO: what if already present?
   INLINE InsertResult Insert(detail::Path p, int ttl) {
-    //assert(occupied == Count());
+    // assert(occupied == Count());
     if (detail::kDebug) {
       std::cout << "Insert ";
       p.Print();
@@ -485,11 +480,11 @@ struct ElasticFilter {
     while (true) {
       detail::Path q = p;
       p = left.Insert(p, rng);
-      //assert(left.Find(q));
+      // assert(left.Find(q));
       if (p.tail == 0) {
         ++occupied;
         if (detail::kDebug) std::cout << "Done" << std::endl;
-        //assert(occupied == Count());
+        // assert(occupied == Count());
         return InsertResult::Ok;
       }
       if (p == q) {
@@ -504,7 +499,7 @@ struct ElasticFilter {
           p.Print();
           std::cout << std::endl;
         }
-        //assert(occupied == Count());
+        // assert(occupied == Count());
         return InsertResult::Stashed;
       }
       // p.Print();
@@ -519,7 +514,7 @@ struct ElasticFilter {
       if (p.tail == 0) {
         ++occupied;
         if (detail::kDebug) std::cout << "Done" << std::endl;
-        //assert(occupied == Count());
+        // assert(occupied == Count());
         return InsertResult::Ok;
       }
       if (p == q) {
@@ -535,11 +530,12 @@ struct ElasticFilter {
           p.Print();
           std::cout << std::endl;
         }
-        //assert(occupied == Count());
+        // assert(occupied == Count());
         return InsertResult::Stashed;
       }
       --ttl;
-      p = detail::ToPath(detail::FromPathNoTail(p, right.f, log_side_size), left.f, log_side_size);
+      p = detail::ToPath(detail::FromPathNoTail(p, right.f, log_side_size), left.f,
+                         log_side_size);
       p.tail = tail;
     }
   }
@@ -569,7 +565,7 @@ INLINE void UpsizeHelper(Slot sl, uint64_t i, ElasticFilter* u, Side ElasticFilt
   detail::Path p;
   static_cast<Slot&>(p) = sl;
   p.bucket = i;
-  //assert(t.occupied == t.Count());
+  // assert(t.occupied == t.Count());
   uint64_t q = FromPathNoTail(p, (u->*s).f, u->log_side_size);
   if (sl.tail == 1ul << kTailSize) {
     p = ToPath(q, (t.left).f, t.log_side_size);
@@ -584,20 +580,20 @@ INLINE void UpsizeHelper(Slot sl, uint64_t i, ElasticFilter* u, Side ElasticFilt
          << (64 - u->log_side_size - kHeadSize - 1);
     detail::Path r = ToPath(q, (t.left).f, t.log_side_size);
     r.tail = (sl.tail << 1);
-    //p.Print();
-    //std::cout << std::hex << q << std::endl;
-    //r.Print();
+    // p.Print();
+    // std::cout << std::hex << q << std::endl;
+    // r.Print();
     t.Insert(r);
-    //r.Print();
-    //std::cout << std::endl;
+    // r.Print();
+    // std::cout << std::endl;
   }
-  //assert(t.occupied == t.Count());
+  // assert(t.occupied == t.Count());
 }
 }  // namespace detail
 
 INLINE void ElasticFilter::Upsize() {
-  //assert(occupied == Count());
-  //std::cout << "Upsize " << log_side_size << std::endl;
+  // assert(occupied == Count());
+  // std::cout << "Upsize " << log_side_size << std::endl;
   ElasticFilter t(1 + log_side_size, entropy);
   for (auto s : {&ElasticFilter::left, &ElasticFilter::right}) {
     detail::Path stash = (this->*s).stash;
@@ -612,10 +608,10 @@ INLINE void ElasticFilter::Upsize() {
     }
   }
   using std::swap;
-  //assert(t.occupied == t.Count());
+  // assert(t.occupied == t.Count());
   swap(*this, t);
-  //assert(occupied == Count());
-  //std::cout << "Done upsize " << log_side_size << std::endl;
+  // assert(occupied == Count());
+  // std::cout << "Done upsize " << log_side_size << std::endl;
 }
 
 }  // namespace filter
