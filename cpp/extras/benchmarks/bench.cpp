@@ -16,6 +16,7 @@
 #include <vector>            // for vector, allocator
 
 #include "filter/block.hpp"  // for BlockFilter, ScalarBlockFilter (ptr o...
+#include "filter/elastic.hpp"
 #include "util.hpp"          // for Rand
 
 using namespace filter;
@@ -90,6 +91,11 @@ vector<Sample> Bench(uint64_t reps, uint64_t bytes, const vector<uint64_t>& to_i
   result.push_back(base);
   cout << base.CSV() << endl;
 
+  base.sample_type = "size";
+  base.payload = filter.SizeInBytes();
+  result.push_back(base);
+  cout << base.CSV() << endl;
+
   // fpp:
   uint64_t found = 0;
   for (unsigned i = 0; i < to_find.size(); ++i) {
@@ -133,7 +139,7 @@ vector<Sample> MultiBench(uint64_t ndv, uint64_t reps, uint64_t bytes) {
   for (unsigned i = 0; i < ndv; ++i) {
     to_insert.push_back(r());
   }
-  for (unsigned i = 0; i < (1000 * 1000); ++i) {
+  for (unsigned i = 0; i < (1000 * 1000 * 32); ++i) {
     to_find.push_back(r());
   }
 
@@ -201,7 +207,7 @@ int main(int argc, char** argv) {
   }
   if (ndv == 0 or reps == 0 or bytes == 0) goto err;
 
-  using TupleType = tuple<BlockFilter, ScalarBlockFilter>;
+  using TupleType = tuple<BlockFilter, ElasticFilter>;
 
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {

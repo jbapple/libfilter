@@ -1,4 +1,4 @@
-// Benchmarks predicted vs. experimental false positive probabilities
+// Benchmarks number of hash collisions when hashing a full filter
 
 #include <limits.h>          // for CHAR_BIT
 #include <cstdint>           // for uint64_t

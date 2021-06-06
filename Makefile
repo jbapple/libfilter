@@ -31,3 +31,5 @@ cpp-world: lib
 
 java-world:
 	mvn -f ./java/ package -Dmaven.test.skip=true
+
+#TODO: java install
