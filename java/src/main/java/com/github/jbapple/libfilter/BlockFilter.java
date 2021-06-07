@@ -234,7 +234,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
   }
 
   /**
-   * Add a hash value to the filter.
+   * Find a hash value in the filter.
    * <p>
    * Do not mix with <code>AddHash32</code> - a hash value that is added with
    * <code>AddHash32</code> will not be present when calling <code>FindHash64</code>.
@@ -277,7 +277,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
   }
 
   /**
-   * Add a hash value to the filter.
+   * Find a hash value in the filter.
    * <p>
    * Do not mix with <code>AddHash64</code> - a hash value that is added with
    * <code>AddHash64</code> will not be present when calling <code>FindHash32</code>.
