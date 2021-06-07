@@ -1,4 +1,5 @@
 #include "filter/block.hpp"
+#include "filter/elastic.hpp"
 
 #include <cstdint>  // for uint64_t
 #include <unordered_set>
@@ -13,16 +14,21 @@ using namespace std;
 template <typename F>
 class BlockTest : public ::testing::Test {};
 
+template <typename F>
+class GeneralTest : public ::testing::Test {};
+
 using BlockTypes = ::testing::Types<BlockFilter, ScalarBlockFilter>;
+using GeneralTypes = ::testing::Types<BlockFilter, ScalarBlockFilter, ElasticFilter>;
 
 TYPED_TEST_SUITE(BlockTest, BlockTypes);
+TYPED_TEST_SUITE(GeneralTest, GeneralTypes);
 
 // TODO: test hidden methods in libfilter.so
 
 // TODO: test more methods, including copy
 
 // Test that once something is inserted, it's always present
-TYPED_TEST(BlockTest, InsertPersists) {
+TYPED_TEST(GeneralTest, InsertPersists) {
   auto ndv = 16000;
   auto x = TypeParam::CreateWithBytes(ndv);
   vector<uint64_t> hashes(ndv);
@@ -63,7 +69,7 @@ TYPED_TEST(BlockTest, HashChanges) {
 
 
 // Test that filters start with a 0.0 fpp.
-TYPED_TEST(BlockTest, StartEmpty) {
+TYPED_TEST(GeneralTest, StartEmpty) {
   auto ndv = 16000000;
   auto x = TypeParam::CreateWithBytes(ndv);
   Rand r;

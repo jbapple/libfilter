@@ -368,11 +368,12 @@ struct Side {
 
   INLINE bool Find(Path p) const {
     assert(p.tail != 0);
-    if (p.bucket == stash.bucket && p.fingerprint == stash.fingerprint) return true;
+    if (stash.tail != 0 && p.bucket == stash.bucket && p.fingerprint == stash.fingerprint) {
+      return true;
+    }
     Bucket& b = data[p.bucket];
     for (int i = 0; i < kBuckets; ++i) {
-      // Too branchy, slows things down
-      // if (b[i].tail == 0) break;
+      if (b[i].tail == 0) continue;
       if (b[i].fingerprint == p.fingerprint && IsPrefixOf(b[i].tail, p.tail)) {
         return true;
       }
