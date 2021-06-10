@@ -17,6 +17,7 @@
 
 #include "filter/block.hpp"  // for BlockFilter, ScalarBlockFilter (ptr o...
 #include "filter/elastic.hpp"
+#include "filter/block-elastic.hpp"
 #include "util.hpp"          // for Rand
 
 using namespace filter;
@@ -59,22 +60,16 @@ struct Sample {
   }
 };
 
-// Returns a single "insert_nanos" statistic, a single "fpp" statistic, and `reps`
-// "find_nanos" statistics. FILTER_TYPE must support CreateWithBytes(), InsertHash(), and
-// FindHash().
-//
-// Also prints each statistic to stdout as soon as it is generated.
+
 template <typename FILTER_TYPE>
-vector<Sample> Bench(uint64_t reps, uint64_t bytes, const vector<uint64_t>& to_insert,
-                     const vector<uint64_t>& to_find) {
+vector<Sample> BenchHelp(uint64_t reps, const vector<uint64_t>& to_insert,
+                         const vector<uint64_t>& to_find, FILTER_TYPE& filter) {
   Sample base;
   base.filter_name = FILTER_TYPE::Name();
   base.ndv = to_insert.size();
-  base.bytes = bytes;
+  // base.bytes = bytes;
 
   vector<Sample> result;
-
-  auto filter = FILTER_TYPE::CreateWithBytes(bytes);
 
   chrono::steady_clock s;
 
@@ -83,6 +78,7 @@ vector<Sample> Bench(uint64_t reps, uint64_t bytes, const vector<uint64_t>& to_i
   for (unsigned i = 0; i < to_insert.size(); ++i) {
     filter.InsertHash(to_insert[i]);
   }
+  base.bytes = filter.SizeInBytes();
   const auto finish = s.now();
   const auto insert_time = static_cast<std::chrono::duration<double>>(finish - start);
   base.sample_type = "insert_nanos";
@@ -91,10 +87,10 @@ vector<Sample> Bench(uint64_t reps, uint64_t bytes, const vector<uint64_t>& to_i
   result.push_back(base);
   cout << base.CSV() << endl;
 
-  base.sample_type = "size";
-  base.payload = filter.SizeInBytes();
-  result.push_back(base);
-  cout << base.CSV() << endl;
+  // base.sample_type = "size";
+  // base.payload = filter.SizeInBytes();
+  // result.push_back(base);
+  // cout << base.CSV() << endl;
 
   // fpp:
   uint64_t found = 0;
@@ -131,57 +127,47 @@ vector<Sample> Bench(uint64_t reps, uint64_t bytes, const vector<uint64_t>& to_i
   return result;
 }
 
+// Returns a single "insert_nanos" statistic, a single "fpp" statistic, and `reps`
+// "find_nanos" statistics. FILTER_TYPE must support CreateWithBytes(), InsertHash(), and
+// FindHash().
+//
+// Also prints each statistic to stdout as soon as it is generated.
+template <typename FILTER_TYPE>
+vector<Sample> BenchWithBytes(uint64_t reps, uint64_t bytes,
+                              const vector<uint64_t>& to_insert,
+                              const vector<uint64_t>& to_find) {
+  auto filter = FILTER_TYPE::CreateWithBytes(bytes);
+  return BenchHelp(reps, to_insert, to_find, filter);
+}
+
+template <typename FILTER_TYPE>
+vector<Sample> BenchWithNdvFpp(uint64_t reps, const vector<uint64_t>& to_insert,
+                               const vector<uint64_t>& to_find, uint64_t ndv,
+                               double fpp) {
+  auto filter = FILTER_TYPE::CreateWithNdvFpp(ndv, fpp);
+  return BenchHelp(reps, to_insert, to_find, filter);
+}
+
 // Calls Bench() on each member of a parameter pack
-template <typename... FILTER_TYPES>
-vector<Sample> MultiBench(uint64_t ndv, uint64_t reps, uint64_t bytes) {
+void Samples(uint64_t ndv, vector<uint64_t>& to_insert, vector<uint64_t>& to_find) {
   Rand r;
-  vector<uint64_t> to_insert, to_find;
   for (unsigned i = 0; i < ndv; ++i) {
     to_insert.push_back(r());
   }
   for (unsigned i = 0; i < (1000 * 1000 * 32); ++i) {
     to_find.push_back(r());
   }
-
-  vector<Sample> result;
-
-  for (const auto& v : {Bench<FILTER_TYPES>(reps, bytes, to_insert, to_find)...}) {
-    for (const auto& w : v) {
-      result.push_back(w);
-    }
-  }
-
-  return result;
 }
-
-// MultiBenchHelp and TupleMultiBench are an unfortunate construction needed to be able to
-// call MultiBench with a specific set of parameters without inserting them into each
-// call; i.e., giving a specific ordered set of types a name in a non-template context.
-
-template <typename>
-struct MultiBenchHelp {};
-
-template <typename... FILTER_TYPES>
-struct MultiBenchHelp<tuple<FILTER_TYPES...>> {
-  static vector<Sample> Delegate(uint64_t ndv, uint64_t reps, uint64_t bytes) {
-    return MultiBench<FILTER_TYPES...>(ndv, reps, bytes);
-  }
-};
-
-template <typename TUPLE>
-vector<Sample> TupleMultiBench(uint64_t ndv, uint64_t reps, uint64_t bytes) {
-  return MultiBenchHelp<TUPLE>::Delegate(ndv, reps, bytes);
-}
-
 
 int main(int argc, char** argv) {
   if (argc < 7) {
   err:
-    cerr << "one optional flag (--print_header) and three required flags: --ndv, --reps, "
-            "--bytes\n";
+    cerr << "one optional flag (--print_header) and four required flags: --ndv, --reps, "
+            "--bytes, --fpp\n";
     return 1;
   }
   uint64_t ndv = 0, reps = 0, bytes = 0;
+  double fpp = 0.0;
   bool print_header = false;
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == string("--ndv")) {
@@ -199,18 +185,30 @@ int main(int argc, char** argv) {
       auto s = istringstream(argv[i]);
       if (not(s >> bytes)) goto err;
       if (not s.eof()) goto err;
+    } else if (argv[i] == string("--fpp")) {
+      ++i;
+      auto s = istringstream(argv[i]);
+      if (not(s >> fpp)) goto err;
+      if (not s.eof()) goto err;
     } else if (argv[i] == string("--print_header")) {
       print_header = true;
     } else {
       goto err;
     }
   }
-  if (ndv == 0 or reps == 0 or bytes == 0) goto err;
+  if (reps == 0 or ndv == 0 or reps == 0 or fpp == 0 or bytes == 0) goto err;
 
-  using TupleType = tuple<BlockFilter, ElasticFilter>;
+  vector<uint64_t> to_insert;
+  vector<uint64_t> to_find;
+  Samples(ndv, to_insert, to_find);
 
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
-    TupleMultiBench<TupleType>(ndv, reps, bytes);
+    BenchWithNdvFpp<BlockElasticFilter>(reps, to_insert, to_find, ndv, fpp);
+    BenchWithNdvFpp<BlockFilter>(reps, to_insert, to_find, ndv, fpp);
+    BenchWithBytes<BlockFilter>(reps, bytes, to_insert, to_find);
+    BenchWithBytes<ElasticFilter>(reps, bytes, to_insert, to_find);
   }
+  //using TupleType = tuple<BlockFilter, ElasticFilter, BlockElasticFilter>;
+
 }
