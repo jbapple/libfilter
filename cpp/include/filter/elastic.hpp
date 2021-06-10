@@ -307,56 +307,62 @@ struct ElasticFilter {
   // empty. Also, p is a left path, not a right one.
   INLINE InsertResult Insert(detail::Path p, int ttl) {
     if (left.stash.tail != 0 && right.stash.tail != 0) return InsertResult::Failed;
+    detail::Side* both[2] = {&left, &right};
     while (true) {
-      detail::Path q = p;
-      p = left.Insert(p, rng);
-      if (p.tail == 0) {
-        // Found an empty slot
-        ++occupied;
-        return InsertResult::Ok;
+      for (int i = 0; i < 2; ++i) {
+        detail::Path q = p;
+        p = both[i]->Insert(p, rng);
+        if (p.tail == 0) {
+          // Found an empty slot
+          ++occupied;
+          return InsertResult::Ok;
+        }
+        if (p == q) {
+          // Combined with or already present in a slot. Success, but no increase in
+          // filter size
+          return InsertResult::Ok;
+        }
+        auto tail = p.tail;
+        if (ttl <= 0 && both[i]->stash.tail == 0) {
+          // we've run out of room. If there's room in this stash, stash it here. If there
+          // is not room in this stash, there must be room in the other, based on the
+          // pre-condition for this method.
+          both[i]->stash = p;
+          ++occupied;
+          return InsertResult::Stashed;
+        }
+        // translate p to beign a path about the right half of the table
+        p = detail::ToPath(detail::FromPathNoTail(p, both[i]->f, log_side_size),
+                           both[1 - i]->f, log_side_size);
+        // P's tail is now artificiall 0, but it should stay the same as we move from side
+        // to side
+        p.tail = tail;
       }
-      if (p == q) {
-        // Combined with or already present in a slot. Success, but no increase in filter
-        // size
-        return InsertResult::Ok;
-      }
-      auto tail = p.tail;
-      if (ttl <= 0 && left.stash.tail == 0) {
-        // we've run out of room. If there's room in this stash, stash it here. If there
-        // is not room in this stash, there must be room in the other, based on the
-        // pre-condition for this method.
-        left.stash = p;
-        ++occupied;
-        return InsertResult::Stashed;
-      }
-      // translate p to beign a path about the right half of the table
-      p = detail::ToPath(detail::FromPathNoTail(p, left.f, log_side_size), right.f, log_side_size);
-      // P's tail is now artificiall 0, but it should stay the same as we move from side to side
-      p.tail = tail;
-
-      // Now mimic the above.
-      // TODO: avoid the code_duplication
-      q = p;
-      p = right.Insert(p, rng);
-      if (p.tail == 0) {
-        ++occupied;
-        return InsertResult::Ok;
-      }
-      if (p == q) {
-        return InsertResult::Ok;
-      }
-      tail = p.tail;
-      if (ttl <= 0) {
-        assert(right.stash.tail == 0);
-        right.stash = p;
-        ++occupied;
-        return InsertResult::Stashed;
-      }
-      --ttl;
-      p = detail::ToPath(detail::FromPathNoTail(p, right.f, log_side_size), left.f,
-                         log_side_size);
-      p.tail = tail;
     }
+    // {
+    //   // Now mimic the above.
+    //   // TODO: avoid the code_duplication
+    //   q = p;
+    //   p = right.Insert(p, rng);
+    //   if (p.tail == 0) {
+    //     ++occupied;
+    //     return InsertResult::Ok;
+    //   }
+    //   if (p == q) {
+    //     return InsertResult::Ok;
+    //   }
+    //   tail = p.tail;
+    //   if (ttl <= 0) {
+    //     assert(right.stash.tail == 0);
+    //     right.stash = p;
+    //     ++occupied;
+    //     return InsertResult::Stashed;
+    //   }
+    //   --ttl;
+    //   p = detail::ToPath(detail::FromPathNoTail(p, right.f, log_side_size), left.f,
+    //                      log_side_size);
+    //   p.tail = tail;
+    // }
   }
 
   // This method just increases ttl until insert succeeds.
