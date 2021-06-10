@@ -207,7 +207,7 @@ struct ElasticFilter {
   }
 
  protected:
-  detail::Side left, right;
+  detail::Side sides[2];
   uint64_t log_side_size;
   detail::PcgRandom rng = {detail::kLogBuckets};
   const uint64_t* entropy;
@@ -217,14 +217,16 @@ struct ElasticFilter {
 
   ElasticFilter(ElasticFilter&&);
   ElasticFilter(const ElasticFilter& that)
-      : left(detail::Side(that.log_side_size, that.entropy)),
-        right(detail::Side(that.log_side_size, that.entropy + 6)),
+      : sides{{(int)that.log_side_size, that.entropy},
+              {(int)that.log_side_size, that.entropy + 4}},
         log_side_size(that.log_side_size),
         rng(that.rng),
         entropy(that.entropy),
         occupied(that.occupied) {
-    memcpy(left.data, that.left.data, sizeof(detail::Bucket) << that.log_side_size);
-    memcpy(right.data, that.right.data, sizeof(detail::Bucket) << that.log_side_size);
+    for (int i = 0; i < 2; ++i) {
+      memcpy(sides[i].data, that.sides[i].data,
+             sizeof(detail::Bucket) << that.log_side_size);
+    }
   }
   ElasticFilter& operator=(const ElasticFilter& that) {
     this->~ElasticFilter();
@@ -242,11 +244,11 @@ struct ElasticFilter {
   // Verifies the occupied field:
   uint64_t Count() const {
     uint64_t result = 0;
-    for (auto s : {&left, &right}) {
-      if (s->stash.tail != 0) ++result;
+    for (int s = 0; s < 2; ++s) {
+      if (sides[s].stash.tail != 0) ++result;
       for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
-          if ((*s)[i][j].tail != 0) ++result;
+          if (sides[s][i][j].tail != 0) ++result;
         }
       }
     }
@@ -255,12 +257,12 @@ struct ElasticFilter {
 
  public:
   void Print() const {
-    for (auto& s : {&left, &right}) {
-      s->stash.Print();
+    for (int s = 0; s < 2; ++s) {
+      sides[s].stash.Print();
       std::cout << std::endl;
       for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
-          (*s)[i][j].Print();
+          sides[s][i][j].Print();
           std::cout << std::endl;
         }
       }
@@ -268,8 +270,7 @@ struct ElasticFilter {
   }
 
   ElasticFilter(int log_side_size, const uint64_t* entropy)
-      : left(log_side_size, entropy),
-        right(log_side_size, entropy + 6),
+      : sides{{log_side_size, entropy}, {log_side_size, entropy + 6}},
         log_side_size(log_side_size),
         entropy(entropy) {}
 
@@ -286,8 +287,15 @@ struct ElasticFilter {
    }
 
   INLINE bool FindHash(uint64_t k) const {
-    return left.Find(detail::ToPath(k, left.f, log_side_size)) ||
-           right.Find(detail::ToPath(k, right.f, log_side_size));
+#if defined(__clang)
+#pragma unroll
+#else
+#pragma GCC unroll 2
+#endif
+    for (int s = 0; s < 2; ++s) {
+      if (sides[s].Find(detail::ToPath(k, sides[s].f, log_side_size))) return true;
+    }
+    return false;
   }
 
 
@@ -296,7 +304,7 @@ struct ElasticFilter {
     if (occupied > 0.94 * (1ul << log_side_size) * 2 * detail::kBuckets) {
       Upsize();
     }
-    Insert(detail::ToPath(k, left.f, log_side_size));
+    Insert(0, detail::ToPath(k, sides[0].f, log_side_size));
   }
 
  protected:
@@ -305,10 +313,15 @@ struct ElasticFilter {
 
   // After ttl, stash the input and return Stashed. Pre-condition: at least one stash is
   // empty. Also, p is a left path, not a right one.
-  INLINE InsertResult Insert(detail::Path p, int ttl) {
-    if (left.stash.tail != 0 && right.stash.tail != 0) return InsertResult::Failed;
-    detail::Side* both[2] = {&left, &right};
+  INLINE InsertResult Insert(int s, detail::Path p, int ttl) {
+    if (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) return InsertResult::Failed;
+    detail::Side* both[2] = {&sides[s], &sides[1 - s]};
     while (true) {
+#if defined(__clang)
+#pragma unroll
+#else
+#pragma GCC unroll 2
+#endif
       for (int i = 0; i < 2; ++i) {
         detail::Path q = p;
         p = both[i]->Insert(p, rng);
@@ -367,38 +380,33 @@ struct ElasticFilter {
 
   // This method just increases ttl until insert succeeds.
   // TODO: upsize when insert fails with high enough ttl?
-  INLINE InsertResult Insert(detail::Path q) {
+  INLINE InsertResult Insert(int s, detail::Path q) {
     int ttl = 32;
     //If one stash is empty, we're fine. Only go here if both stashes are full
-    while (left.stash.tail != 0 && right.stash.tail != 0) {
+    while (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) {
       ttl = 2 * ttl;
-      // remove stash value
-      detail::Path p = left.stash;
-      left.stash.tail = 0;
-      --occupied;
-      // Insert it. We know this will succeed, as one stash is now empty, but we hope it
-      // succeeds with Ok, not Stashed.
-      InsertResult result = Insert(p, ttl);
-      assert(result != InsertResult::Failed);
-      // At least one stash is now free. Can now do the REAL insert (after the loop)
-      if (result == InsertResult::Ok) break;
-
-      // same as above, though now need to convert right stash to a left path, since
-      // Insert takes only left paths.
-      p = right.stash;
-      uint64_t tail = p.tail;
-      right.stash.tail = 0;
-      --occupied;
-      p = detail::ToPath(detail::FromPathNoTail(p, right.f, log_side_size), left.f,
-                         log_side_size);
-      p.tail = tail;
-      result = Insert(p, ttl);
-      assert(result != InsertResult::Failed);
-      if (result == InsertResult::Ok) break;
+#if defined(__clang)
+#pragma unroll
+#else
+#pragma GCC unroll 2
+#endif
+      for (int i = 0; i < 2; ++i) {
+        int t = s^i;
+        // remove stash value
+        detail::Path p = sides[t].stash;
+        sides[t].stash.tail = 0;
+        --occupied;
+        // Insert it. We know this will succeed, as one stash is now empty, but we hope it
+        // succeeds with Ok, not Stashed.
+        InsertResult result = Insert(t, p, ttl);
+        assert(result != InsertResult::Failed);
+        // At least one stash is now free. Can now do the REAL insert (after the loop)
+        if (result == InsertResult::Ok) break;
+      }
     }
     // Can totally punt here. IOW, the stashes are ALWAYS full, since we don't even try
     // very hard not to fill them!
-    return Insert(q, 1);
+    return Insert(s, q, 1);
   }
 
   friend void swap(ElasticFilter&, ElasticFilter&);
@@ -406,44 +414,44 @@ struct ElasticFilter {
   // Take an item from slot sl with bucket index i, a filter u that sl is in, a side that
   // sl is in, and a filter to move sl to, does so, potentially inserting TWO items in t,
   // as described in the paper.
-  INLINE void UpsizeHelper(detail::Slot sl, uint64_t i, ElasticFilter* u,
-                           detail::Side ElasticFilter::*s, ElasticFilter& t) {
+  INLINE void UpsizeHelper(detail::Slot sl, uint64_t i, ElasticFilter* u, int s,
+                           ElasticFilter& t) {
     if (sl.tail == 0) return;
     detail::Path p;
     static_cast<detail::Slot&>(p) = sl;
     p.bucket = i;
-    uint64_t q = detail::FromPathNoTail(p, (u->*s).f, u->log_side_size);
+    uint64_t q = detail::FromPathNoTail(p, u->sides[s].f, u->log_side_size);
     if (sl.tail == 1ul << detail::kTailSize) {
       // There are no tail bits left! Insert two values.
       // First, hash to the left side of the larger table.
-      p = detail::ToPath(q, (t.left).f, t.log_side_size);
+      p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
       // Still no tail! :-)
       p.tail = sl.tail;
-      t.Insert(p);
+      t.Insert(0, p);
       // change theraw value by just one bit: its last
       q |= (1ul << (64 - u->log_side_size - detail::kHeadSize - 1));
-      p = detail::ToPath(q, (t.left).f, t.log_side_size);
+      p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
       p.tail = sl.tail;
-      t.Insert(p);
+      t.Insert(0, p);
     } else {
       // steal a bit from the tail
       q |= static_cast<uint64_t>(sl.tail >> detail::kTailSize)
            << (64 - u->log_side_size - detail::kHeadSize - 1);
-      detail::Path r = detail::ToPath(q, (t.left).f, t.log_side_size);
+      detail::Path r = detail::ToPath(q, t.sides[0].f, t.log_side_size);
       r.tail = (sl.tail << 1);
-      t.Insert(r);
+      t.Insert(0, r);
     }
   }
 
   // Double the size of the filter
   void Upsize() {
     ElasticFilter t(1 + log_side_size, entropy);
-    for (auto s : {&ElasticFilter::left, &ElasticFilter::right}) {
-      detail::Path stash = (this->*s).stash;
+    for (int s : {0, 1}) {
+      detail::Path stash = sides[s].stash;
       UpsizeHelper(stash, stash.bucket, this, s, t);
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
-          detail::Slot sl = (this->*s)[i][j];
+          detail::Slot sl = sides[s][i][j];
           UpsizeHelper(sl, i, this, s, t);
         }
       }
@@ -455,8 +463,8 @@ struct ElasticFilter {
 
 INLINE void swap(ElasticFilter& x, ElasticFilter& y) {
   using std::swap;
-  swap(x.left, y.left);
-  swap(x.right, y.right);
+  swap(x.sides[0], y.sides[0]);
+  swap(x.sides[1], y.sides[1]);
   swap(x.log_side_size, y.log_side_size);
   swap(x.rng, y.rng);
   swap(x.entropy, y.entropy);
