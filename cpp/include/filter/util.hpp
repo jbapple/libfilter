@@ -10,30 +10,32 @@ namespace detail {
 #define INLINE __attribute__((always_inline)) inline
 
 // Returns the lowest k bits of x
-INLINE uint64_t Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
+INLINE constexpr uint64_t Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
 
 // Feistel is a permutation that is also a hash function, based on a Feistel permutation.
 struct Feistel {
   // The salt for the hash functions. The component hash function is strong
   // multiply-shift. TODO: really only need four salts here, not 6.
-  uint64_t keys[3][2];
+  uint64_t keys[2][2];
 
-  INLINE uint64_t Lo(int, int, int w, uint64_t x) const { return Mask(w, x); }
+  INLINE constexpr uint64_t Lo(int, int, int w, uint64_t x) const { return Mask(w, x); }
   // Returns the high bits of x. if w is s, returns the t high bits. If W is t, returns
   // the s high bits
-  INLINE uint64_t Hi(int s, int t, int w, uint64_t x) const {
+  INLINE constexpr uint64_t Hi(int s, int t, int w, uint64_t x) const {
     return Mask(w, x >> (s + t - w));
   }
 
-  INLINE Feistel(const void* entropy) { memcpy(keys, entropy, 3 * 2 * sizeof(uint64_t)); }
+  INLINE constexpr Feistel(const uint64_t entropy[4])
+      : keys{{entropy[0], entropy[1]}, {entropy[2], entropy[3]}} {}
 
   // Applies strong multiply-shift to the w low bits of x, returning the high w bits
-  INLINE uint64_t ApplyOnce(int s, int t, int w, uint64_t x, const uint64_t k[2]) const {
+  INLINE constexpr uint64_t ApplyOnce(int s, int t, int w, uint64_t x,
+                                      const uint64_t k[2]) const {
     return Hi(s, t, s + t - w, Mask(w, x) * Mask(s + t, k[0]) + Mask(s + t, k[1]));
   }
 
   // Performs the hash function "forwards". w is the width of x. This is ASYMMETRIC Feistel.
-  INLINE uint64_t Permute(int w, uint64_t x) const {
+  INLINE constexpr uint64_t Permute(int w, uint64_t x) const {
     // s is floor(w/2), t is ceil(w/2).
     auto s = w >> 1;
     auto t = w - s;
@@ -58,7 +60,7 @@ struct Feistel {
     return result;
   }
 
-  INLINE uint64_t ReversePermute(int w, uint64_t x) const {
+  INLINE constexpr uint64_t ReversePermute(int w, uint64_t x) const {
     auto s = w / 2;
     auto t = w - s;
 

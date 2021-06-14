@@ -344,6 +344,7 @@ struct ElasticFilter {
           ++occupied;
           return InsertResult::Stashed;
         }
+        --ttl;
         // translate p to beign a path about the right half of the table
         p = detail::ToPath(detail::FromPathNoTail(p, both[i]->f, log_side_size),
                            both[1 - i]->f, log_side_size);
