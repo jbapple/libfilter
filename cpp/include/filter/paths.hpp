@@ -68,7 +68,7 @@ struct Path : public Slot {
   uint64_t bucket;
 
   constexpr Path(): Slot(), level(), bucket() {}
-  
+
   INLINE void Print() const {
     std::cout << "{" << std::dec << level << bucket << ", {" << long_fp << std::hex << fingerprint << ", "
               << tail << "}}";
@@ -260,40 +260,52 @@ To change a path to another one representing the same key
 
 */
 
-INLINE constexpr Path RePath(Path p, const Feistel& from_short, const Feistel& from_long,
-                             const Feistel& to_short, const Feistel& to_long,
-                             uint64_t log_small_size, uint64_t cursor, Path* out) {
-  if (p.level < cursor) {
+INLINE Path RePath(Path p, const Feistel from_short, const Feistel from_long,
+                   const Feistel to_short, const Feistel to_long, uint64_t log_small_size,
+                   uint64_t from_cursor, uint64_t to_cursor, Path* out) {
+  if (p.level < from_cursor) {
+    assert(not p.long_fp);
     const uint64_t key = FromPathNoTail(p, from_long, log_small_size + 1, kHeadSize - 1);
-    Path q = ToPath(key, to_long, cursor, log_small_size, false);
+    Path q =
+        ToPath(key, to_long, to_cursor, log_small_size, false /* full is not short */);
     q.tail = p.tail;
     out->tail = 0;
     return q;
   }
-  if( p.long_fp) {
+  if (p.long_fp) {
     const uint64_t key = FromPathNoTail(p, from_long, log_small_size, kHeadSize);
-    Path q = ToPath(key, to_long, cursor, log_small_size, false);
+    Path q = ToPath(key, to_long, to_cursor, log_small_size, false);
     q.tail = p.tail;
     out->tail = 0;
     return q;
   }
+  // All of
   uint64_t key = FromPathNoTail(p, from_short, log_small_size, kHeadSize - 1);
-  Path q = ToPath(key, to_short, cursor, log_small_size, true);
-  q.tail = p.tail;
-  if (q.level >= cursor) return q;
+  // TODO: what if q.tail == 0;
+  Path q = ToPath(key, to_short, to_cursor, log_small_size,
+                  true /* full is short because tail is short */);
+  if (q.level >= to_cursor) {
+    assert(q.tail != 0);
+    q.tail = p.tail;
+    out->tail = 0;
+    return q;
+  }
+  assert(q.tail == 0);
   // q is invalid - the level is low, but there aren't enough bits for the fingerprint
   if (p.tail != 1 << kTailSize) {
-    uint64_t k =
-        key | ((p.tail >> kTailSize) << (64 - kLogLevels - log_small_size - kHeadSize));
-    Path q2 = ToPath(k, to_long, cursor, log_small_size, true);
+    uint64_t k = key | (static_cast<uint64_t>(p.tail >> kTailSize)
+                        << (64 - kLogLevels - log_small_size - kHeadSize));
+    Path q2 = ToPath(k, to_long, to_cursor, log_small_size,
+                     false /* full is now long, since we added a bit to k*/);
     q2.tail = p.tail << 1;
     out->tail = 0;
+    //q2.tail |= 1;
     return q2;
   }
   // p.tail is empty!
-  *out = ToPath(key, to_long, cursor, log_small_size, true);
+  *out = ToPath(key, to_long, to_cursor, log_small_size, false);
   uint64_t k = key | (1ul << (64 - kLogLevels - log_small_size - kHeadSize));
-  Path q2 = ToPath(k, to_long, cursor, log_small_size, true);
+  Path q2 = ToPath(k, to_long, to_cursor, log_small_size, false);
   q2.tail = p.tail;
   return q2;
 }

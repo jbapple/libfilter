@@ -11,7 +11,7 @@ clean:
 
 LINKS += googletest/build/lib/libgtest_main.a googletest/build/lib/libgtest.a -lpthread
 INCLUDES += -I googletest/googletest/include
-export CXXFLAGS := -std=c++17 $(INCLUDES) $(WARN) $(RELEASE) -ggdb3 -O0
+export CXXFLAGS := -std=c++17 $(INCLUDES) $(WARN) $(RELEASE) -ggdb3 -O0 -UNDEBUG
 
 include $(DEFAULT_RECIPE)
 
