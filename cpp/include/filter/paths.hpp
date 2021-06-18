@@ -304,6 +304,7 @@ INLINE Path RePath(Path p, const Feistel from_short, const Feistel from_long,
   }
   // p.tail is empty!
   *out = ToPath(key, to_long, to_cursor, log_small_size, false);
+  out->tail = p.tail;
   uint64_t k = key | (1ul << (64 - kLogLevels - log_small_size - kHeadSize));
   Path q2 = ToPath(k, to_long, to_cursor, log_small_size, false);
   q2.tail = p.tail;
