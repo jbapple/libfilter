@@ -26,7 +26,9 @@ namespace filter {
 
 namespace detail {
 
-thread_local const constexpr int kLogLevels = 5;
+namespace minimal_plastic {
+
+thread_local const constexpr int kLogLevels = 1;
 thread_local const constexpr uint64_t kLevels = 1ul << kLogLevels;
 
 // From the paper, kTailSize is the log of the number of times the size will
@@ -45,7 +47,7 @@ static_assert(kHeadSize + kTailSize == 14, "kHeadSize + kTailSize == 14");
 
 // The number of slots in each cuckoo table bucket. The higher this is, the easier it is
 // to do an insert but the higher the fpp.
-thread_local const constexpr int kLogBuckets = 2;
+thread_local const constexpr int kLogBuckets = 1;
 thread_local const constexpr int kBuckets = 1 << kLogBuckets;
 
 struct Slot {
@@ -57,7 +59,7 @@ struct Slot {
   INLINE void Print() const {
     std::cout << "{" << long_fp << std::hex << fingerprint << ", " << tail << "}";
   }
-  constexpr Slot() :long_fp(), fingerprint(), tail() {}
+  constexpr Slot() : long_fp(), fingerprint(), tail() {}
 } __attribute__((packed));
 
 static_assert(sizeof(Slot) == 2, "sizeof(Slot)");
@@ -70,8 +72,8 @@ struct Path : public Slot {
   constexpr Path(): Slot(), level(), bucket() {}
 
   INLINE void Print() const {
-    std::cout << "{" << std::dec << level << bucket << ", {" << long_fp << std::hex << fingerprint << ", "
-              << tail << "}}";
+    std::cout << "{" << std::dec << level << ", " << bucket << ", {" << std::boolalpha
+              << long_fp << std::hex << ", " << fingerprint << ", " << tail << "}}";
   }
 
   INLINE bool operator==(const Path& that) const {
@@ -79,6 +81,11 @@ struct Path : public Slot {
            fingerprint == that.fingerprint && tail == that.tail;
   }
 
+  void SetSlot(const Slot s) {
+    long_fp = s.long_fp;
+    fingerprint = s.fingerprint;
+    tail = s.tail;
+  }
 
 };
 
@@ -166,8 +173,9 @@ enum class SlotType { kLongIndex = 0, kLongFingerprint = 1, kShort = 2 };
 //
 // if full_is_short is true and the path is before the cursor, this function retuens an
 // empty path (tail == 0).
-INLINE constexpr Path ToPath(uint64_t raw, const Feistel& f, int cursor,
-                             uint64_t low_level_size, bool full_is_short) {
+INLINE Path ToPath(uint64_t raw, const Feistel& f, int cursor, uint64_t low_level_size,
+                   bool full_is_short) {
+  std::cout << std::hex << raw << " to ";
   const uint64_t pre_hash_level_index_fp_and_tail =
       raw >> (64 - kLogLevels - low_level_size - kHeadSize + full_is_short - kTailSize);
   const uint64_t raw_tail = Mask(kTailSize, pre_hash_level_index_fp_and_tail);
@@ -180,6 +188,8 @@ INLINE constexpr Path ToPath(uint64_t raw, const Feistel& f, int cursor,
   bool big_index = (result.level < cursor);
   if (big_index && full_is_short) {
     result.tail = 0;
+    result.Print();
+    std::cout << std::endl;
     return result;
   }
 
@@ -194,13 +204,15 @@ INLINE constexpr Path ToPath(uint64_t raw, const Feistel& f, int cursor,
   // encode the tail using the encoding described above, in which the length of the tail
   // i the complement of the tzcnt plus one.
   result.tail =  raw_tail * 2 + 1;
+  result.Print();
+  std::cout << std::endl;
   return result;
 }
 
 // Uses reverse permuting to get back the high bits of the original hashed value. Elides
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
-INLINE constexpr uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t level_size,
+INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t level_size,
                                          uint64_t fingerprint_size) {
   const uint64_t hashed_level_index_and_fp =
       (((p.level << level_size) | p.bucket) << fingerprint_size) | p.fingerprint;
@@ -208,6 +220,8 @@ INLINE constexpr uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t leve
       kLogLevels + level_size + fingerprint_size, hashed_level_index_and_fp);
   uint64_t shifted_up = pre_hashed_index_and_fp
                         << (64 - kLogLevels - level_size - fingerprint_size);
+  p.Print();
+  std::cout << " to " << std::hex << shifted_up << std::endl;
   return shifted_up;
 }
 
@@ -311,5 +325,6 @@ INLINE Path RePath(Path p, const Feistel from_short, const Feistel from_long,
   return q2;
 }
 
+}  // namespace minimal_plastic
 }  // namespace detail
 }  // namespace filter

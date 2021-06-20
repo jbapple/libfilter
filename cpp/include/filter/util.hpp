@@ -8,6 +8,7 @@ namespace filter {
 namespace detail {
 
 #define INLINE __attribute__((always_inline)) inline
+#define INLINE
 
 // Returns the lowest k bits of x
 INLINE constexpr uint64_t Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
@@ -81,7 +82,7 @@ struct Feistel {
 };
 
 INLINE void swap(Feistel& x, Feistel& y) {
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < 2; ++i) {
     for (int j = 0; j < 2; ++j) {
       using std::swap;
       swap(x.keys[i][j], y.keys[i][j]);

@@ -2,6 +2,7 @@
 
 using namespace filter;
 using namespace filter::detail;
+using namespace filter::detail::minimal_plastic;
 
 #include <cstdint>  // for uint64_t
 #include <unordered_set>

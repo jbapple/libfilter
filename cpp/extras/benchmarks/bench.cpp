@@ -18,6 +18,7 @@
 #include "filter/block.hpp"  // for BlockFilter, ScalarBlockFilter (ptr o...
 #include "filter/elastic.hpp"
 #include "filter/block-elastic.hpp"
+#include "filter/minimal-plastic.hpp"
 #include "util.hpp"          // for Rand
 
 using namespace filter;
@@ -204,10 +205,12 @@ int main(int argc, char** argv) {
 
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
+    BenchWithBytes<MinimalPlasticFilter>(reps, bytes, to_insert, to_find);
+    BenchWithBytes<ElasticFilter>(reps, bytes, to_insert, to_find);
     BenchWithNdvFpp<BlockElasticFilter>(reps, to_insert, to_find, ndv, fpp);
     BenchWithNdvFpp<BlockFilter>(reps, to_insert, to_find, ndv, fpp);
     BenchWithBytes<BlockFilter>(reps, bytes, to_insert, to_find);
-    BenchWithBytes<ElasticFilter>(reps, bytes, to_insert, to_find);
+
   }
   //using TupleType = tuple<BlockFilter, ElasticFilter, BlockElasticFilter>;
 

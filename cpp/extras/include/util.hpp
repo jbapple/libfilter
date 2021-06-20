@@ -37,6 +37,9 @@ class Rand {
     yState = raw();
     yState = yState << 32;
     yState |= raw();
+
+    xState = 0x306cbabbb4c34e88;
+    yState = 0x0a0718e1416341e1;
   }
 
   std::uint64_t operator()() { return romuDuoJr_random(); }
