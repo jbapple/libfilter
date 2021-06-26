@@ -8,6 +8,7 @@ namespace filter {
 namespace detail {
 
 #define INLINE __attribute__((always_inline)) inline
+#undef INLINE
 #define INLINE
 
 // Returns the lowest k bits of x
@@ -79,6 +80,12 @@ struct Feistel {
   }
 
   friend void swap(Feistel&, Feistel&);
+
+  std::size_t Summary() const {
+    return keys[0][0] ^ keys[0][1] ^ keys[1][0] ^ keys[1][1];
+  }
+  //Feistel(const Feistel&) = delete;
+  //Feistel& operator=(const Feistel&) = delete;
 };
 
 INLINE void swap(Feistel& x, Feistel& y) {

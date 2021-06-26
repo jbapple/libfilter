@@ -107,8 +107,8 @@ TEST(Main, RePathHalfIdentity) {
         auto p = ToPath(x, identity, cursor, low_level, is_short);
         if (p.tail == 0) continue;
         Path r;
-        auto q = RePath(p, identity, identity, f, f, low_level, cursor,
-                        cursor, &r);
+        auto q =
+            RePath(p, identity, identity, f, f, low_level, low_level, cursor, cursor, &r);
         EXPECT_EQ(r.tail, 0u);
         r = ToPath(x, f, cursor, low_level, is_short);
         EXPECT_NE(r.tail, 0u);
@@ -140,8 +140,8 @@ TEST(Main, RePathShortIdentity) {
           continue;
         }
         Path r;
-        auto s = RePath(p, identity, identity, f, f, low_level, cursor,
-                        cursor, &r);
+        auto s =
+            RePath(p, identity, identity, f, f, low_level, low_level, cursor, cursor, &r);
         EXPECT_EQ(r.tail, 0u);
         EXPECT_EQ(q.level, s.level);
         EXPECT_EQ(q.bucket, s.bucket);
@@ -172,7 +172,7 @@ TEST(Main, RePathShortLongIdentity) {
       count++;
       q = ToPath(x, f, cursor, low_level, false);
       Path r;
-      auto s = RePath(p, identity, identity, f, f, low_level, cursor, cursor, &r);
+      auto s = RePath(p, identity, identity, f, f, low_level, low_level, cursor, cursor, &r);
       EXPECT_EQ(r.tail, 0u);
       EXPECT_EQ(q.level, s.level) << "here " << i << " " << cursor;
       EXPECT_EQ(q.bucket, s.bucket) << i << " " << cursor;
@@ -205,7 +205,8 @@ TEST(Main, RePathDouble) {
       q = ToPath(x, f, cursor, low_level, false);
       Path r;
       p.tail = 1u << kTailSize;
-      auto s = RePath(p, identity, identity, f, f, low_level, cursor, cursor, &r);
+      auto s =
+          RePath(p, identity, identity, f, f, low_level, low_level, cursor, cursor, &r);
       EXPECT_EQ(s.tail, 1u << kTailSize);
       EXPECT_EQ(r.tail, 1u << kTailSize);
       EXPECT_TRUE((q.level == s.level && q.bucket == s.bucket &&

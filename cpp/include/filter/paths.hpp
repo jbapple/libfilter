@@ -188,8 +188,8 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, int cursor, uint64_t low_leve
   bool big_index = (result.level < cursor);
   if (big_index && full_is_short) {
     result.tail = 0;
-    result.Print();
-    std::cout << std::endl;
+    //result.Print();
+    std::cout << "NOTHING" << std::endl;
     return result;
   }
 
@@ -205,7 +205,9 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, int cursor, uint64_t low_leve
   // i the complement of the tzcnt plus one.
   result.tail =  raw_tail * 2 + 1;
   result.Print();
-  std::cout << std::endl;
+  std::cout << " via " << std::dec << cursor << " " << low_level_size << " "
+            << std::boolalpha << full_is_short << std::hex << " " << f.Summary()
+            << std::endl;
   return result;
 }
 
@@ -213,7 +215,7 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, int cursor, uint64_t low_leve
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
 INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t level_size,
-                                         uint64_t fingerprint_size) {
+                               uint64_t fingerprint_size) {
   const uint64_t hashed_level_index_and_fp =
       (((p.level << level_size) | p.bucket) << fingerprint_size) | p.fingerprint;
   const uint64_t pre_hashed_index_and_fp = f.ReversePermute(
@@ -221,7 +223,8 @@ INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t level_size,
   uint64_t shifted_up = pre_hashed_index_and_fp
                         << (64 - kLogLevels - level_size - fingerprint_size);
   p.Print();
-  std::cout << " to " << std::hex << shifted_up << std::endl;
+  std::cout << " to " << std::hex << shifted_up << " via " << std::dec << level_size
+            << " " << fingerprint_size << std::hex << " " << f.Summary() << std::endl;
   return shifted_up;
 }
 
@@ -274,42 +277,113 @@ To change a path to another one representing the same key
 
 */
 
-INLINE Path RePath(Path p, const Feistel from_short, const Feistel from_long,
-                   const Feistel to_short, const Feistel to_long, uint64_t log_small_size,
-                   uint64_t from_cursor, uint64_t to_cursor, Path* out) {
+
+// INLINE Path RePath(Path p, const Feistel& from_short, const Feistel& from_long,
+//                    const Feistel& to_short, const Feistel& to_long,
+//                    uint64_t log_from_size, uint64_t log_to_size, int from_cursor,
+//                    int to_cursor, Path* out) {
+//   // TODO: when log_to_size is larger than log_from_size, need to steal bits from the tail?
+//   assert(p.tail != 0);
+//   const bool upsize = log_to_size - log_from_size;
+//   if (p.level < from_cursor) {
+//     std::cout << "BRANCH A" << std::endl;
+//     assert(not p.long_fp);
+//     const uint64_t key = FromPathNoTail(p, from_long, log_from_size + 1, kHeadSize - 1);
+//     Path q =
+//         ToPath(key, to_long, to_cursor, log_to_size, false /* full is not short */);
+//     q.tail = p.tail;
+//     out->tail = 0;
+//     return q;
+//   }
+//   if (p.long_fp) {
+//     std::cout << "BRANCH B" << std::endl;
+//     const uint64_t key = FromPathNoTail(p, from_long, log_from_size, kHeadSize);
+//     Path q = ToPath(key, upsize ? to_short : to_long, to_cursor, log_to_size, upsize);
+//     q.tail = p.tail;
+//     out->tail = 0;
+//     return q;
+//   }
+//   std::cout << "BRANCH CDE " << p.level << " of " << from_cursor << std::endl;
+//   // All of
+//   uint64_t key = FromPathNoTail(p, from_short, log_from_size, kHeadSize - 1);
+//   // TODO: what if q.tail == 0;
+//   Path q = ToPath(key, to_short, to_cursor, log_to_size,
+//                   true /* full is short because tail is short */);
+//   if (not upsize && q.level >= to_cursor) {
+//     std::cout << "BRANCH C" << std::endl;
+//     assert(q.tail != 0);
+//     q.tail = p.tail;
+//     out->tail = 0;
+//     return q;
+//   }
+//   // assert(q.tail == 0);
+//   // q is invalid - the level is low, but there aren't enough bits for the fingerprint
+//   if (p.tail != 1 << kTailSize) {
+//     std::cout << "BRANCH D" << std::endl;
+//     uint64_t k = key | (static_cast<uint64_t>(p.tail >> kTailSize)
+//                         << (64 - kLogLevels - log_from_size - kHeadSize));
+//     Path q2 = ToPath(k, to_long, to_cursor, log_to_size,
+//                      false /* full is now long, since we added a bit to k*/);
+//     q2.tail = p.tail << 1;
+//     out->tail = 0;
+//     //q2.tail |= 1;
+//     return q2;
+//   }
+//   // p.tail is empty!
+//   std::cout << "BRANCH E" << std::endl;
+//   *out = ToPath(key, to_long, to_cursor, log_to_size, false);
+//   out->tail = p.tail;
+//   uint64_t k = key | (1ul << (64 - kLogLevels - log_from_size - kHeadSize));
+//   Path q2 = ToPath(k, to_long, to_cursor, log_to_size, false);
+//   q2.tail = p.tail;
+//   return q2;
+// }
+
+INLINE Path RePath(Path p, const Feistel& from_short, const Feistel& from_long,
+                   const Feistel& to_short, const Feistel& to_long,
+                   uint64_t log_from_size, uint64_t log_to_size, int from_cursor,
+                   int to_cursor, Path* out) {
+  // TODO: when log_to_size is larger than log_from_size, need to steal bits from the tail?
+  assert(p.tail != 0);
+  const bool upsize = log_to_size - log_from_size;
   if (p.level < from_cursor) {
+    std::cout << "BRANCH A" << std::endl;
     assert(not p.long_fp);
-    const uint64_t key = FromPathNoTail(p, from_long, log_small_size + 1, kHeadSize - 1);
+    const uint64_t key = FromPathNoTail(p, from_long, log_from_size + 1, kHeadSize - 1);
     Path q =
-        ToPath(key, to_long, to_cursor, log_small_size, false /* full is not short */);
+        ToPath(key, to_long, to_cursor, log_to_size, false /* full is not short */);
     q.tail = p.tail;
     out->tail = 0;
     return q;
   }
   if (p.long_fp) {
-    const uint64_t key = FromPathNoTail(p, from_long, log_small_size, kHeadSize);
-    Path q = ToPath(key, to_long, to_cursor, log_small_size, false);
+    std::cout << "BRANCH B" << std::endl;
+    const uint64_t key = FromPathNoTail(p, from_long, log_from_size, kHeadSize);
+    Path q = ToPath(key, upsize ? to_short : to_long, to_cursor, log_to_size, upsize);
     q.tail = p.tail;
     out->tail = 0;
     return q;
   }
+  std::cout << "BRANCH CDE " << p.level << " of " << from_cursor << std::endl;
   // All of
-  uint64_t key = FromPathNoTail(p, from_short, log_small_size, kHeadSize - 1);
+  uint64_t key = FromPathNoTail(p, from_short, log_from_size, kHeadSize - 1);
   // TODO: what if q.tail == 0;
-  Path q = ToPath(key, to_short, to_cursor, log_small_size,
+  Path q = ToPath(key, to_short, to_cursor, log_to_size,
                   true /* full is short because tail is short */);
-  if (q.level >= to_cursor) {
+  if (not upsize && q.level >= to_cursor) {
+    std::cout << "BRANCH C" << std::endl;
     assert(q.tail != 0);
     q.tail = p.tail;
     out->tail = 0;
     return q;
   }
-  assert(q.tail == 0);
+  // assert(q.tail == 0);
   // q is invalid - the level is low, but there aren't enough bits for the fingerprint
   if (p.tail != 1 << kTailSize) {
+    std::cout << "BRANCH D" << std::endl;
     uint64_t k = key | (static_cast<uint64_t>(p.tail >> kTailSize)
-                        << (64 - kLogLevels - log_small_size - kHeadSize));
-    Path q2 = ToPath(k, to_long, to_cursor, log_small_size,
+                        << (64 - kLogLevels - log_from_size - kHeadSize));
+    Path q2 = ToPath(k, to_long, to_cursor, log_to_size,
                      false /* full is now long, since we added a bit to k*/);
     q2.tail = p.tail << 1;
     out->tail = 0;
@@ -317,10 +391,11 @@ INLINE Path RePath(Path p, const Feistel from_short, const Feistel from_long,
     return q2;
   }
   // p.tail is empty!
-  *out = ToPath(key, to_long, to_cursor, log_small_size, false);
+  std::cout << "BRANCH E" << std::endl;
+  *out = ToPath(key, to_long, to_cursor, log_to_size, false);
   out->tail = p.tail;
-  uint64_t k = key | (1ul << (64 - kLogLevels - log_small_size - kHeadSize));
-  Path q2 = ToPath(k, to_long, to_cursor, log_small_size, false);
+  uint64_t k = key | (1ul << (64 - kLogLevels - log_from_size - kHeadSize));
+  Path q2 = ToPath(k, to_long, to_cursor, log_to_size, false);
   q2.tail = p.tail;
   return q2;
 }

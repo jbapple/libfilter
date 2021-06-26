@@ -140,7 +140,9 @@ struct Side {
   // succeded without anning anything new. Returns something else if that something else
   // was displaced by the insert. That item must be inserted then
   INLINE Path Insert(Path p, PcgRandom& rng) {
-    return levels[p.level].Insert(p, rng);
+    auto result = levels[p.level].Insert(p, rng);
+    assert(Find(p));
+    return result;
   }
 
   INLINE bool Find(Path p) const {
@@ -251,7 +253,7 @@ struct MinimalPlasticFilter {
         cursor(0),
         log_side_size(log_side_size) {}
 
-  static MinimalPlasticFilter CreateWithBytes(uint64_t bytes) {
+  static MinimalPlasticFilter CreateWithBytes(uint64_t /*bytes*/) {
     thread_local constexpr const uint64_t kEntropy[24] = {
         0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
         0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f,
@@ -271,7 +273,7 @@ struct MinimalPlasticFilter {
    }
 
   INLINE bool FindHash(uint64_t k) const {
-    for (int i : {0,1}) {
+    for (int i : {0, 1}) {
       auto p = detail::minimal_plastic::ToPath(k, sides[i].lo, cursor, log_side_size, true);
       if (p.tail != 0 && sides[i].Find(p)) return true;
       p = detail::minimal_plastic::ToPath(k, sides[i].hi, cursor, log_side_size, false);
@@ -282,7 +284,7 @@ struct MinimalPlasticFilter {
 
   // TODO: manage stash
   INLINE void InsertHash(uint64_t k) {
-    if (occupied > 0.94 * Capacity() || occupied + 1 >= Capacity()) {
+    if (occupied > 0.94 * Capacity() || occupied + 4 >= Capacity()) {
       Upsize();
     }
     // TODO: only need one path here. Which one to pick?
@@ -292,8 +294,9 @@ struct MinimalPlasticFilter {
   }
 
   INLINE void Unstash(int ttl) {
-    for (int i : {0,1}) {
+    for (int i : {0, 1}) {
       auto p = sides[i].stash;
+      if (p.tail == 0) continue;
       sides[i].stash.tail = 0;
       Insert(i, p, ttl);
     }
@@ -302,6 +305,7 @@ struct MinimalPlasticFilter {
   enum class InsertResult { Ok, Stashed, Failed };
 
   INLINE InsertResult Insert(int side, detail::minimal_plastic::Path p, int ttl) {
+    assert(p.tail != 0);
     std::cout << "Begin insert ";
     p.Print();
     std::cout << std::endl;
@@ -327,7 +331,7 @@ struct MinimalPlasticFilter {
         }
         detail::minimal_plastic::Path extra;
         auto next = RePath(r, sides[i].lo, sides[i].hi, sides[1 - i].lo, sides[1 - i].hi,
-                           log_side_size, cursor, cursor, &extra);
+                           log_side_size, log_side_size, cursor, cursor, &extra);
         if (extra.tail != 0) {
           std::cout << "Recurse insert" << std::endl;
           Insert(1 - i, extra, ttl);
@@ -336,6 +340,7 @@ struct MinimalPlasticFilter {
         // Or maybe break at the beginning of this logic if repath returns two things
         // or retry if there aren't two stashes open at this time.
         p = next;
+        assert(p.tail != 0);
       }
     }
   }
@@ -348,38 +353,23 @@ struct MinimalPlasticFilter {
     std::cout << "Upsize " << std::dec << cursor << " "
               << ((2u << log_side_size) * sizeof(detail::minimal_plastic::Bucket))
               << std::endl;
-    auto old_cursor = cursor;
-    cursor = (cursor + 1) % detail::minimal_plastic::kLevels;
-    detail::minimal_plastic::Bucket* next[2];
-    next[0] = new detail::minimal_plastic::Bucket[2 << log_side_size]();
-    next[1] = new detail::minimal_plastic::Bucket[2 << log_side_size]();
-    detail::minimal_plastic::Bucket* last[2] = {sides[0][old_cursor].data, sides[1][old_cursor].data};
-    sides[0][old_cursor].data = next[0];
-    sides[1][old_cursor].data = next[1];
-    // std::cout << std::hex << (size_t)last[0] << " to " << (size_t)next[0] << std::endl;
-    // std::cout << std::hex << (size_t)last[1] << " to " << (size_t)next[1] << std::endl;
-    detail::minimal_plastic::Path p;
-    p.level = old_cursor;
-    for (int s : {0, 1}) {
-      for (unsigned i = 0; i < (1 << log_side_size); ++i) {
-        p.bucket = i;
-        for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
-          if (last[s][i][j].tail == 0) continue;
-          p.SetSlot(last[s][i][j]);
-          assert(p.tail != 0);
-          detail::minimal_plastic::Path q;
-          auto r = RePath(p, sides[s].lo, sides[s].hi, sides[s].lo, sides[s].hi,
-                          log_side_size, old_cursor, old_cursor + 1, &q);
-          auto ttl = 17;
-          if (q.tail != 0) {
-            Insert(s, q, ttl);
-          }
-          Insert(s, r, ttl);
-          assert(sides[s].Find(r));
-          // assert(sides[s].Find(p) || sides[1-s].Find(p));
-        }
-      }
+    for (uint64_t i = 1; i != 0; i *= 2) {
+      if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
+      Unstash(i);
     }
+    detail::minimal_plastic::Bucket* last_data[2] = {sides[0][cursor].data, sides[1][cursor].data};
+    const detail::Feistel last_f[4] = {sides[0].lo, sides[0].hi, sides[1].lo,
+                                       sides[1].hi};
+    auto last_log_side_size = log_side_size;
+    auto last_cursor = cursor;
+    {
+      detail::minimal_plastic::Bucket* next[2];
+      next[0] = new detail::minimal_plastic::Bucket[2 << log_side_size]();
+      next[1] = new detail::minimal_plastic::Bucket[2 << log_side_size]();
+      sides[0][last_cursor].data = next[0];
+      sides[1][last_cursor].data = next[1];
+    }
+    cursor = (last_cursor + 1) % detail::minimal_plastic::kLevels;
     if (cursor == 0) {
       // for (int i :  {0,1}) {
       //   auto p = sides[i].stash;
@@ -389,7 +379,38 @@ struct MinimalPlasticFilter {
       // }
       ++log_side_size;
       using namespace std;
+      // TODO: does this need to be done earlier?
       for (int i : {0, 1}) swap(sides[i].lo, sides[i].hi);
+    }
+
+
+    // std::cout << std::hex << (size_t)last[0] << " to " << (size_t)next[0] <<
+    // std::endl;
+    // std::cout << std::hex << (size_t)last[1] << " to " << (size_t)next[1] <<
+    // std::endl;
+    detail::minimal_plastic::Path p;
+    p.level = last_cursor;
+    for (int s : {0, 1}) {
+      for (unsigned i = 0; i < (1u << last_log_side_size); ++i) {
+        p.bucket = i;
+        for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
+          if (last_data[s][i][j].tail == 0) continue;
+          p.SetSlot(last_data[s][i][j]);
+          assert(p.tail != 0);
+          detail::minimal_plastic::Path q, r;
+          r = RePath(p, last_f[2 * s], last_f[2 * s + 1], sides[s].lo, sides[s].hi,
+                     last_log_side_size, log_side_size, last_cursor, cursor, &q);
+          auto ttl = 17;
+          assert(r.tail != 0);
+          if (q.tail != 0) {
+            std::cout << " DOUBLE OUT ";
+            Insert(s, q, ttl);
+          }
+          Insert(s, r, ttl);
+          // assert(sides[s].Find(r));
+          //assert(sides[s].Find(r) || sides[1-s].Find(r));
+        }
+      }
     }
     // std::cout << std::hex << (size_t)last[0] << " to "
     //           << (size_t)sides[0][old_cursor].data << std::endl;
