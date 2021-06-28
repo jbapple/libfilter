@@ -131,7 +131,7 @@ struct Side {
   }
 
   INLINE Level& operator[](unsigned i) {
-    assert(i < 32);
+    assert(i < detail::minimal_plastic::kLevels);
     return levels[i];
   }
   INLINE const Level& operator[](unsigned i) const { return levels[i]; }
@@ -317,7 +317,7 @@ struct MinimalPlasticFilter {
     // TODO: only need one path here. Which one to pick?
     auto p =
         detail::minimal_plastic::ToPath(k, sides[0].hi, cursor, log_side_size, false);
-    Insert(0, p, 17);
+    Insert(0, p, 500);
   }
 
   INLINE void Unstash(int ttl) {
@@ -339,7 +339,7 @@ struct MinimalPlasticFilter {
     //std::cout << std::endl;
     while (true) {
       for (int i : {side, 1 - side}) {
-        auto countz = Count();
+        //auto countz = Count();
         //assert(occupied == countz);
         --ttl;
         if (ttl < 0 && sides[i].stash.tail == 0) {
@@ -388,10 +388,10 @@ struct MinimalPlasticFilter {
     std::cout << "Upsize " << std::dec << cursor << " "
               << ((2u << log_side_size) * sizeof(detail::minimal_plastic::Bucket))
               << std::endl;
-    for (uint64_t i = 1; i != 0; i *= 2) {
-      if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
-      Unstash(i);
-    }
+    // for (uint64_t i = 1; i != 0; i *= 2) {
+    //   if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
+    //   Unstash(i);
+    // }
     detail::minimal_plastic::Bucket* last_data[2] = {sides[0][cursor].data, sides[1][cursor].data};
     {
       detail::minimal_plastic::Bucket* next[2];
@@ -404,10 +404,22 @@ struct MinimalPlasticFilter {
     detail::minimal_plastic::Path p;
     p.level = cursor - 1;
     for (int s : {0, 1}) {
+      if (sides[s].stash.tail != 0 && sides[s].stash.level == cursor - 1) {
+        auto p = sides[s].stash;
+        sides[s].stash.tail = 0;
+        --occupied;
+        detail::minimal_plastic::Path q, r;
+        r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
+        auto ttl = 17;
+        assert(r.tail != 0);
+        if (q.tail != 0) Insert(s, q, ttl);
+        Insert(s, r, ttl);
+      }
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         p.bucket = i;
         for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
           if (last_data[s][i][j].tail == 0) continue;
+          --occupied;
           p.SetSlot(last_data[s][i][j]);
           assert(p.tail != 0);
           detail::minimal_plastic::Path q, r;
@@ -415,9 +427,7 @@ struct MinimalPlasticFilter {
           auto ttl = 17;
           assert(r.tail != 0);
           if (q.tail != 0) Insert(s, q, ttl);
-          auto old_occupied = occupied;
           Insert(s, r, ttl);
-          occupied = old_occupied;
         }
       }
     }

@@ -46,8 +46,9 @@ void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
   for (unsigned i = 0; i < hashes.size(); ++i) {
     x.InsertHash(hashes[i]);
     for (unsigned j = 0; j <= i; ++j) {
-      ASSERT_TRUE(x.FindHash(hashes[j])) << dec << j << " of " << i << " of "
-                                         << hashes.size() << " with " << hex << hashes[j];
+      ASSERT_TRUE(x.FindHash(hashes[j]))
+          << dec << j << " of " << i << " of " << hashes.size() << " with hash 0x" << hex
+          << hashes[j];
     }
   }
 }
