@@ -146,7 +146,9 @@ struct Side {
   }
 
   INLINE bool Find(Path p) const {
-    return stash == p || levels[p.level].Find(p);
+    return (stash.long_fp == p.long_fp && stash.fingerprint == p.fingerprint &&
+            IsPrefixOf(stash.tail, p.tail)) ||
+           levels[p.level].Find(p);
   }
 
   friend void swap(Side&, Side&);

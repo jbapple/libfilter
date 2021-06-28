@@ -28,7 +28,7 @@ namespace detail {
 
 namespace minimal_plastic {
 
-thread_local const constexpr int kLogLevels = 1;
+thread_local const constexpr int kLogLevels = 2;
 thread_local const constexpr uint64_t kLevels = 1ul << kLogLevels;
 
 // From the paper, kTailSize is the log of the number of times the size will
@@ -188,7 +188,6 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, int cursor, uint64_t low_leve
   bool big_index = (result.level < cursor);
   if (big_index && full_is_short) {
     result.tail = 0;
-    //result.Print();
     // std::cout << "NOTHING" << std::endl;
     return result;
   }
@@ -204,7 +203,7 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, int cursor, uint64_t low_leve
   // encode the tail using the encoding described above, in which the length of the tail
   // i the complement of the tzcnt plus one.
   result.tail =  raw_tail * 2 + 1;
-  //result.Print();
+  // result.Print();
   // std::cout << " via " << std::dec << cursor << " " << low_level_size << " "
   //           << std::boolalpha << full_is_short << std::hex << " " << f.Summary()
   //           << std::endl;
@@ -222,7 +221,7 @@ INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t level_size,
       kLogLevels + level_size + fingerprint_size, hashed_level_index_and_fp);
   uint64_t shifted_up = pre_hashed_index_and_fp
                         << (64 - kLogLevels - level_size - fingerprint_size);
-  //p.Print();
+  // p.Print();
   // std::cout << " to " << std::hex << shifted_up << " via " << std::dec << level_size
   //           << " " << fingerprint_size << std::hex << " " << f.Summary() << std::endl;
   return shifted_up;
