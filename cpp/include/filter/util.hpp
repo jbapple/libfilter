@@ -151,8 +151,8 @@ struct PcgRandom {
 constexpr
 #endif
 INLINE bool IsPrefixOf(uint16_t x, uint16_t y) {
-  // assert(x != 0);
-  // assert(y != 0);
+  assert(x != 0);
+  assert(y != 0);
   auto a = x ^ y;
   auto c = __builtin_ctz(x);
   auto h = __builtin_ctz(y);

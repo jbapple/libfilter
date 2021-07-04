@@ -117,8 +117,8 @@ struct Side {
     for (uint64_t i = 0; i < kLevels; ++i) {
       levels[i].~Level();
       new (&levels[i]) Level(log_level_size);
-      std::cout << "level " << std::dec << i << " " << std::hex << (size_t)(&levels[i])
-                << " " << (size_t)levels[i].data << std::endl;
+      //std::cout << "level " << std::dec << i << " " << std::hex << (size_t)(&levels[i])
+      //          << " " << (size_t)levels[i].data << std::endl;
     }
     stash.tail = 0;
   }
@@ -146,8 +146,8 @@ struct Side {
   }
 
   INLINE bool Find(Path p) const {
-    return (stash.long_fp == p.long_fp && stash.fingerprint == p.fingerprint &&
-            IsPrefixOf(stash.tail, p.tail)) ||
+    return (stash.tail != 0 && stash.long_fp == p.long_fp &&
+            stash.fingerprint == p.fingerprint && IsPrefixOf(stash.tail, p.tail)) ||
            levels[p.level].Find(p);
   }
 
@@ -311,7 +311,7 @@ struct MinimalPlasticFilter {
   INLINE void InsertHash(uint64_t k) {
     auto countz = Count();
     assert(occupied == countz);
-    if (occupied > 0.8 * Capacity() || occupied + 4 >= Capacity()) {
+    if (occupied > 0.65 * Capacity() || occupied + 4 >= Capacity()) {
       auto countz = Count();
       assert(occupied == countz);
       Upsize();
@@ -336,9 +336,9 @@ struct MinimalPlasticFilter {
 
   INLINE InsertResult Insert(int side, detail::minimal_plastic::Path p, int ttl) {
     assert(p.tail != 0);
-    //std::cout << "Begin insert ";
-    //p.Print();
-    //std::cout << std::endl;
+    std::cout << "Begin insert ";
+    p.Print();
+    std::cout << std::endl;
     while (true) {
       for (int i : {side, 1 - side}) {
         //auto countz = Count();
@@ -347,7 +347,7 @@ struct MinimalPlasticFilter {
         if (ttl < 0 && sides[i].stash.tail == 0) {
           sides[i].stash = p;
           ++occupied;
-          std::cout << (-ttl) << std::endl;
+          //std::cout << (-ttl) << std::endl;
           return InsertResult::Stashed;
         }
         detail::minimal_plastic::Path q = p;
@@ -355,13 +355,13 @@ struct MinimalPlasticFilter {
         if (r.tail == 0) {
           // Found an empty slot
           ++occupied;
-          std::cout << (-ttl) << std::endl;
+          //std::cout << (-ttl) << std::endl;
           return InsertResult::Ok;
         }
         if (r == q) {
           // Combined with or already present in a slot. Success, but no increase in
           // filter size
-          std::cout << (-ttl) << std::endl;
+          //std::cout << (-ttl) << std::endl;
           return InsertResult::Ok;
         }
         detail::minimal_plastic::Path extra;
@@ -406,7 +406,9 @@ struct MinimalPlasticFilter {
     detail::minimal_plastic::Path p;
     p.level = cursor - 1;
     for (int s : {0, 1}) {
+      std::cout << (s == 0 ? "left" : "right") << std::endl;
       if (sides[s].stash.tail != 0 && sides[s].stash.level == cursor - 1) {
+        std::cout << "stash" << std::endl;
         auto p = sides[s].stash;
         sides[s].stash.tail = 0;
         --occupied;
@@ -414,8 +416,12 @@ struct MinimalPlasticFilter {
         r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
         auto ttl = 17;
         assert(r.tail != 0);
-        if (q.tail != 0) Insert(s, q, ttl);
+        if (q.tail != 0) {
+          std::cout << "Recurse insert" << std::endl;;
+          Insert(s, q, ttl);
+        }
         Insert(s, r, ttl);
+        std::cout << "done stash" << std::endl;
       }
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         p.bucket = i;
@@ -425,10 +431,13 @@ struct MinimalPlasticFilter {
           p.SetSlot(last_data[s][i][j]);
           assert(p.tail != 0);
           detail::minimal_plastic::Path q, r;
-          r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor-1, &q);
+          r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
           auto ttl = 17;
           assert(r.tail != 0);
-          if (q.tail != 0) Insert(s, q, ttl);
+          if (q.tail != 0) {
+            std::cout << "Recurse insert" << std::endl;
+            Insert(s, q, ttl);
+          }
           Insert(s, r, ttl);
         }
       }

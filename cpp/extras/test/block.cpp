@@ -40,12 +40,21 @@ TYPED_TEST_SUITE(NdvFppTest, CreateWithNdvFpp);
 template <typename T>
 void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
   Rand r;
+  // 200:
+  r.xState = 0xc07db21402b59465;
+  r.yState = 0x7489fa569760d5a5;
+  r.initXState = r.xState;
+  r.initYState = r.yState;
   for (unsigned i = 0; i < hashes.size(); ++i) {
     hashes[i] = r();
   }
   for (unsigned i = 0; i < hashes.size(); ++i) {
     x.InsertHash(hashes[i]);
     for (unsigned j = 0; j <= i; ++j) {
+      if (not x.FindHash(hashes[j])) {
+        throw 2;
+      }
+      assert(x.FindHash(hashes[j]));
       ASSERT_TRUE(x.FindHash(hashes[j]))
           << dec << j << " of " << i << " of " << hashes.size() << " with hash 0x" << hex
           << hashes[j];
@@ -55,10 +64,12 @@ void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
 
 // Test that once something is inserted, it's always present
 TYPED_TEST(BytesTest, InsertPersistsWithBytes) {
-  auto ndv = 16000;
-  auto x = TypeParam::CreateWithBytes(ndv);
-  vector<uint64_t> hashes(ndv);
-  InsertPersistsHelp(x, hashes);
+  for (int i = 0; i < 32000; ++i) {
+    auto ndv = 200;
+    auto x = TypeParam::CreateWithBytes(ndv);
+    vector<uint64_t> hashes(ndv);
+    InsertPersistsHelp(x, hashes);
+  }
 }
 
 
