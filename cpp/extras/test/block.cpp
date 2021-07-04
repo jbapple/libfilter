@@ -41,16 +41,25 @@ template <typename T>
 void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
   Rand r;
   // 200:
-  r.xState = 0xc07db21402b59465;
-  r.yState = 0x7489fa569760d5a5;
+  // r.xState = 0xc07db21402b59465;
+  // r.yState = 0x7489fa569760d5a5;
+  // r.initXState = r.xState;
+  // r.initYState = r.yState;
+
+  r.xState = 0x85886b737a31b249;
+  r.yState = 0x909057046099b1f7;
   r.initXState = r.xState;
   r.initYState = r.yState;
+
   for (unsigned i = 0; i < hashes.size(); ++i) {
     hashes[i] = r();
   }
   for (unsigned i = 0; i < hashes.size(); ++i) {
     x.InsertHash(hashes[i]);
     for (unsigned j = 0; j <= i; ++j) {
+      EXPECT_TRUE(x.FindHash(hashes[j]))
+          << dec << j << " of " << i << " of " << hashes.size() << " with hash 0x" << hex
+          << hashes[j];
       if (not x.FindHash(hashes[j])) {
         throw 2;
       }

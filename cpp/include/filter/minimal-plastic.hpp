@@ -405,15 +405,19 @@ struct MinimalPlasticFilter {
     cursor = cursor + 1;
     detail::minimal_plastic::Path p;
     p.level = cursor - 1;
+    detail::minimal_plastic::Path stashes[2] = {sides[0].stash, sides[1].stash};
+    if (stashes[0].tail) --occupied;
+    if (stashes[1].tail) --occupied;
+    sides[0].stash.tail = 0;
+    sides[1].stash.tail = 0;
     for (int s : {0, 1}) {
       std::cout << (s == 0 ? "left" : "right") << std::endl;
-      if (sides[s].stash.tail != 0 && sides[s].stash.level == cursor - 1) {
+      if (stashes[s].tail != 0 && stashes[s].level == cursor - 1) {
         std::cout << "stash" << std::endl;
-        auto p = sides[s].stash;
-        sides[s].stash.tail = 0;
-        --occupied;
+        //Unstash(500);
+
         detail::minimal_plastic::Path q, r;
-        r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
+        r = RePathUpsize(stashes[s], sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
         auto ttl = 17;
         assert(r.tail != 0);
         if (q.tail != 0) {
@@ -423,6 +427,9 @@ struct MinimalPlasticFilter {
         Insert(s, r, ttl);
         std::cout << "done stash" << std::endl;
       }
+    }
+    for (int s: {0,1}) {
+      std::cout << (s == 0 ? "left" : "right") << std::endl;
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         p.bucket = i;
         for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
