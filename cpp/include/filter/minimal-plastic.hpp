@@ -336,9 +336,9 @@ struct MinimalPlasticFilter {
 
   INLINE InsertResult Insert(int side, detail::minimal_plastic::Path p, int ttl) {
     assert(p.tail != 0);
-    std::cout << "Begin insert ";
-    p.Print();
-    std::cout << std::endl;
+    // std::cout << "Begin insert ";
+    // p.Print();
+    // std::cout << std::endl;
     while (true) {
       for (int i : {side, 1 - side}) {
         //auto countz = Count();
@@ -412,7 +412,7 @@ struct MinimalPlasticFilter {
     sides[1].stash.tail = 0;
     for (int s : {0, 1}) {
       std::cout << (s == 0 ? "left" : "right") << std::endl;
-      if (stashes[s].tail != 0 && stashes[s].level == cursor - 1) {
+      if (stashes[s].tail != 0) {
         std::cout << "stash" << std::endl;
         //Unstash(500);
 

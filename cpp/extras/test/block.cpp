@@ -46,8 +46,17 @@ void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
   // r.initXState = r.xState;
   // r.initYState = r.yState;
 
-  r.xState = 0x85886b737a31b249;
-  r.yState = 0x909057046099b1f7;
+  // r.xState = 0x85886b737a31b249;
+  // r.yState = 0x909057046099b1f7;
+  // r.initXState = r.xState;
+  // r.initYState = r.yState;
+
+  // r.xState = 0x85886b737a31b249;
+  // r.yState = 0x909057046099b1f7;
+
+  r.xState = 0xb6612080a1098a3a;
+  r.yState = 0xd3dd8964672f0389;
+
   r.initXState = r.xState;
   r.initYState = r.yState;
 
@@ -63,10 +72,10 @@ void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
       if (not x.FindHash(hashes[j])) {
         throw 2;
       }
-      assert(x.FindHash(hashes[j]));
-      ASSERT_TRUE(x.FindHash(hashes[j]))
-          << dec << j << " of " << i << " of " << hashes.size() << " with hash 0x" << hex
-          << hashes[j];
+      // assert(x.FindHash(hashes[j]));
+      // ASSERT_TRUE(x.FindHash(hashes[j]))
+      //     << dec << j << " of " << i << " of " << hashes.size() << " with hash 0x" << hex
+      //     << hashes[j];
     }
   }
 }
