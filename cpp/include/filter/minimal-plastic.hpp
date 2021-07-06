@@ -311,7 +311,7 @@ struct MinimalPlasticFilter {
   INLINE void InsertHash(uint64_t k) {
     auto countz = Count();
     assert(occupied == countz);
-    if (occupied > 0.65 * Capacity() || occupied + 4 >= Capacity()) {
+    if (occupied > 0.75 * Capacity() || occupied + 4 >= Capacity()) {
       auto countz = Count();
       assert(occupied == countz);
       Upsize();
@@ -347,7 +347,8 @@ struct MinimalPlasticFilter {
         if (ttl < 0 && sides[i].stash.tail == 0) {
           sides[i].stash = p;
           ++occupied;
-          //std::cout << (-ttl) << std::endl;
+          if (ttl < -1000) std::cout << (-ttl) << std::endl;
+
           return InsertResult::Stashed;
         }
         detail::minimal_plastic::Path q = p;
@@ -355,13 +356,14 @@ struct MinimalPlasticFilter {
         if (r.tail == 0) {
           // Found an empty slot
           ++occupied;
-          //std::cout << (-ttl) << std::endl;
+          if (ttl < -1000) std::cout << (-ttl) << std::endl;
           return InsertResult::Ok;
         }
         if (r == q) {
           // Combined with or already present in a slot. Success, but no increase in
           // filter size
-          //std::cout << (-ttl) << std::endl;
+          if (ttl < -1000) std::cout << (-ttl) << std::endl;
+
           return InsertResult::Ok;
         }
         detail::minimal_plastic::Path extra;
@@ -389,7 +391,7 @@ struct MinimalPlasticFilter {
   void Upsize() {
     std::cout << "Upsize " << std::dec << cursor << " "
               << ((2u << log_side_size) * sizeof(detail::minimal_plastic::Bucket))
-              << std::endl;
+              << " " << occupied << std::endl;
     // for (uint64_t i = 1; i != 0; i *= 2) {
     //   if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
     //   Unstash(i);
@@ -411,9 +413,9 @@ struct MinimalPlasticFilter {
     sides[0].stash.tail = 0;
     sides[1].stash.tail = 0;
     for (int s : {0, 1}) {
-      std::cout << (s == 0 ? "left" : "right") << std::endl;
+      // std::cout << (s == 0 ? "left" : "right") << std::endl;
       if (stashes[s].tail != 0) {
-        std::cout << "stash" << std::endl;
+        // std::cout << "stash" << std::endl;
         //Unstash(500);
 
         detail::minimal_plastic::Path q, r;
@@ -425,11 +427,11 @@ struct MinimalPlasticFilter {
           Insert(s, q, ttl);
         }
         Insert(s, r, ttl);
-        std::cout << "done stash" << std::endl;
+        // std::cout << "done stash" << std::endl;
       }
     }
     for (int s: {0,1}) {
-      std::cout << (s == 0 ? "left" : "right") << std::endl;
+      // std::cout << (s == 0 ? "left" : "right") << std::endl;
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         p.bucket = i;
         for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {

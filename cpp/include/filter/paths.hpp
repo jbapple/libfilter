@@ -28,7 +28,7 @@ namespace detail {
 
 namespace minimal_plastic {
 
-thread_local const constexpr int kLogLevels = 4;
+thread_local const constexpr int kLogLevels = 5;
 thread_local const constexpr uint64_t kLevels = 1ul << kLogLevels;
 
 // From the paper, kTailSize is the log of the number of times the size will
@@ -41,8 +41,8 @@ thread_local const constexpr uint64_t kLevels = 1ul << kLogLevels;
 // Note that kHeadSize must be large enough for quotient cuckoo hashing to work sensibly:
 // it needs some randomness in the fingerprint to ensure each item hashes to sufficiently
 // different buckets kHead is just the rest of the uint16_t, and is log2(1/epsilon)
-thread_local const constexpr int kHeadSize = 9;
-thread_local const constexpr int kTailSize = 5;
+thread_local const constexpr int kHeadSize = 8;
+thread_local const constexpr int kTailSize = 6;
 static_assert(kHeadSize + kTailSize == 14, "kHeadSize + kTailSize == 14");
 
 // The number of slots in each cuckoo table bucket. The higher this is, the easier it is

@@ -82,12 +82,10 @@ void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
 
 // Test that once something is inserted, it's always present
 TYPED_TEST(BytesTest, InsertPersistsWithBytes) {
-  for (int i = 0; i < 32000; ++i) {
-    auto ndv = 200;
-    auto x = TypeParam::CreateWithBytes(ndv);
-    vector<uint64_t> hashes(ndv);
-    InsertPersistsHelp(x, hashes);
-  }
+  auto ndv = 16000;
+  auto x = TypeParam::CreateWithBytes(ndv);
+  vector<uint64_t> hashes(ndv);
+  InsertPersistsHelp(x, hashes);
 }
 
 
