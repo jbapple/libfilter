@@ -281,6 +281,14 @@ INLINE Path RePathUpsize(Path p, const Feistel& flo, const Feistel& fhi,
   const int to_cursor = from_cursor + 1;
   // TODO: when log_to_size is larger than log_from_size, need to steal bits from the tail?
   assert(p.tail != 0);
+  if (p.level < from_cursor) {
+    // std::cout << "BRANCH A" << std::endl;
+    const uint64_t key = FromPathNoTail(p, fhi, log_size+1, kHeadSize-1);
+    Path q = ToPath(key, fhi, to_cursor, log_size, false);
+    q.tail = p.tail;
+    out->tail = 0;
+    return q;
+  }
   if (p.long_fp) {
     // std::cout << "BRANCH B" << std::endl;
     const uint64_t key = FromPathNoTail(p, fhi, log_size, kHeadSize);

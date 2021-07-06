@@ -54,11 +54,11 @@ void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
   // r.xState = 0x85886b737a31b249;
   // r.yState = 0x909057046099b1f7;
 
-  r.xState = 0xb6612080a1098a3a;
-  r.yState = 0xd3dd8964672f0389;
+  //r.xState = 0xb6612080a1098a3a;
+  //r.yState = 0xd3dd8964672f0389;
 
-  r.initXState = r.xState;
-  r.initYState = r.yState;
+  //r.initXState = r.xState;
+  //r.initYState = r.yState;
 
   for (unsigned i = 0; i < hashes.size(); ++i) {
     hashes[i] = r();
