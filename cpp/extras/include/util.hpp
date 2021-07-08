@@ -49,14 +49,14 @@ public:
     // yState = 0x2842f167de69e747;
     // xState = 0x306cbabbb4c34e88;
     // yState = 0x0a0718e1416341e3;
-    std::cout << std::hex << "0x" << xState << std::endl;
-    std::cout << std::hex << "0x" << yState << std::endl;
+    // std::cout << std::hex << "0x" << xState << std::endl;
+    // std::cout << std::hex << "0x" << yState << std::endl;
   }
 
   std::uint64_t operator()() { return romuDuoJr_random(); }
 
   ~Rand() {
-    std::cout << std::hex << "0x" << initXState << std::endl;
-    std::cout << std::hex << "0x" << initYState << std::endl;
+    // std::cout << std::hex << "0x" << initXState << std::endl;
+    // std::cout << std::hex << "0x" << initYState << std::endl;
   }
 };

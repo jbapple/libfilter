@@ -41,8 +41,8 @@ thread_local const constexpr uint64_t kLevels = 1ul << kLogLevels;
 // Note that kHeadSize must be large enough for quotient cuckoo hashing to work sensibly:
 // it needs some randomness in the fingerprint to ensure each item hashes to sufficiently
 // different buckets kHead is just the rest of the uint16_t, and is log2(1/epsilon)
-thread_local const constexpr int kHeadSize = 8;
-thread_local const constexpr int kTailSize = 6;
+thread_local const constexpr int kHeadSize = 9;
+thread_local const constexpr int kTailSize = 5;
 static_assert(kHeadSize + kTailSize == 14, "kHeadSize + kTailSize == 14");
 
 // The number of slots in each cuckoo table bucket. The higher this is, the easier it is
@@ -87,7 +87,8 @@ struct Path : public Slot {
     tail = s.tail;
   }
 
-};
+} __attribute__((packed));
+
 
 
 // Converts a hash value to a path. The bucket and the fingerprint are acquired via
@@ -110,58 +111,6 @@ The one for short input yields a path iff the level is greater than or equal to 
 cursor.
 
 
-*/
-/*
-INLINE void ToPaths(uint64_t raw, const Feistel f[2], uint64_t log_small_size,
-                    uint64_t cursor, Path result[2]) {
-  for (unsigned delta : {1, 0}) {
-    uint64_t pre_hash_level_index_and_fp =
-        raw >> (64 - log_small_size - delta - kHeadSize - kLogLevels);
-    uint64_t hashed_level_index_and_fp = hi.Permute(
-        log_side_size + delta + kHeadSize + kLogLevels, pre_hash_level_index_and_fp);
-    uint64_t level = hashed_level_index_and_fp >> (kHeadSize + log_side_size + delta);
-    if (level < cursor && delta == 0) {
-      result[i].tail = 0;
-      continue;
-    }
-    uint64_t index = Mask(log_side_size + (level < cursor), hashed_level_index_and_fp >> kHeadSize);
-    result[i].long_fp = (level >= cursor) && (delta > 0);
-    result[i].level = level;
-    result[i].bucket = index;
-    // Helpfully gets cut off by being a bitfield
-    result[i].fingerprint = hashed_level_index_and_fp;
-    uint64_t pre_hash_level_index_fp_and_tail =
-        raw >> (64 - log_side_size - delta - kHeadSize - kTailSize - kLogLevels);
-    uint64_t raw_tail = Mask(kTailSize, pre_hash_level_index_fp_and_tail);
-    // encode the tail using the encoding described above, in which the length of the tail
-    // i the complement of the tzcnt plus one.
-    uint64_t encoded_tail = raw_tail * 2 + 1;
-    result[i].tail = encoded_tail;
-  }
-}
-*/
-
-/*
-INLINE constexpr Path ToPath(uint64_t raw, const Feistel f, uint64_t level_size,
-                             uint64_t fingerprint_size) {
-  const uint64_t pre_hash_level_index_fp_and_tail =
-      raw >> (64 - kLogLevels - level_size - fingerprint_size - kTailSize);
-  const uint64_t pre_hash_level_index_and_fp =
-      pre_hash_level_index_fp_and_tail >> kTailSize;
-  const uint64_t hashed_level_index_and_fp =
-      hi.Permute(kLogLevels + level_size + fingerprint_size, pre_hash_level_index_and_fp);
-  const uint64_t level = hashed_level_index_and_fp >> (level_size + fingerprint_size);
-  const uint64_t level_index = Mask(level_size, hashed_level_index_and_fp >> fingerprint_size);
-  result[i].level = level;
-  result[i].bucket = level_index;
-  result[i].long_fp = fingerprint_size >= kHeadSize;
-  // Helpfully gets cut off by being a bitfield
-  result[i].fingerprint = hashed_level_index_and_fp;
-  const uint64_t raw_tail = Mask(kTailSize, pre_hash_level_index_fp_and_tail);
-  // encode the tail using the encoding described above, in which the length of the tail
-  // i the complement of the tzcnt plus one.
-  result[i].tail =  raw_tail * 2 + 1;
-}
 */
 
 enum class SlotType { kLongIndex = 0, kLongFingerprint = 1, kShort = 2 };
@@ -393,47 +342,6 @@ INLINE Path RePath(Path p, const Feistel& from_short, const Feistel& from_long,
   q2.tail = p.tail;
   return q2;
 }
-
-// INLINE Path RePathUpsize(Path p, const Feistel& from_short, const Feistel& from_long,
-//                          const Feistel& to_short, const Feistel& to_long,
-//                          uint64_t log_from_size, Path* out) {
-//   // TODO: when log_to_size is larger than log_from_size, need to steal bits from the tail?
-//   assert(p.tail != 0);
-//   if (p.long_fp) {
-//     std::cout << "BRANCH F" << std::endl;
-//     const uint64_t key = FromPathNoTail(p, from_long, log_from_size, kHeadSize);
-//     Path q =
-//         ToPath(key, to_short, 0 /* cursor */, log_from_size + 1, true /* is_short */);
-//     q.tail = p.tail;
-//     out->tail = 0;
-//     return q;
-//   }
-//   // std::cout << "BRANCH CDE " << p.level << " of " << from_cursor << std::endl;
-//   uint64_t key = FromPathNoTail(p, from_short, log_from_size, kHeadSize - 1);
-//   // TODO: what if q.tail == 0;
-//   // Path q = ToPath(key, to_short, to_cursor, log_to_size,
-//   //                true /* full is short because tail is short */);
-//   // q is invalid - the level is low, but there aren't enough bits for the fingerprint
-//   if (p.tail != 1 << kTailSize) {
-//     std::cout << "BRANCH G" << std::endl;
-//     uint64_t k = key | (static_cast<uint64_t>(p.tail >> kTailSize)
-//                         << (64 - kLogLevels - log_from_size - kHeadSize));
-//     Path q2 = ToPath(k, to_short, 0 /*cursor*/, log_from_size + 1,
-//                      true /* full is now long, since we added a bit to k*/);
-//     q2.tail = p.tail << 1;
-//     out->tail = 0;
-//     //q2.tail |= 1;
-//     return q2;
-//   }
-//   // p.tail is empty!
-//   std::cout << "BRANCH H" << std::endl;
-//   *out = ToPath(key, to_long, to_cursor, log_to_size, false);
-//   out->tail = p.tail;
-//   uint64_t k = key | (1ul << (64 - kLogLevels - log_from_size - kHeadSize));
-//   Path q2 = ToPath(k, to_long, to_cursor, log_to_size, false);
-//   q2.tail = p.tail;
-//   return q2;
-// }
 
 }  // namespace minimal_plastic
 }  // namespace detail

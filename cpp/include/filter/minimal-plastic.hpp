@@ -309,12 +309,13 @@ struct MinimalPlasticFilter {
 
   // TODO: manage stash
   INLINE void InsertHash(uint64_t k) {
-    auto countz = Count();
-    assert(occupied == countz);
-    if (occupied > 0.75 * Capacity() || occupied + 4 >= Capacity()) {
-      auto countz = Count();
-      assert(occupied == countz);
+    //auto countz = Count();
+    //assert(occupied == countz);
+    if (occupied > 0.74 * Capacity() || occupied + 4 >= Capacity()) {
+      //auto countz = Count();
+      //assert(occupied == countz);
       Upsize();
+      std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
     }
     // TODO: only need one path here. Which one to pick?
     auto p =
@@ -334,7 +335,7 @@ struct MinimalPlasticFilter {
 
   enum class InsertResult { Ok, Stashed, Failed };
 
-  INLINE InsertResult Insert(int side, detail::minimal_plastic::Path p, int ttl) {
+  inline InsertResult Insert(int side, detail::minimal_plastic::Path p, int ttl) {
     assert(p.tail != 0);
     // std::cout << "Begin insert ";
     // p.Print();
@@ -347,7 +348,7 @@ struct MinimalPlasticFilter {
         if (ttl < 0 && sides[i].stash.tail == 0) {
           sides[i].stash = p;
           ++occupied;
-          if (ttl < -1000) std::cout << (-ttl) << std::endl;
+          if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
 
           return InsertResult::Stashed;
         }
@@ -356,13 +357,13 @@ struct MinimalPlasticFilter {
         if (r.tail == 0) {
           // Found an empty slot
           ++occupied;
-          if (ttl < -1000) std::cout << (-ttl) << std::endl;
+          if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
           return InsertResult::Ok;
         }
         if (r == q) {
           // Combined with or already present in a slot. Success, but no increase in
           // filter size
-          if (ttl < -1000) std::cout << (-ttl) << std::endl;
+          if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
 
           return InsertResult::Ok;
         }
@@ -370,7 +371,7 @@ struct MinimalPlasticFilter {
         auto next = RePath(r, sides[i].lo, sides[i].hi, sides[1 - i].lo, sides[1 - i].hi,
                            log_side_size, log_side_size, cursor, cursor, &extra);
         if (extra.tail != 0) {
-          std::cout << "Recurse insert" << std::endl;
+          // std::cout << "Recurse insert" << std::endl;
           Insert(1 - i, extra, ttl);
         }
         // TODO: what if insert returns stashed? Do we need multiple states? Maybe green , yellow red?
@@ -389,9 +390,9 @@ struct MinimalPlasticFilter {
 
   // Double the size of one level of the filter
   void Upsize() {
-    std::cout << "Upsize " << std::dec << cursor << " "
-              << ((2u << log_side_size) * sizeof(detail::minimal_plastic::Bucket))
-              << " " << occupied << std::endl;
+    // std::cout << "Upsize " << std::dec << cursor << " "
+    //           << ((2u << log_side_size) * sizeof(detail::minimal_plastic::Bucket))
+    //           << " " << occupied << std::endl;
     // for (uint64_t i = 1; i != 0; i *= 2) {
     //   if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
     //   Unstash(i);
@@ -423,7 +424,7 @@ struct MinimalPlasticFilter {
         auto ttl = 17;
         assert(r.tail != 0);
         if (q.tail != 0) {
-          std::cout << "Recurse insert" << std::endl;;
+          //std::cout << "Recurse insert" << std::endl;;
           Insert(s, q, ttl);
         }
         Insert(s, r, ttl);
@@ -444,7 +445,7 @@ struct MinimalPlasticFilter {
           auto ttl = 17;
           assert(r.tail != 0);
           if (q.tail != 0) {
-            std::cout << "Recurse insert" << std::endl;
+            //std::cout << "Recurse insert" << std::endl;
             Insert(s, q, ttl);
           }
           Insert(s, r, ttl);
@@ -458,7 +459,7 @@ struct MinimalPlasticFilter {
       using namespace std;
       for (int i : {0, 1}) swap(sides[i].lo, sides[i].hi);
     }
-    std::cout << "End Upsize" << std::endl;
+    // std::cout << "End Upsize" << std::endl;
   }
 };
 

@@ -38,10 +38,12 @@ struct BlockElasticFilter {
   }
 
   void Upsize() {
-    std::cout << cursor << " " << last_ndv << std::endl;
+
     last_ndv *= 2;
     levels[cursor] = new BlockFilter(
-        BlockFilter::CreateWithNdvFpp(last_ndv, fpp / pow(cursor + 1, 2) / 1.65));
+        BlockFilter::CreateWithNdvFpp(last_ndv, fpp / pow(cursor + 1, 2) * 3.14));
+    std::cout << cursor << " " << last_ndv << " " << levels[cursor]->SizeInBytes()
+              << std::endl;
     ++cursor;
     ttl = last_ndv;
   }

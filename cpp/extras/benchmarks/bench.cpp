@@ -149,6 +149,14 @@ vector<Sample> BenchWithNdvFpp(uint64_t reps, const vector<uint64_t>& to_insert,
   return BenchHelp(reps, to_insert, to_find, filter);
 }
 
+template <typename FILTER_TYPE>
+vector<Sample> BenchGrowWithNdvFpp(uint64_t reps, const vector<uint64_t>& to_insert,
+                               const vector<uint64_t>& to_find, uint64_t ndv,
+                               double fpp) {
+  auto filter = FILTER_TYPE::CreateWithNdvFpp(32, fpp);
+  return BenchHelp(reps, to_insert, to_find, filter);
+}
+
 // Calls Bench() on each member of a parameter pack
 void Samples(uint64_t ndv, vector<uint64_t>& to_insert, vector<uint64_t>& to_find) {
   Rand r;
@@ -207,7 +215,7 @@ int main(int argc, char** argv) {
   for (unsigned i = 0; i < reps; ++i) {
     BenchWithBytes<MinimalPlasticFilter>(reps, bytes, to_insert, to_find);
     BenchWithBytes<ElasticFilter>(reps, bytes, to_insert, to_find);
-    BenchWithNdvFpp<BlockElasticFilter>(reps, to_insert, to_find, ndv, fpp);
+    BenchGrowWithNdvFpp<BlockElasticFilter>(reps, to_insert, to_find, ndv, fpp);
     BenchWithNdvFpp<BlockFilter>(reps, to_insert, to_find, ndv, fpp);
     BenchWithBytes<BlockFilter>(reps, bytes, to_insert, to_find);
 

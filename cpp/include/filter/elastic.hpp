@@ -353,30 +353,6 @@ struct ElasticFilter {
         p.tail = tail;
       }
     }
-    // {
-    //   // Now mimic the above.
-    //   // TODO: avoid the code_duplication
-    //   q = p;
-    //   p = right.Insert(p, rng);
-    //   if (p.tail == 0) {
-    //     ++occupied;
-    //     return InsertResult::Ok;
-    //   }
-    //   if (p == q) {
-    //     return InsertResult::Ok;
-    //   }
-    //   tail = p.tail;
-    //   if (ttl <= 0) {
-    //     assert(right.stash.tail == 0);
-    //     right.stash = p;
-    //     ++occupied;
-    //     return InsertResult::Stashed;
-    //   }
-    //   --ttl;
-    //   p = detail::ToPath(detail::FromPathNoTail(p, right.f, log_side_size), left.f,
-    //                      log_side_size);
-    //   p.tail = tail;
-    // }
   }
 
   // This method just increases ttl until insert succeeds.

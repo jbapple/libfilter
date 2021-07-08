@@ -8,8 +8,6 @@ namespace filter {
 namespace detail {
 
 #define INLINE __attribute__((always_inline)) inline
-#undef INLINE
-#define INLINE
 
 // Returns the lowest k bits of x
 INLINE constexpr uint64_t Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
