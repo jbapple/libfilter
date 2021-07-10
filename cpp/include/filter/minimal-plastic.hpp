@@ -288,7 +288,7 @@ struct MinimalPlasticFilter {
         0x50d61c3272a24ccb, 0x40cb1e4f0da34cc3, 0xb88f09c3af35472e, 0x8de6d01bb8a849a5};
 
     return MinimalPlasticFilter(
-        0,
+        3,
         // std::max(1.0, log(1.0 * bytes / 2 / detail::minimal_plastic::kBuckets /
         //                   sizeof(detail::minimal_plastic::Slot) /
         //                   detail::minimal_plastic::kBuckets /
@@ -311,11 +311,14 @@ struct MinimalPlasticFilter {
   INLINE void InsertHash(uint64_t k) {
     //auto countz = Count();
     //assert(occupied == countz);
-    if (occupied > 0.74 * Capacity() || occupied + 4 >= Capacity()) {
+    if (occupied > 0.8 * Capacity() || occupied + 4 >= Capacity() ||
+        (sides[0].stash.tail != 0 || sides[1].stash.tail != 0)) {
       //auto countz = Count();
       //assert(occupied == countz);
       Upsize();
-      std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
+      if (cursor == 0) {
+        std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
+      }
     }
     // TODO: only need one path here. Which one to pick?
     auto p =
@@ -345,6 +348,11 @@ struct MinimalPlasticFilter {
         //auto countz = Count();
         //assert(occupied == countz);
         --ttl;
+        if (ttl < -1000 && ((-ttl & (-ttl - 1)) == 0)) {
+          std::cout << std::dec << (-ttl) << std::endl;
+          std::cout << occupied << " " << Capacity() << " " << (sides[0].stash.tail != 0)
+                    << " " << (sides[1].stash.tail != 0) << std::endl;
+        }
         if (ttl < 0 && sides[i].stash.tail == 0) {
           sides[i].stash = p;
           ++occupied;
@@ -421,7 +429,7 @@ struct MinimalPlasticFilter {
 
         detail::minimal_plastic::Path q, r;
         r = RePathUpsize(stashes[s], sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
-        auto ttl = 17;
+        auto ttl = 500;
         assert(r.tail != 0);
         if (q.tail != 0) {
           //std::cout << "Recurse insert" << std::endl;;
@@ -442,7 +450,7 @@ struct MinimalPlasticFilter {
           assert(p.tail != 0);
           detail::minimal_plastic::Path q, r;
           r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
-          auto ttl = 17;
+          auto ttl = 500;
           assert(r.tail != 0);
           if (q.tail != 0) {
             //std::cout << "Recurse insert" << std::endl;
