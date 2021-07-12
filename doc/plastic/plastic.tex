@@ -1,0 +1,328 @@
+\documentclass[letterpaper, 11pt]{article}
+
+\pdfoutput=1
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{color}
+\usepackage{graphicx}
+\PassOptionsToPackage{hyphens}{url}\usepackage[pdftitle={Plastic cuckoo filters: growing a cuckoo filter}]{hyperref}
+\usepackage{microtype}
+\usepackage[strings]{underscore}
+\usepackage{doi}
+\usepackage{nicefrac}
+
+
+\DeclareMathOperator{\adj}{adj}
+
+%\renewcommand\UrlFont{\color{blue}\rmfamily}
+
+%% \newcommand{\reals}{\mathbb{R}}
+%% \newcommand{\rats}{\mathbb{Q}}
+%% \newcommand{\nats}{\mathbb{N}}
+\newcommand{\ints}{\mathbb{Z}}
+%% \newcommand{\cplx}{\mathbb{C}}
+\newcommand{\defeq}{\;\genfrac{}{}{0pt}{2}{\text{def}}{=}\;}
+
+%\pagestyle{empty}
+
+\begin{document}
+
+\title{Plastic cuckoo filters: growing a cuckoo filter}
+\author{Jim Apple \\
+  jbapple@apache.org}
+\maketitle
+%\thispagestyle{empty}
+
+\section{Introduction}
+While there are many filter structures that support approximate membership queries on sets with a given maximum size, the question of extensible (or {\em incremental} or {\em growable}) filters is little studied.
+The classic answer is to create a sequence of filters with more capacity and lower false positive probabilities.
+This has logarithmic lookup time and uses $O(n \lg n)$ space.~\cite{psw}
+Later authors consider cuckoo filters in which, when the filter grows, the size of the fingerprint shrings, therby increasing the false positive probability.~\cite{logarithm}
+
+In \cite{psw}, the authors introduce a structure that performs lookups in $O(1)$ while still allowing the structure to grow and keep a low false positive rate (not exceeding a threashhold specified when the structure was created) all while using no more than $O(\lg \lg n + \lg (1/\varepsilon))$ words of space per element.
+This paper presents a practical instantiation of this model, an outstanding challenge from those authors.
+
+As a follow-on, the structure in~\cite{psw} depends on \cite{succinct}.
+As noted in \cite{dysect}, dictionaries like \cite{succinct} do not directly address the problem of using low space when the dictionary is not near the maximum space it will need.
+For example, As a set grows from size $x$ to $2x$ in increments of one, the dictionary in \cite{succinct} will reconstruct the entire dictionary at least once.
+Furthermore, letting the reconstruction move from $y$ to $(1 + \Omega(1))y$, the smaller the constant is the larger the number of rebuilds that will occur.
+Additionally, non-power-of-two sizes pose challenges for quotienting, a technique used to reduce the space usage.~\cite{change-your-base, cleary-quotient}
+
+Section~\ref{mpcf} presents a minimal elastic filters based on~\cite{dysect}.
+This version of filter re-allocates and refills the table only once for each time the table doubles in size, but does so without increasing the cpacity and space usage of the table beyond a small percentage over the size of the data contained within.
+
+\section{Plastic cuckoo filters}
+
+Plastic cuckoo filters are approximate membership query (``AMQ'') structures that offer the following operations:
+
+\begin{itemize}
+\item {\bf Create} initializes an empty filter with the given size
+  %and false positive probability, and expected {\em growth factor}.
+  %A growth factor is the maximum number of doublings the structure must be able to undergo while maintaining the given false positive probability.
+\item {\bf Insert} adds a key to the filter.
+  This takes $O(1)$ expected time.
+\item {\bf Lookup} takes a key and returns $\top$ if the key is in the structure and $\bot$ with probability $1-\varepsilon$ is the key is not in the structure.
+  This is called a {\em membership test}.
+  It takes $O(1)$ worst-case time
+\item {\bf Upsize} doubles the capacity of the filter in $\Theta(n)$ time.
+\end{itemize}
+
+We use quotienting cuckoo tables from \cite{backyard} to store the data in a plastic cuckoo filter.
+Briefly, the quotienting table uses permutation hash functions to transform the input key into two different hash values that can be used to reconstruct the original key.
+Then the top $\lg n - O(1)$ bits are omitted from the stored values, since these are implicitly stored in the location of the bucket.
+In this way, data can be moved from one subtable to the other via key reconstruction, even without storing the key.
+
+A slot consists of two groups of bits: one of size 8, and the other of size up to 7.
+The former is called the fingerprint and the latter is called the tail.
+A bucket consists of four slots.
+A side consists of $2^k$ buckets for some $k$ as well as a permutation on $\ints_{2^{k+8}}$.
+A PCF consists of two sides and one hash function that produces a 64-bit key.
+The two sides have the same number of buckets but different permutations.
+
+To look up an input, first hash it with the PCF's hash function.
+Then, for each side:
+
+Apply a permutation to the most-significant $k+8$ bits in the key.
+Reserve the next 7 bits of the key; this will be the key's tail.
+Using the most-significant $k$ bits in the result, select a bucket.
+the remaining 8 bits in they key are the fingerprint.
+Check to see if any slot contains an identical fingerprint.
+If so, check if the slot's tail is a prefix of the key's tail.
+If so, return $\top$.
+
+\begin{verbatim}
+Slot := {fingerprint = 8, tail <= 7}
+Bucket := Slot[4]
+Side(k) := {Bucket[2^k], Permutation(k + 8)}
+PCF(k) = {Side(k)[2], HashFunction}
+
+Lookup(input, PCF(k)) {
+  for (side : Side[0], Side[1]) {
+    permed := side.Permutation(input[0, k+8])
+    tail := input[k+8, k+15]
+    pail := side.Bucket[permed[0, k]]
+    for (slot : pail) {
+      if (slot.fingerprint == permed[k, k+8]
+          and
+          slot.tail IsPrefixOf permed[k+8, k+15]) {
+        return True
+      }
+    }
+  }
+}
+\end{verbatim}
+
+To insert a key into a side, first search for it.
+If not found, permute the most significant $k+8$ bytes in the key with that side's permutation.
+Reserve the next 7 bits as the tail.
+Use the most significant $k$ bits from the permuted tail to select a bucket; the next 8 bits are the fingerprint.
+In that bucket, if there is an empty slot, put the fingerprint and tail in it.
+Otherwise, select a slot to {\em kick}: we will move the data in this slot to the other side.
+
+To kick data in a slot, first reconstruct the first $k + 8$ bits of the key:
+form a number by concatenating the $k$ bits of the bucket index and the $8$ bits of the fingerprint.
+Applying that side's permutation in reverse to the value.
+Use the same tail (this does not get permuted) and insert the data into the other side using the algorithm above.
+
+To upsize, create a new PCF and transfer the data to it.
+To transfer the data, we use the kick algorithm, but we need an alteration, since the number of buckets is now $2^{k+1}$.
+To produce a key with that many bits, first reverse permute the $k+8$ bits from the bucket index and the fingerprint.
+Now steal a bit from the tail and append it onto the end of the key.
+Since the tail was taken unaltered from the key, this gives the most-significant $k+9$ bits of the original key.
+The new tail is now decreased in size by one.
+The key and the new tail of it can now be inserted into one of the sides of the new PCF as described above.
+
+This works as long as the tail has positive length.
+If the tail has length zero, there is nothing to steal from.
+Instead, create two candidate keys from the reverse-permutes $k+8$ bits, by appending a zero and a one.
+We don't know which one of these was in the original key, so both are inserted.
+The calculations of how many slots the produces is the key calculation in the space consumption analysis in~\cite{psw}.
+
+%% check to see if the tail in that slot is a prefix of the 
+
+%% To look up a key
+
+%% Plastic cuckoo filters are based on this filter, but additionally add a value to each key.
+%% The value is the next $\lg d$ bits of the key, where $d$ is the growth factor.
+
+
+
+%% Plastic cuckoo filters are based on a type of bloomier filter.
+%% A bloomier filter is an AMQ supporting lookups, not just membership queries.
+%% Given a domain and range $D$ and $R$ where $D \subset U$ and $M$ is a map from $D$ to $R$, a query for $x$ in a bloomier filter for $M$ returns $M(x)$ if $x \in D$ and $\bot$ with probability $1-\varepsilon$ when $x \in U \backslash D$, and otherwise returns an arbitrary value in $R$.
+
+%% Next we will form a quotienting cuckoo map.
+%% A quotienting cuckoo map has a domain of $\ints_d$ and a range of $\ints_r$.
+%% A standard cuckoo map would use $d + r$ bits per unit of capacity.
+%% A quotienting cuckoo table uses $d + r + \lg b -  \lg m $ where $m$ is the capacity of the table and $b$ is the size of the bucket.
+
+
+%% In an elastic filter, the permuted key has length $\lg \nicefrac{1}{\varepsilon} + \lg m - \lg b$ while the range consists of all sequences of bits of length less than $\lg\lg \nicefrac{U}{n} + O(1)$.
+%% When the table is nearly full, meaning that further additions would likely fail, the size is doubled.
+%% This increases the size of the unstored bits by 1, so the number of stored bits would be smaller, as well.
+%% Instead of letting that happen, a bit is ``stolen'' from the range of sequences of bits.
+
+%% This shortens the value in the range, but the range stays the same.
+%% If there are no bits to steal becuase the value is the empty string, {\em two} new values are generated to insert into the new, larger table: one with a one appended to the stored bits, one with a zero.
+%% This follows directly from \cite{psw}.
+
+\section{Minimal plastic cuckoo filter}
+\label{mpcf}
+
+The previous structure suffers from a step-function space usage:
+at each point, the structure has a size which is a power of two, sometimes allocating much more space than is needed.
+To address this, this section describes a similar structure using DySECT to reduce the space usage to only what is needed.
+
+In an MPCF, each slot has a fingerprint of size 7 or 8, a tail of size up to 7.
+A bucket consists of four slots.
+A level consists of two tables of the same size, each with $2^k$ buckets, for some $k$
+The table consists of four permutations, one hash function, and $32$ levels.
+The maximum and minimum $k$ across all levels differ by at most 1.
+
+The permutations are grouped by side, two for each.
+The permutations are on values with length $5 + k + 7$ and $5 + k + 8$, where $2^k$ is the size of the smallest table, in buckets.
+
+If there are larger and smaller levels, then every slot in the larger levels has size 7, not 8.
+This is because the implicitly-stored part of the key is one-bit longer in the larger levels.
+
+In an MPCF, upsize only increases the size of one of the levels, not the whole structure.
+As a result, the capacity of the filter tracks more closely the number of entries in the table.
+
+To lookup a value in an MPCF, apply each of the four permutations to the hashed key.
+For the permutations on $k + 13$ bits, the first five bits indicate the level, the next $k$ or $k+1$ indicate the bucket, and the remaining 7 or 8 bits are the fingerprint.
+Lookup proceeds as it does in the PCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up.
+For the permutations on $k + 12$ bits, the first five bits indicate the level.
+If the level has tables with $2^{k+1}$ buckets, the permuted key is ignored; to do otherwise would leave only $k+12 - 5 - (k+1) = 6$ bits for the fingerprint, which is not possible.
+Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+13$ case.
+
+The upsize, insert, and kick operations proceed as in the PCF case.
+There are some complications, however.
+
+Upsize only increases the size of one level.
+After 31 upsizes, the next one makes all of the levels the same size.
+At that point, two new permutations must be initialized to handle new longer key prefixes.
+
+During a kick operation, a slot may move between levels with differently-sized arrays of buckets.
+This poses no problem when the fingerprint has size 8, but when the fingerprint has size 7 and the level moved from has a bucket array of size $2^k$ and the level moved to has a bucket array of size $2^{k+1}$,  there are not enough bits in the fingerprint.
+As above, we steal bits from the tail, and, as above, if there are no bits to steal, two new key prifxes are created and inserted, as one of them must be the prefix of the original key.
+
+%% The primary complexity in combining DySECT and the unnamed structure from \cite{psw} is that different levels of the structure have different sizes, and so the portion of the hashed value that is implicitly stored in the location is different.
+%% This is why the fingerprint size can vary across slots.
+%% One restriction is that, 
+
+
+
+%% To address this, in a minimal plastic cuckoo filter, the key is permited to have a lower size.
+%% In larger levels, the key has length $L + z + \lg \nicefrac{1}{\varepsilon}$.
+%% In smaller levels, the key may also have length one less than that.
+%% Since longer keys can be stored in longer of shorter levels, the values associated with keys in the lnger levels are shorter than the values associated with long keys in the shorter levels.
+
+%% When moving keys between levels, keys may sometime move from shorter to longer keys when moving from a short level to a long level.
+%% When this occurs, a bit is stolen from the tail, as described above for plastic filters.
+%% This means that sometimes a single key turns into two, as above.
+%% During the transition from all-small levels to all-large levels, each key will have a bit moved to it from the value exactly once, since when keys move from long levels to short levels, they can keep the same length.
+
+%% In a DySECT table, there are $2^L$ {\em levels}.
+%% Each level has $2^z$ or $2^{z+1}$ buckets.
+%% When the table grows, a single level grows from $2^z$ to $2^{z+1}$ buckets.
+%% Once all the levels have $2^{z+1}$ buckets, new growth increases one level from $2^{z+1}$ to $2^{z+2}$ buckets, and so on.
+
+
+
+
+%% Each plastic filter consists of a left and a right {\em side}.
+%% Each side has $2^L$ {\em layers}.
+%% Each layer is an array of {\em buckets}.
+%% Each bucket contains $b$ {\em slots}, each of which holds a {\em fingerprint} of length $F$ or $F-1$.
+%% In addition to the fingerprint, each slot contains a {\em tail}, which is a binary string of length less than $T$.
+
+%% Both the fingerprint and the tail are encoded by using a single additional bit each.
+%% The number of trailing 0 bits in the encoding indicates the length of the tail.
+%% For instance, a tail of length $n$ is stored in the high order bits, then one 1-bit is present, then $T - n$ 0-bits.
+%% This encoding uses one additional bit each, so the total size of the slot is $F + T + 2$ bits.
+
+%% Corresponding layers in the two sides of an plastic filter have the same size.
+%% Every array of buckets has a size that is a power of two.
+%% At all points in time, there is a {\em cursor $c$} in $\mathbb{Z}_{2^L}$ and a value $m$ such that all layers at indices greater than or equal to $c$ have bucket arrays of size $m$, while all layers at indices less than $c$ have bucket arrays of size $2m$.
+%% All fingerprints in size-$2m$ layers have length $F-1$, whereas fingerprints in size-$m$ layers can also have size $F$.
+
+%% Each side contains two randomly-chosen operators; each operator is a set of permutations; each permutation operates on $\mathbb{Z}_{2^i}$ for each $i < L + F - 1 \le w$, where $w$ is the word size of the machine.
+%% %Each operation below is applied to bit lengths of $L + \lg m$ and $L + \lg m + 1$.
+%% To find a key from $\mathbb{Z}_{2^k}$ in an plastic filter, it is first broken up into four pieces, starting from the high-order bits.
+
+%% \begin{enumerate}
+%% \item The top $L + \lg m + F - 1$ or $L + \lg m + F$ bits
+%% \item The next $T$ bits (the tail)
+%% \item The remaining bits, which are discarded
+%% \end {enumerate}
+
+%% The top bits are hashed with the permutations, and then the results are broken up into three parts:
+
+%% \begin{enumerate}
+%% \item The $L$ most significant bits, indicating the layer
+%% \item Since the index of the layer has now been set, the length of its bucket array is now known.
+%%   If the bucket array has length $2m$, the next $\lg m + 1$ bits are selected as the bucket index.
+%%   Otherwise, the next $\lg m$ bits are.
+%% \item $F$ or $F - 1$ bits, representing the fingerprint.
+%%   If the bucket array has length $2m$ and the top $L + \lg m + F - 1$ bits were selected and hashed, then only $F-2$ bits are left for the fingerprint.
+%%   These are considered {\em invalid}.
+%% \end{enumerate}
+
+%% The named parts will be referred to as the {\em layer index}, the {\em bucket index}, the {\em fingerprint}, and the {\em tail}.
+%% These four parts together constitute a {\em path}; the sum of the bit lengths of the components is a path's length.
+%% By their length constraints (at most $L + \lg m + F$ bits), paths never have a layer index less than $c$ and a fingerprint of length $F$.
+%% Because permutations have inverses, the path can be used to reconstruct the top $L + \lg m + F - 1 + T$ or $L + \lg m + F + T$ bits of the key, depending on the length of the bucket index and the fingerprint.
+
+%% \subsection{Operations}
+
+%% To look up a key, two to four paths are first formed, corresponding to the two permutations times the two path lengths.
+%% It may be the case that the paths produced by hashing a short key are pointing to locations in a large level.
+%% Such paths are ignored.
+%% A slot in a bucket matches a path when the keys are identical.\footnote{This was the test in \cite{psw}. In minimal plastic cuckoo filters, the values are also matched - the one in the entry must be a prefix of the one being searched for. This lowers the false positive rate at the cost of extra comparison time.}
+
+%% Insertion follows the usual cuckoo pattern of looking for an empty slot and then kicking out a value if none is found, continuing until all keys have been successfully placed.
+%% Minimal plastic cuckoo filters additionally have a temporary stash to handle keys that cannot be placed until a level size increase is done.
+
+%% One difference is the keys, as each side uses a permutation and must reconstruct the top bits of the original key before hashing with the permutations from the opposite side of the table.
+%% There are three cases to cover:
+
+%% \begin{itemize}
+%% \item Kicking the value in a slot from a layer with index $< c$ to one with an index $\ge c$:
+%%   the fingerprints in layers $< c$ have length $F-1$, and the bucket indices have length $1 + \lg m$.
+%%   To move an item to a layer $\ge c$, move the low-order bit from the bucket index into a new high-order bit in the fingerprint.
+%%   This makes a slot with a fingerprint of length $F$, which is permitted in layers with index $\ge c$.
+%% \item Kicking the value with a fingerprint of length $F$ to a layer with index $< c$:
+%%   this is simply the reverse of the kick above, so a the high order bit from the fingerprint is moved to be a new low-order bit in the bucket index.
+%% \item Kicking the value a fingerprint of length $F-1$ from a layer with index $\ge c$ to a layer with index $< c$:
+%%   here, again, we steal a high-order bit from the fingerprint to push to the bucket index as a new low-order bit.
+%%   This leaves the fingerprint with length $F-2$, which is invalid.
+%%   To fix this, we steal a bit from the tail to be in the fingerprint.
+
+%%   Note that, unlike the cases above, the stolen bit is from the un-permuted domain.
+%%   As such, that value needs to be sent through the permutation backwards, have the tail bit appended, then re-hashed, potentially changing the layer index.
+%%   No matter what the new layer index is, the concatenated bucket index plus fingerprint has length $\lg m + 1$, which is valid.
+
+%%   If there are no remaining bits in the tail, {\em two} values are inserted; each one constructed by appending a bit to the fingerprint before rehashing.
+%%   This essentially turns a single slot into two.
+%% \end{itemize}
+
+%% When the hash table is close to full, the cuckoo lookup path will grow.
+%% Once the hash table occupancy exceeds some pre-set fill-factor $\alpha$, the two bucket arrays at location $c$ (the cursor) are doubled in size, and their old values are inserted into the table with the newly-doubled arrays.
+%% Once $c = 2^L$ and the doubling operation is complete, $c$ is reset to $0$ and the operators are swapped.
+
+TODO: variable-sized stashes in plastic filter
+
+TODO: what is the fpp of the dictionary
+
+TODO: permutation swapping
+
+TODO: combining tails
+
+TODO: hashing entropy enough when tail is long and head is short, or do all items in bucket b necessarily map to the same bucket c?
+
+\bibliographystyle{alpha}
+\bibliography{plastic}
+
+\end{document}

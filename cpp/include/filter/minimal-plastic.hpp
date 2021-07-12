@@ -110,17 +110,16 @@ void swap(Level& x, Level& y) {
 struct Side {
   Feistel hi, lo;
   Level levels[kLevels];
-  Path stash;
+  std::vector<Path> stashes;
 
   INLINE Side(int log_level_size, const uint64_t* keys)
-    : hi(&keys[0]), lo(&keys[6]) {
+    : hi(&keys[0]), lo(&keys[6]), stashes() {
     for (uint64_t i = 0; i < kLevels; ++i) {
       levels[i].~Level();
       new (&levels[i]) Level(log_level_size);
       //std::cout << "level " << std::dec << i << " " << std::hex << (size_t)(&levels[i])
       //          << " " << (size_t)levels[i].data << std::endl;
     }
-    stash.tail = 0;
   }
   INLINE ~Side() {
     /*
@@ -146,9 +145,13 @@ struct Side {
   }
 
   INLINE bool Find(Path p) const {
-    return (stash.tail != 0 && stash.long_fp == p.long_fp &&
-            stash.fingerprint == p.fingerprint && IsPrefixOf(stash.tail, p.tail)) ||
-           levels[p.level].Find(p);
+    for (auto stash : stashes) {
+      if (stash.tail != 0 && stash.long_fp == p.long_fp &&
+          stash.fingerprint == p.fingerprint && IsPrefixOf(stash.tail, p.tail)) {
+        return true;
+      }
+    }
+    return levels[p.level].Find(p);
   }
 
   friend void swap(Side&, Side&);
@@ -161,7 +164,7 @@ INLINE void swap(Side& x, Side& y) {
   for (uint64_t i = 0; i < kLevels; ++i) {
     swap(x.levels[i], y.levels[i]);
   }
-  swap(x.stash, y.stash);
+  swap(x.stashes, y.stashes);
 }
 
 }  // namespace minimal_plastic
@@ -207,6 +210,10 @@ struct MinimalPlasticFilter {
   }
   */
 
+  // ~MinimalPlasticFilter() {
+  //   std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
+  // }
+
   uint64_t Capacity() const {
     return 2 + 2 * detail::minimal_plastic::kBuckets *
                    ((1ul << log_side_size) * detail::minimal_plastic::kLevels +
@@ -225,7 +232,7 @@ struct MinimalPlasticFilter {
   uint64_t Count() const {
     uint64_t result = 0;
     for (int s = 0; s < 2; ++s) {
-      if (sides[s].stash.tail != 0) ++result;
+      result += sides[s].stashes.size();
       for (unsigned k = 0; k < detail::minimal_plastic::kLevels; ++k) {
         for (uint64_t i = 0; i < (1ull + (k < cursor)) << log_side_size; ++i) {
           for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
@@ -239,8 +246,8 @@ struct MinimalPlasticFilter {
 
   void Print() const {
     for (int s = 0; s < 2; ++s) {
-      if (sides[s].stash.tail) {
-        sides[s].stash.Print();
+      for (auto stash : sides[s].stashes) {
+        stash.Print();
         std::cout << std::endl;
       }
       for (unsigned k = 0; k < detail::minimal_plastic::kLevels; ++k) {
@@ -288,7 +295,7 @@ struct MinimalPlasticFilter {
         0x50d61c3272a24ccb, 0x40cb1e4f0da34cc3, 0xb88f09c3af35472e, 0x8de6d01bb8a849a5};
 
     return MinimalPlasticFilter(
-        3,
+        0,
         // std::max(1.0, log(1.0 * bytes / 2 / detail::minimal_plastic::kBuckets /
         //                   sizeof(detail::minimal_plastic::Slot) /
         //                   detail::minimal_plastic::kBuckets /
@@ -312,29 +319,29 @@ struct MinimalPlasticFilter {
     //auto countz = Count();
     //assert(occupied == countz);
     if (occupied > 0.8 * Capacity() || occupied + 4 >= Capacity() ||
-        (sides[0].stash.tail != 0 || sides[1].stash.tail != 0)) {
+        sides[0].stashes.size() > 2 || sides[1].stashes.size() > 2) {
       //auto countz = Count();
       //assert(occupied == countz);
       Upsize();
       if (cursor == 0) {
-        std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
+        // std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
       }
     }
     // TODO: only need one path here. Which one to pick?
     auto p =
         detail::minimal_plastic::ToPath(k, sides[0].hi, cursor, log_side_size, false);
-    Insert(0, p, 500);
+    Insert(0, p, 128);
   }
 
-  INLINE void Unstash(int ttl) {
-    for (int i : {0, 1}) {
-      auto p = sides[i].stash;
-      if (p.tail == 0) continue;
-      sides[i].stash.tail = 0;
-      --occupied;
-      Insert(i, p, ttl);
-    }
-  }
+  // INLINE void Unstash(int ttl) {
+  //   for (int i : {0, 1}) {
+  //     auto p = sides[i].stash;
+  //     if (p.tail == 0) continue;
+  //     sides[i].stash.tail = 0;
+  //     --occupied;
+  //     Insert(i, p, ttl);
+  //   }
+  // }
 
   enum class InsertResult { Ok, Stashed, Failed };
 
@@ -350,14 +357,13 @@ struct MinimalPlasticFilter {
         --ttl;
         if (ttl < -1000 && ((-ttl & (-ttl - 1)) == 0)) {
           std::cout << std::dec << (-ttl) << std::endl;
-          std::cout << occupied << " " << Capacity() << " " << (sides[0].stash.tail != 0)
-                    << " " << (sides[1].stash.tail != 0) << std::endl;
+          std::cout << occupied << " " << Capacity() << " " << sides[0].stashes.size()
+                    << " " << sides[1].stashes.size() << std::endl;
         }
-        if (ttl < 0 && sides[i].stash.tail == 0) {
-          sides[i].stash = p;
+        if (ttl < 0) {
+          sides[i].stashes.push_back(p);
           ++occupied;
           if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
-
           return InsertResult::Stashed;
         }
         detail::minimal_plastic::Path q = p;
@@ -405,6 +411,7 @@ struct MinimalPlasticFilter {
     //   if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
     //   Unstash(i);
     // }
+    // std::cout << sides[0].stashes.size() + sides[1].stashes.size() << std::endl;
     detail::minimal_plastic::Bucket* last_data[2] = {sides[0][cursor].data, sides[1][cursor].data};
     {
       detail::minimal_plastic::Bucket* next[2];
@@ -416,20 +423,26 @@ struct MinimalPlasticFilter {
     cursor = cursor + 1;
     detail::minimal_plastic::Path p;
     p.level = cursor - 1;
-    detail::minimal_plastic::Path stashes[2] = {sides[0].stash, sides[1].stash};
-    if (stashes[0].tail) --occupied;
-    if (stashes[1].tail) --occupied;
-    sides[0].stash.tail = 0;
-    sides[1].stash.tail = 0;
+
+    std::vector<detail::minimal_plastic::Path> stashes[2] = {
+        std::vector<detail::minimal_plastic::Path>(),
+        std::vector<detail::minimal_plastic::Path>()};
+    using std::swap;
+    swap(stashes[0], sides[0].stashes);
+    swap(stashes[1], sides[1].stashes);
+    occupied = occupied - stashes[0].size();
+    occupied = occupied - stashes[1].size();
+    sides[0].stashes.clear();
+    sides[1].stashes.clear();
     for (int s : {0, 1}) {
       // std::cout << (s == 0 ? "left" : "right") << std::endl;
-      if (stashes[s].tail != 0) {
+      for (auto stash : stashes[s]) {
         // std::cout << "stash" << std::endl;
         //Unstash(500);
 
         detail::minimal_plastic::Path q, r;
-        r = RePathUpsize(stashes[s], sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
-        auto ttl = 500;
+        r = RePathUpsize(stash, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
+        auto ttl = 128;
         assert(r.tail != 0);
         if (q.tail != 0) {
           //std::cout << "Recurse insert" << std::endl;;
@@ -450,7 +463,7 @@ struct MinimalPlasticFilter {
           assert(p.tail != 0);
           detail::minimal_plastic::Path q, r;
           r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
-          auto ttl = 500;
+          auto ttl = 128;
           assert(r.tail != 0);
           if (q.tail != 0) {
             //std::cout << "Recurse insert" << std::endl;

@@ -234,6 +234,10 @@ struct ElasticFilter {
     return *this;
   }
 
+  ~ElasticFilter() {
+    //std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
+  }
+
   uint64_t SizeInBytes() const {
     return 2 /* sides */ *
            (sizeof(detail::Path) /* stash */ +
@@ -298,11 +302,13 @@ struct ElasticFilter {
     return false;
   }
 
+  INLINE uint64_t Capacity() const { return  2 * detail::kBuckets * (1ul << log_side_size); }
 
   INLINE void InsertHash(uint64_t k) {
     // 95% is achievable, generally,but give it some room
     if (occupied > 0.94 * (1ul << log_side_size) * 2 * detail::kBuckets) {
       Upsize();
+      //std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
     }
     Insert(0, detail::ToPath(k, sides[0].f, log_side_size));
   }

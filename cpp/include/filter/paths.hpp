@@ -45,6 +45,8 @@ thread_local const constexpr int kHeadSize = 7;
 thread_local const constexpr int kTailSize = 7;
 static_assert(kHeadSize + kTailSize == 14, "kHeadSize + kTailSize == 14");
 
+// TODO: overlapping buckets to increase occupancy
+
 // The number of slots in each cuckoo table bucket. The higher this is, the easier it is
 // to do an insert but the higher the fpp.
 thread_local const constexpr int kLogBuckets = 2;

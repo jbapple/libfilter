@@ -214,10 +214,10 @@ int main(int argc, char** argv) {
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
     BenchWithBytes<MinimalPlasticFilter>(reps, bytes, to_insert, to_find);
-    // BenchWithBytes<ElasticFilter>(reps, bytes, to_insert, to_find);
-    // BenchGrowWithNdvFpp<BlockElasticFilter>(reps, to_insert, to_find, ndv, fpp);
-    // BenchWithNdvFpp<BlockFilter>(reps, to_insert, to_find, ndv, fpp);
-    // BenchWithBytes<BlockFilter>(reps, bytes, to_insert, to_find);
+    BenchWithBytes<ElasticFilter>(reps, bytes, to_insert, to_find);
+    BenchGrowWithNdvFpp<BlockElasticFilter>(reps, to_insert, to_find, ndv, fpp);
+    BenchWithNdvFpp<BlockFilter>(reps, to_insert, to_find, ndv, fpp);
+    BenchWithBytes<BlockFilter>(reps, bytes, to_insert, to_find);
 
   }
   //using TupleType = tuple<BlockFilter, ElasticFilter, BlockElasticFilter>;
