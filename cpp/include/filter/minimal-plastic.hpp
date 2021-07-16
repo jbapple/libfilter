@@ -318,13 +318,19 @@ struct MinimalPlasticFilter {
   INLINE void InsertHash(uint64_t k) {
     //auto countz = Count();
     //assert(occupied == countz);
-    if (occupied > 0.8 * Capacity() || occupied + 4 >= Capacity() ||
-        sides[0].stashes.size() > 2 || sides[1].stashes.size() > 2) {
-      //auto countz = Count();
-      //assert(occupied == countz);
+
+    while (occupied > 0.90 * Capacity() || occupied + 4 >= Capacity() ||
+        sides[0].stashes.size() + sides[1].stashes.size() > 32) {
+      // if (sides[0].stashes.size() + sides[1].stashes.size() > 0) {
+
+      // if (occupied > 0.80 * Capacity() || occupied + 4 >= Capacity()) {
+
+      // auto countz = Count();
+      // assert(occupied == countz);
       Upsize();
       if (cursor == 0) {
-        // std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
+        // std::cout << occupied << " " << Capacity() << " " << SizeInBytes() <<
+        // std::endl;
       }
     }
     // TODO: only need one path here. Which one to pick?

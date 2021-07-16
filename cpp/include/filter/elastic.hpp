@@ -173,13 +173,15 @@ struct Side {
 
   INLINE bool Find(Path p) const {
     assert(p.tail != 0);
-    if (stash.tail != 0 && p.bucket == stash.bucket && p.fingerprint == stash.fingerprint) {
+    if (stash.tail != 0 && p.bucket == stash.bucket && p.fingerprint == stash.fingerprint && IsPrefixOf(stash.tail, p.tail)) {
+      //std::cout << "match\n";
       return true;
     }
     Bucket& b = data[p.bucket];
     for (int i = 0; i < kBuckets; ++i) {
       if (b[i].tail == 0) continue;
       if (b[i].fingerprint == p.fingerprint && IsPrefixOf(b[i].tail, p.tail)) {
+        //std::cout << "match\n";
         return true;
       }
     }
@@ -428,6 +430,7 @@ struct ElasticFilter {
 
   // Double the size of the filter
   void Upsize() {
+    //std::cout << Capacity() << std::endl;
     ElasticFilter t(1 + log_side_size, entropy);
     for (int s : {0, 1}) {
       detail::Path stash = sides[s].stash;
