@@ -5,6 +5,7 @@
 \usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{color}
 \usepackage{graphicx}
 \PassOptionsToPackage{hyphens}{url}\usepackage[pdftitle={Plastic cuckoo filters: growing a cuckoo filter}]{hyperref}
@@ -14,6 +15,8 @@
 \usepackage{nicefrac}
 \usepackage{listings}
 %\usepackage{todonotes}
+
+\newtheorem{theorem}{Theorem}
 
 \lstset{
 %    frame=tb, % draw a frame at the top and bottom of the code block
@@ -43,13 +46,13 @@
 % https://tex.stackexchange.com/questions/171803/change-font-size-of-the-verbatim-environment
 % \newcommand{\verbatimfont}[1]{\renewcommand{\verbatim@font}{\ttfamily#1}}
 
-\usepackage{etoolbox}
-\makeatletter
-\patchcmd{\@verbatim}
-  {\verbatim@font}
-  {\verbatim@font\small}
-  {}{}
-\makeatother
+%% \usepackage{etoolbox}
+%% \makeatletter
+%% \patchcmd{\@verbatim}
+%%   {\verbatim@font}
+%%   {\verbatim@font\small}
+%%   {}{}
+%% \makeatother
 
 
 \begin{document}
@@ -67,7 +70,7 @@ Even when this keeps the false positive rate low, lookup times balloon from cons
 Later authors consider cuckoo filters in which, when the filter grows, the size of the fingerprint shrinks, thereby increasing the false positive probability.~\cite{logarithm,morton-journal,vacuum,rsqf}
 
 In \cite{psw}, the authors introduce a structure that performs lookups in $O(1)$ while still allowing the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created) all while using no more than $O(\lg \lg n + \lg (1/\varepsilon))$ words of space per element.
-This paper presents a practical instantiation of this model, an outstanding challenge from those authors.
+Section~\ref{pcf} presents `plastic cuckoo filters, a practical instantiation of this model, an outstanding challenge from \cite{psw}.
 
 Additionally, the structure in~\cite{psw} depends on \cite{succinct}.
 As noted in \cite{dysect}, dictionaries like \cite{succinct} do not directly address the problem of using low space when the dictionary is not near the maximum space it will need.
@@ -79,7 +82,7 @@ Section~\ref{mpcf} presents a minimal plastic filters based on~\cite{dysect}.
 This version of filter re-allocates and refills the table only once for each time the table doubles in size, but does so without increasing the capacity and space usage of the table beyond a small percentage over the size of the data contained within.
 
 \section{Plastic cuckoo filters}
-
+\label{pcf}
 Plastic cuckoo filters (``PCFs'') are approximate membership query structures that offer the following operations:
 
 \begin{itemize}
@@ -108,7 +111,7 @@ A PCF consists of two sides and one hash function that produces a 64-bit key.
 The two sides have the same number of buckets but different permutations.
 
 A lookup begins by hashing a key with the PCF's hash function.
-Then, for each side Lookup:
+Then the lookup operation does the following:
 
 \begin{enumerate}
 \item Applies a permutation to the most-significant $k+8$ bits in the key.
@@ -156,8 +159,8 @@ Lookup(input: U, pcf: PCF(U, k)) {
 }
 \end{figure}
 
-The insert operation, first search for the key, and, if found, returns.
-Insert proceeds as in lookup, placing the key's fingerprint and tail in an empty slot, if one is.
+The insert operation first searches for the key, and, if found, returns.
+Otherwise, as in lookup operations, insert places the key's fingerprint and tail in an empty slot, if one is found.
 If none is found, insert selects a slot from the bucket to {\em kick}: the data in this slot will be moved to the other side.
 
 The kick operation first reconstructs the high order $k + 8$ bits of the key by concatenating the $k$ bits of the bucket index and the $8$ bits of the fingerprint, then applying that side's permutation in reverse to the value.
@@ -175,7 +178,7 @@ InsertPCF(input: U, pcf: PCF(U, k)) {
 InsertBucket(fingerprint, tail, bucket) {
   new_slot := {fingerprint := fingerprint, tail: tail}
   for(slot : bucket) {
-    if (slot == $\bot$) {
+    if (slot == `$\bot$`) {
       slot := new_slot
       return
     }
@@ -183,7 +186,6 @@ InsertBucket(fingerprint, tail, bucket) {
   swap(slot, RandomSlotIn(bucket))
   return slot
 }
-
 
 InsertSide(hashed: `$\ints_2^{k+8}$`, tail: `$\cup_{i \le 7} \ints_2^i$`,
            side: Side(k), otherSide: Side(k)) {
@@ -214,8 +216,8 @@ The key and the new tail of it can now be inserted into one of the sides of the 
 
 This works as long as the tail has positive length.
 If the tail has length zero, there is nothing to steal from.
-Instead, two candidate keys are created from the reverse-permuted $k+8$ bits, by appending a zero and a one.
-We don't know which one of these was in the original key, so both are inserted.
+Instead, two candidate keys are created from the reverse-permuted $k+8$ bits by appending a zero and a one.
+It's indeterminate which one of these was in the original key, so both are inserted.
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
@@ -253,7 +255,157 @@ Upsize(pcf: PCF(U, k)) {
 \caption{Pseudocode for the upsize operation on PCFs}
 \end{figure}
 
+\subsection{Space and false positive analysis}
+
+In \cite{psw}, the dictionary is broken up into subsequences of size $2^i$.
+Each subsequence $S_i$ contains the inserted keys with insertion order number in $[2^i, 2^{i+1})$.
+Only when transitioning subsequences is the steal operation performed.
+However, in PCFs, transitions happen when the dictionary is near full.
+This does not necessarily correspond to the sequences.
+Firstly, the $i$th dictionary cannot hold $2^i$ keys, just $\alpha 2^i$, where $\alpha$ si the ``fill factor''.
+Second, the dictionary is sized according to the number of entries, while the structure in \cite{psw} is sized according to the number of insertions.
+These differ, as the number of entries for a sequence grows as the sequence lengthens as a result of the steals against an empty tail.
+
+The false positive probability depends on the number of elements with different tail lengths.
+Specifically, in a dictionary with $n$ elements where $p(i)$ is the number of elements with tail of length $i$, the false positive probability is less than
+
+\[
+8 n^{-1} \sum_{i \le 7} 2^{-i-8}p(i)
+\]
+
+\[
+2^{-5} n^{-1} \sum_{i \le 7} 2^{-i}p(i)
+\]
+
+In any insertion sequence $I$, let $\alpha_I$ be the smallest number such that a dictionary with $\alpha_I x$ entries and capacity for $x$ entries is upsized.
+
+
+
+\begin{theorem}
+  $p(i)$
+\end{theorem}~\begin{proof}
+Assuming the dictionary starts with both sides having Bucket arrays of size 1, and thus having an element capacity of 8, the first $8 \alpha$ elements are inserted before any upsizing and therefore have tails of the full length, 7.
+In this first phase, a candidate gets compared to at most $8 \alpha$ elements and has a $2^{-15}$ chance of collision with each, for a false positive probability (``fpp'') of less than $2^{-12}$.
+Once the table has resized to having capacity 16, at most 8 of the slots are filles with tails of length 6.
+The addition of at most 8 more items of length 7 makes
+
+\[
+p(i) =
+\begin{cases}
+8 & i = 6\\
+8 & i = 7\\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+and thus the fpp is less than $8 \cdot 16^{-1} (2^{-14}\cdot 8 + 2^{-15}\cdot 8) = 2^{-12} + 2^{-13}$.
+Repeating, we get
+
+\[
+p(i) =
+\begin{cases}
+8 & i = 5\\
+8 & i = 6\\
+16 & i = 7\\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+and thus the fpp is less than $8 \cdot 32^{-1} (2^{-13}\cdot 8 + 2^{-14}\cdot 8 + 2^{-15}\cdot 16) = 2^{-12} + 2^{-13} + 2^{-13}$.
+
+\[
+p(i) =
+\begin{cases}
+8 & i = 4\\
+8 & i = 5\\
+16 & i = 6\\
+32 & i = 7\\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+and thus the fpp is $8 \cdot 64^{-1} (2^{-12}\cdot 8 + 2^{-13}\cdot 8 + 2^{-14}\cdot 16 + 2^{-15}\cdot 32) = 2^{-12} + 2^{-13} + 2^{-13} + 2^{-13}$.
+
+This pattern repeats until and including
+
+\[
+p(i) =
+\begin{cases}
+8 & i = 0\\
+2^{2+i} & \text{otherwise}
+\end{cases}
+\]
+
+when $n = 2^{10}$ after inserting $2^10$.
+
+so the fpp is less than $2^{-12} + 6 \cdot 2^{-13}$
+
+After that, the next $p(i)$ is
+
+\[
+p(i) =
+\begin{cases}
+3 \cdot 2^3 & i = 0\\
+2^{10} - 8 & i = 7 \\
+2^{3+i} & \text{otherwise}
+\end{cases}
+\]
+
+with $n = 2^{11} - 2^4 + 3 \cdot ^3$ after inserting $2^11$
+
+and then
+
+\[
+p(i) =
+\begin{cases}
+4 \cdot 2^4 & i = 0\\
+2^{4+i} & \text{otherwise}
+\end{cases}
+\]
+
+with $n = 2^{12} - 2^5 + 4 \cdot 2^4$
+
+
+following the pattern
+
+\[
+p(i) =
+\begin{cases}
+j \cdot 2^j & i = 0\\
+2^{j+i} & \text{otherwise}
+\end{cases}
+\]
+
+when $n = j \cdot 2^j - 2^{j+1} + 2^{8+j}$ after inserting
+
+In this case, the false positive probability is 
+
+\[
+2^{-5} \cdot (j \cdot 2^j - 2^{j+1} + 2^{8+j})^{-1}(j \cdot 2^j + 2^{-1}2^{j+1} + 2^{-2}2^{j+2} \dots)
+\]
+
+\[
+2^{-5} \cdot (j \cdot 2^j - 2^{j+1} + 2^{8+j})^{-1}(j \cdot 2^j + 7\cdot2^j)
+\]
+
+\[
+2^{-5} \cdot (2^j(j - 2 + 2^8))^{-1}2^j(j + 7)
+\]
+
+\[
+2^{-5} (j - 2 + 2^8)^{-1}(j + 7)
+\]
+
+\[
+\frac{j+7}{2^5 (j - 2 + 2^8)}
+\]
+
+\end{proof}
+
+That is only approximated in PCFs, as the 
+
 The calculations of how many slots the accumulation of these doublings produces is the key calculation in the space consumption analysis in~\cite{psw}.
+That is crucial as well for the false positive rate
 For the concrete setting here, if the dictionary starts with $k = 0$ (each side having size 1 bucket), then after $m$ upsizes, if $m < 7$, $2^{m+2}(1 - \delta)$ keys have been inserted and the same number are in the dictionary.
 Half of the tails have length seven, a quarter have length six, and so on.
 The false positive probability is $2^{m+2}(1 - \delta) \cdot 2^{-m-8}(m \cdot 2^{-8}) = m(1-\delta)2^{-14}$, which is between $6.1E-5$ and $4.2E-4$.

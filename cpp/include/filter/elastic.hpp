@@ -36,8 +36,8 @@ namespace detail {
 // Note that kHeadSize must be large enough for quotient cuckoo hashing to work sensibly:
 // it needs some randomness in the fingerprint to ensure each item hashes to sufficiently
 // different buckets kHead is just the rest of the uint16_t, and is log2(1/epsilon)
-thread_local const constexpr int kHeadSize = 8;
-thread_local const constexpr int kTailSize = 7;
+thread_local const constexpr int kHeadSize = 10;
+thread_local const constexpr int kTailSize = 5;
 static_assert(kHeadSize + kTailSize == 15, "kHeadSize + kTailSize == 15");
 
 // The number of slots in each cuckoo table bucket. The higher this is, the easier it is
@@ -123,13 +123,11 @@ static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
 struct Side {
   Feistel f;
   Bucket* data;
-  Path stash;
+  std::vector<Path> stash;
 
   INLINE Side(int log_side_size, const uint64_t* keys)
-      : f(&keys[0]), data(new Bucket[1ul << log_side_size]()) {
-    static_cast<Slot&>(stash) = {0, 0};
-    stash.tail = 0;
-  }
+      : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
+
   INLINE ~Side() { delete[] data; }
 
   INLINE Bucket& operator[](unsigned i) { return data[i]; }
@@ -173,9 +171,12 @@ struct Side {
 
   INLINE bool Find(Path p) const {
     assert(p.tail != 0);
-    if (stash.tail != 0 && p.bucket == stash.bucket && p.fingerprint == stash.fingerprint && IsPrefixOf(stash.tail, p.tail)) {
-      //std::cout << "match\n";
-      return true;
+    for (auto& path : stash) {
+      if (path.tail != 0 && p.bucket == path.bucket &&
+          p.fingerprint == path.fingerprint && IsPrefixOf(path.tail, p.tail)) {
+        // std::cout << "match\n";
+        return true;
+      }
     }
     Bucket& b = data[p.bucket];
     for (int i = 0; i < kBuckets; ++i) {
@@ -241,9 +242,8 @@ struct ElasticFilter {
   }
 
   uint64_t SizeInBytes() const {
-    return 2 /* sides */ *
-           (sizeof(detail::Path) /* stash */ +
-            sizeof(detail::Slot) * (1 << log_side_size) * detail::kBuckets);
+    return sizeof(detail::Path) * (sides[0].stash.size() + sides[1].stash.size()) +
+           2 * sizeof(detail::Slot) * (1 << log_side_size) * detail::kBuckets;
   }
 
  protected:
@@ -251,7 +251,7 @@ struct ElasticFilter {
   uint64_t Count() const {
     uint64_t result = 0;
     for (int s = 0; s < 2; ++s) {
-      if (sides[s].stash.tail != 0) ++result;
+      result += sides[s].stash.size();
       for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
           if (sides[s][i][j].tail != 0) ++result;
@@ -264,8 +264,10 @@ struct ElasticFilter {
  public:
   void Print() const {
     for (int s = 0; s < 2; ++s) {
-      sides[s].stash.Print();
-      std::cout << std::endl;
+      for (auto& p : sides[s].stash) {
+        p.Print();
+        std::cout << std::endl;
+      }
       for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
           sides[s][i][j].Print();
@@ -322,7 +324,7 @@ struct ElasticFilter {
   // After ttl, stash the input and return Stashed. Pre-condition: at least one stash is
   // empty. Also, p is a left path, not a right one.
   INLINE InsertResult Insert(int s, detail::Path p, int ttl) {
-    if (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) return InsertResult::Failed;
+    //if (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) return InsertResult::Failed;
     detail::Side* both[2] = {&sides[s], &sides[1 - s]};
     while (true) {
 #if defined(__clang)
@@ -344,11 +346,11 @@ struct ElasticFilter {
           return InsertResult::Ok;
         }
         auto tail = p.tail;
-        if (ttl <= 0 && both[i]->stash.tail == 0) {
+        if (ttl <= 0) {
           // we've run out of room. If there's room in this stash, stash it here. If there
           // is not room in this stash, there must be room in the other, based on the
           // pre-condition for this method.
-          both[i]->stash = p;
+          both[i]->stash.push_back(p);
           ++occupied;
           return InsertResult::Stashed;
         }
@@ -368,30 +370,34 @@ struct ElasticFilter {
   INLINE InsertResult Insert(int s, detail::Path q) {
     int ttl = 32;
     //If one stash is empty, we're fine. Only go here if both stashes are full
-    while (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) {
-      ttl = 2 * ttl;
-#if defined(__clang)
-#pragma unroll
-#else
-#pragma GCC unroll 2
-#endif
-      for (int i = 0; i < 2; ++i) {
-        int t = s^i;
-        // remove stash value
-        detail::Path p = sides[t].stash;
-        sides[t].stash.tail = 0;
-        --occupied;
-        // Insert it. We know this will succeed, as one stash is now empty, but we hope it
-        // succeeds with Ok, not Stashed.
-        InsertResult result = Insert(t, p, ttl);
-        assert(result != InsertResult::Failed);
-        // At least one stash is now free. Can now do the REAL insert (after the loop)
-        if (result == InsertResult::Ok) break;
-      }
-    }
+    // while (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) {
+    //   ttl = 2 * ttl;
+// #if defined(__clang)
+// #pragma unroll
+// #else
+// #pragma GCC unroll 2
+// #endif
+//       for (int i = 0; i < 2; ++i) {
+//         int t = s^i;
+//         // remove stash value
+//         for (auto p : sides[t].stash) {
+//         sides[t].stash.tail = 0;
+//         --occupied;
+//         // Insert it. We know this will succeed, as one stash is now empty, but we hope it
+//         // succeeds with Ok, not Stashed.
+//         InsertResult result = Insert(t, p, ttl);
+//         assert(result != InsertResult::Failed);
+//         // At least one stash is now free. Can now do the REAL insert (after the loop)
+//         if (result == InsertResult::Ok) break;
+//       }
+    // }
     // Can totally punt here. IOW, the stashes are ALWAYS full, since we don't even try
     // very hard not to fill them!
-    return Insert(s, q, 1);
+    while (occupied > 0.9 * Capacity() || occupied + 4 > Capacity() ||
+           sides[0].stash.size() + sides[1].stash.size() > 32) {
+      Upsize();
+    }
+    return Insert(s, q, ttl);
   }
 
   friend void swap(ElasticFilter&, ElasticFilter&);
@@ -432,9 +438,23 @@ struct ElasticFilter {
   void Upsize() {
     //std::cout << Capacity() << std::endl;
     ElasticFilter t(1 + log_side_size, entropy);
+
+    std::vector<detail::Path> stashes[2] = {std::vector<detail::Path>(),
+                                            std::vector<detail::Path>()};
+    using std::swap;
+    swap(stashes[0], sides[0].stash);
+    swap(stashes[1], sides[1].stash);
+    occupied = occupied - stashes[0].size();
+    occupied = occupied - stashes[1].size();
+    sides[0].stash.clear();
+    sides[1].stash.clear();
     for (int s : {0, 1}) {
-      detail::Path stash = sides[s].stash;
-      UpsizeHelper(stash, stash.bucket, this, s, t);
+      // std::cout << (s == 0 ? "left" : "right") << std::endl;
+      for (auto stash : stashes[s]) {
+        // std::cout << "stash" << std::endl;
+        //Unstash(500);
+        UpsizeHelper(stash, stash.bucket, this, s, t);
+      }
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
           detail::Slot sl = sides[s][i][j];
