@@ -310,7 +310,7 @@ struct ElasticFilter {
 
   INLINE void InsertHash(uint64_t k) {
     // 95% is achievable, generally,but give it some room
-    if (occupied > 0.94 * (1ul << log_side_size) * 2 * detail::kBuckets) {
+    while (occupied > 0.90 * Capacity() || occupied + 4 >= Capacity() || sides[0].stash.size() + sides[1].stash.size() > 8) {
       Upsize();
       //std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
     }
@@ -393,10 +393,10 @@ struct ElasticFilter {
     // }
     // Can totally punt here. IOW, the stashes are ALWAYS full, since we don't even try
     // very hard not to fill them!
-    while (occupied > 0.9 * Capacity() || occupied + 4 > Capacity() ||
-           sides[0].stash.size() + sides[1].stash.size() > 32) {
-      Upsize();
-    }
+    // while (occupied > 0.9 * Capacity() || occupied + 4 > Capacity() ||
+    //        sides[0].stash.size() + sides[1].stash.size() > 32) {
+    //   Upsize();
+    // }
     return Insert(s, q, ttl);
   }
 

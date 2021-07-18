@@ -8,13 +8,14 @@
 \usepackage{amsthm}
 \usepackage{color}
 \usepackage{graphicx}
-\PassOptionsToPackage{hyphens}{url}\usepackage[pdftitle={Plastic cuckoo filters: growing a cuckoo filter}]{hyperref}
+\PassOptionsToPackage{hyphens}{url}\usepackage[pdftitle={Plastic cuckoo filters: growing a filter}]{hyperref}
 \usepackage{microtype}
 \usepackage[strings]{underscore}
 \usepackage{doi}
 \usepackage{nicefrac}
 \usepackage{listings}
 %\usepackage{todonotes}
+\usepackage{epigraph}
 
 \newtheorem{theorem}{Theorem}
 
@@ -57,11 +58,14 @@
 
 \begin{document}
 
-\title{Plastic cuckoo filters: growing a cuckoo filter}
+\title{Plastic cuckoo filters: growing a filter}
 \author{Jim Apple \\
   jbapple@apache.org}
+
 \maketitle
 %\thispagestyle{empty}
+
+%\epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}{Shakespeare}
 
 \section{Introduction}
 While there are many filter structures that support approximate membership queries on sets with a given maximum size, the question of extensible (or {\em incremental} or {\em growable}) filters is little studied.
@@ -70,15 +74,15 @@ Even when this keeps the false positive rate low, lookup times balloon from cons
 Later authors consider cuckoo filters in which, when the filter grows, the size of the fingerprint shrinks, thereby increasing the false positive probability.~\cite{logarithm,morton-journal,vacuum,rsqf}
 
 In \cite{psw}, the authors introduce a structure that performs lookups in $O(1)$ while still allowing the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created) all while using no more than $O(\lg \lg n + \lg (1/\varepsilon))$ words of space per element.
-Section~\ref{pcf} presents `plastic cuckoo filters, a practical instantiation of this model, an outstanding challenge from \cite{psw}.
+Section~\ref{pcf} presents {\em plastic cuckoo filters}, a practical instantiation of this model, an outstanding challenge from \cite{psw}.
 
-Additionally, the structure in~\cite{psw} depends on \cite{succinct}.
+The structure in~\cite{psw} depends on \cite{succinct}.
 As noted in \cite{dysect}, dictionaries like \cite{succinct} do not directly address the problem of using low space when the dictionary is not near the maximum space it will need.
 For example, as a set grows from size $x$ to $2x$ in increments of one, the dictionary in \cite{succinct} will reconstruct the entire dictionary at least once.
 Furthermore, if the reconstruction increases the capacity from $y$ to $(1 + \delta)y$, $1/\lg(1+\delta)$ rebuilds will occur.
 Finally, non-power-of-two sizes pose challenges for quotienting, a technique needed to reduce the space usage by up to one bit per element.~\cite{change-your-base, cleary-quotient}
 
-Section~\ref{mpcf} presents a minimal plastic filters based on~\cite{dysect}.
+Section~\ref{mpcf} presents minimal plastic filters based on~\cite{dysect}.
 This version of filter re-allocates and refills the table only once for each time the table doubles in size, but does so without increasing the capacity and space usage of the table beyond a small percentage over the size of the data contained within.
 
 \section{Plastic cuckoo filters}
@@ -92,7 +96,7 @@ Plastic cuckoo filters (``PCFs'') are approximate membership query structures th
 \item {\bf Insert} adds a key to the filter.
   This takes $O(1)$ expected time.
   It can fail when the filter is nearly full.
-\item {\bf Lookup} takes a key and returns \verb|True| if the key is in the structure and \verb|False| with probability $1-\varepsilon$ is the key is not in the structure.
+\item {\bf Lookup} takes a key and returns \verb|True| if the key is in the structure and \verb|False| with probability $1-\varepsilon$ if the key is not in the structure.
   This is called a {\em membership test}.
   It takes $O(1)$ worst-case time
 \item {\bf Upsize} doubles the capacity of the filter in $\Theta(n)$ time.
@@ -160,11 +164,11 @@ Lookup(input: U, pcf: PCF(U, k)) {
 \end{figure}
 
 The insert operation first searches for the key, and, if found, returns.
-Otherwise, as in lookup operations, insert places the key's fingerprint and tail in an empty slot, if one is found.
+Otherwise, insert places the key's fingerprint and tail in an empty slot, if one is found.
 If none is found, insert selects a slot from the bucket to {\em kick}: the data in this slot will be moved to the other side.
 
 The kick operation first reconstructs the high order $k + 8$ bits of the key by concatenating the $k$ bits of the bucket index and the $8$ bits of the fingerprint, then applying that side's permutation in reverse to the value.
-Using the same tail (this does not get permuted), kick then inserts the data into the other side using the insert algorithm described above.
+Using the same tail (this does not get permuted), the kick operation then recursively inserts the data into the opposite side using the insert algorithm described above.
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
@@ -208,7 +212,7 @@ Kick(side: Side(k), otherSide: Side(k),
 
 The upsize operation begins by creating a new PCF.
 To transfer the data, it uses the kick algorithm, but needs an alteration, since the number of buckets is now $2^{k+1}$.
-To produce a key with that many bits, first reconstructs the $k+8$ bits of the key that were used to construct the bucket index and fingerprint.
+To produce a key with that many bits, upsize first reconstructs the $k+8$ bits of the key that were used to construct the bucket index and fingerprint.
 Then a bit is ``stolen'' from the tail and appended onto the end of the key.
 Since the tail was taken unaltered from the key, this gives $k+9$ bits of the original key.
 The new tail is now decreased in size by one.
@@ -221,7 +225,7 @@ It's indeterminate which one of these was in the original key, so both are inser
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
-Steal(head: `$\ints_2^{k+8}$`, tail: `$\cup_{i \le 7}\ints_2^i$`) {
+Steal(head, tail) {
   if (|tail| == 0) {
     return Concat(head, 0), Concat(head, 1), tail
   }
@@ -255,188 +259,323 @@ Upsize(pcf: PCF(U, k)) {
 \caption{Pseudocode for the upsize operation on PCFs}
 \end{figure}
 
-\subsection{Space and false positive analysis}
+%% \subsection{Space and false positive analysis}
 
-In \cite{psw}, the dictionary is broken up into subsequences of size $2^i$.
-Each subsequence $S_i$ contains the inserted keys with insertion order number in $[2^i, 2^{i+1})$.
-Only when transitioning subsequences is the steal operation performed.
-However, in PCFs, transitions happen when the dictionary is near full.
-This does not necessarily correspond to the sequences.
-Firstly, the $i$th dictionary cannot hold $2^i$ keys, just $\alpha 2^i$, where $\alpha$ si the ``fill factor''.
-Second, the dictionary is sized according to the number of entries, while the structure in \cite{psw} is sized according to the number of insertions.
-These differ, as the number of entries for a sequence grows as the sequence lengthens as a result of the steals against an empty tail.
+%% In \cite{psw}, the dictionary is broken up into subsequences of size $2^i$.
+%% Each subsequence $S_i$ contains the inserted keys with insertion order number in $[2^i, 2^{i+1})$.
+%% Only when transitioning subsequences is the steal operation performed.
+%% However, in PCFs, transitions happen when the dictionary is near full.
+%% This does not necessarily correspond to the sequences.
+%% Firstly, the $i$th dictionary cannot hold $2^i$ keys, just $\alpha 2^i$, where $\alpha$ si the ``fill factor''.
+%% Second, the dictionary is sized according to the number of entries, while the structure in \cite{psw} is sized according to the number of insertions.
+%% These differ, as the number of entries for a sequence grows as the sequence lengthens as a result of the steals against an empty tail.
 
-The false positive probability depends on the number of elements with different tail lengths.
-Specifically, in a dictionary with $n$ elements where $p(i)$ is the number of elements with tail of length $i$, the false positive probability is less than
+%% The false positive probability depends on the number of elements with different tail lengths.
+%% Specifically, in a dictionary with $n$ elements where $p(i)$ is the number of elements with tail of length $i$, the false positive probability is less than
 
-\[
-8 n^{-1} \sum_{i \le 7} 2^{-i-8}p(i)
-\]
+%% \[
+%% 8 n^{-1} \sum_{i \le 7} 2^{-i-8}p(i)
+%% \]
 
-\[
-2^{-5} n^{-1} \sum_{i \le 7} 2^{-i}p(i)
-\]
+%% \[
+%% 2^{-5} n^{-1} \sum_{i \le 7} 2^{-i}p(i)
+%% \]
 
-In any insertion sequence $I$, let $\alpha_I$ be the smallest number such that a dictionary with $\alpha_I x$ entries and capacity for $x$ entries is upsized.
-
-
-
-\begin{theorem}
-  $p(i)$
-\end{theorem}~\begin{proof}
-Assuming the dictionary starts with both sides having Bucket arrays of size 1, and thus having an element capacity of 8, the first $8 \alpha$ elements are inserted before any upsizing and therefore have tails of the full length, 7.
-In this first phase, a candidate gets compared to at most $8 \alpha$ elements and has a $2^{-15}$ chance of collision with each, for a false positive probability (``fpp'') of less than $2^{-12}$.
-Once the table has resized to having capacity 16, at most 8 of the slots are filles with tails of length 6.
-The addition of at most 8 more items of length 7 makes
-
-\[
-p(i) =
-\begin{cases}
-8 & i = 6\\
-8 & i = 7\\
-0 & \text{otherwise}
-\end{cases}
-\]
-
-and thus the fpp is less than $8 \cdot 16^{-1} (2^{-14}\cdot 8 + 2^{-15}\cdot 8) = 2^{-12} + 2^{-13}$.
-Repeating, we get
-
-\[
-p(i) =
-\begin{cases}
-8 & i = 5\\
-8 & i = 6\\
-16 & i = 7\\
-0 & \text{otherwise}
-\end{cases}
-\]
-
-and thus the fpp is less than $8 \cdot 32^{-1} (2^{-13}\cdot 8 + 2^{-14}\cdot 8 + 2^{-15}\cdot 16) = 2^{-12} + 2^{-13} + 2^{-13}$.
-
-\[
-p(i) =
-\begin{cases}
-8 & i = 4\\
-8 & i = 5\\
-16 & i = 6\\
-32 & i = 7\\
-0 & \text{otherwise}
-\end{cases}
-\]
-
-and thus the fpp is $8 \cdot 64^{-1} (2^{-12}\cdot 8 + 2^{-13}\cdot 8 + 2^{-14}\cdot 16 + 2^{-15}\cdot 32) = 2^{-12} + 2^{-13} + 2^{-13} + 2^{-13}$.
-
-This pattern repeats until and including
-
-\[
-p(i) =
-\begin{cases}
-8 & i = 0\\
-2^{2+i} & \text{otherwise}
-\end{cases}
-\]
-
-when $n = 2^{10}$ after inserting $2^10$.
-
-so the fpp is less than $2^{-12} + 6 \cdot 2^{-13}$
-
-After that, the next $p(i)$ is
-
-\[
-p(i) =
-\begin{cases}
-3 \cdot 2^3 & i = 0\\
-2^{10} - 8 & i = 7 \\
-2^{3+i} & \text{otherwise}
-\end{cases}
-\]
-
-with $n = 2^{11} - 2^4 + 3 \cdot ^3$ after inserting $2^11$
-
-and then
-
-\[
-p(i) =
-\begin{cases}
-4 \cdot 2^4 & i = 0\\
-2^{4+i} & \text{otherwise}
-\end{cases}
-\]
-
-with $n = 2^{12} - 2^5 + 4 \cdot 2^4$
-
-
-following the pattern
-
-\[
-p(i) =
-\begin{cases}
-j \cdot 2^j & i = 0\\
-2^{j+i} & \text{otherwise}
-\end{cases}
-\]
-
-when $n = j \cdot 2^j - 2^{j+1} + 2^{8+j}$ after inserting
-
-In this case, the false positive probability is 
-
-\[
-2^{-5} \cdot (j \cdot 2^j - 2^{j+1} + 2^{8+j})^{-1}(j \cdot 2^j + 2^{-1}2^{j+1} + 2^{-2}2^{j+2} \dots)
-\]
-
-\[
-2^{-5} \cdot (j \cdot 2^j - 2^{j+1} + 2^{8+j})^{-1}(j \cdot 2^j + 7\cdot2^j)
-\]
-
-\[
-2^{-5} \cdot (2^j(j - 2 + 2^8))^{-1}2^j(j + 7)
-\]
-
-\[
-2^{-5} (j - 2 + 2^8)^{-1}(j + 7)
-\]
-
-\[
-\frac{j+7}{2^5 (j - 2 + 2^8)}
-\]
-
-\end{proof}
-
-That is only approximated in PCFs, as the 
-
-The calculations of how many slots the accumulation of these doublings produces is the key calculation in the space consumption analysis in~\cite{psw}.
-That is crucial as well for the false positive rate
-For the concrete setting here, if the dictionary starts with $k = 0$ (each side having size 1 bucket), then after $m$ upsizes, if $m < 7$, $2^{m+2}(1 - \delta)$ keys have been inserted and the same number are in the dictionary.
-Half of the tails have length seven, a quarter have length six, and so on.
-The false positive probability is $2^{m+2}(1 - \delta) \cdot 2^{-m-8}(m \cdot 2^{-8}) = m(1-\delta)2^{-14}$, which is between $6.1E-5$ and $4.2E-4$.
-TODO: experimentally different. Make graph.
-%% check to see if the tail in that slot is a prefix of the 
-
-%% To look up a key
-
-%% Plastic cuckoo filters are based on this filter, but additionally add a value to each key.
-%% The value is the next $\lg d$ bits of the key, where $d$ is the growth factor.
+%% In any insertion sequence $I$, let $\alpha_I$ be the smallest number such that a dictionary with $\alpha_I x$ entries and capacity for $x$ entries is upsized.
 
 
 
-%% Plastic cuckoo filters are based on a type of bloomier filter.
-%% A bloomier filter is an AMQ supporting lookups, not just membership queries.
-%% Given a domain and range $D$ and $R$ where $D \subset U$ and $M$ is a map from $D$ to $R$, a query for $x$ in a bloomier filter for $M$ returns $M(x)$ if $x \in D$ and $\bot$ with probability $1-\varepsilon$ when $x \in U \backslash D$, and otherwise returns an arbitrary value in $R$.
+%% \begin{theorem}
+%%   $p(i)$
+%% \end{theorem}~\begin{proof}
+%% Assuming the dictionary starts with both sides having Bucket arrays of size 1, and thus having an element capacity of 8, the first $8 \alpha$ elements are inserted before any upsizing and therefore have tails of the full length, 7.
+%% In this first phase, a candidate gets compared to at most $8 \alpha$ elements and has a $2^{-15}$ chance of collision with each, for a false positive probability (``fpp'') of less than $2^{-12}$.
+%% Once the table has resized to having capacity 16, at most 8 of the slots are filles with tails of length 6.
+%% The addition of at most 8 more items of length 7 makes
 
-%% Next we will form a quotienting cuckoo map.
-%% A quotienting cuckoo map has a domain of $\ints_d$ and a range of $\ints_r$.
-%% A standard cuckoo map would use $d + r$ bits per unit of capacity.
-%% A quotienting cuckoo table uses $d + r + \lg b -  \lg m $ where $m$ is the capacity of the table and $b$ is the size of the bucket.
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% 8 & i = 6\\
+%% %% 8 & i = 7\\
+%% %% 0 & \text{otherwise}
+%% %% \end{cases}
+%% %% \]
+
+%% %% and thus the fpp is less than $8 \cdot 16^{-1} (2^{-14}\cdot 8 + 2^{-15}\cdot 8) = 2^{-12} + 2^{-13}$.
+%% %% Repeating, we get
+
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% 8 & i = 5\\
+%% %% 8 & i = 6\\
+%% %% 16 & i = 7\\
+%% %% 0 & \text{otherwise}
+%% %% \end{cases}
+%% %% \]
+
+%% %% and thus the fpp is less than $8 \cdot 32^{-1} (2^{-13}\cdot 8 + 2^{-14}\cdot 8 + 2^{-15}\cdot 16) = 2^{-12} + 2^{-13} + 2^{-13}$.
+
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% 8 & i = 4\\
+%% %% 8 & i = 5\\
+%% %% 16 & i = 6\\
+%% %% 32 & i = 7\\
+%% %% 0 & \text{otherwise}
+%% %% \end{cases}
+%% %% \]
+
+%% %% and thus the fpp is $8 \cdot 64^{-1} (2^{-12}\cdot 8 + 2^{-13}\cdot 8 + 2^{-14}\cdot 16 + 2^{-15}\cdot 32) = 2^{-12} + 2^{-13} + 2^{-13} + 2^{-13}$.
+
+%% %% This pattern repeats until and including
+
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% 8 & i = 0\\
+%% %% 2^{2+i} & \text{otherwise}
+%% %% \end{cases}
+%% %% \]
+
+%% %% when $n = 2^{10}$ after inserting $2^10$.
+
+%% %% so the fpp is less than $2^{-12} + 6 \cdot 2^{-13}$
+
+%% %% After that, the next $p(i)$ is
+
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% 3 \cdot 2^3 & i = 0\\
+%% %% 2^{10} - 8 & i = 7 \\
+%% %% 2^{3+i} & \text{otherwise}
+%% %% \end{cases}
+%% %% \]
+
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% 4 \cdot 2^4 & i = 0\\
+%% %% 2^{10} - 2\cdot2^2 & i = 6 \\
+%% %% 2^{11} - 3\cdot 2^3 & i = 7 \\
+%% %% 2^{4+i} & \text{otherwise}
+%% %% \end{cases}
+%% %% \]
+
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% 9 \cdot 2^9 & i = 0\\
+%% %% 2^{10} - 2 \cdot 2^2 & i = 1 \\
+%% %% 2^{11} - 3 \cdot 2^3 & i = 2 \\
+%% %% 2^{12} - 4 \cdot 2^4 & i = 3 \\
+%% %% 2^{13} - 5 \cdot 2^5 & i = 4 \\
+%% %% 2^{14} - 6 \cdot 2^6 & i = 5 \\
+%% %% 2^{15} - 7 \cdot 2^7 & i = 6 \\
+%% %% 2^{16} - 8 \cdot 2^8 & i = 7 \\
+%% %% \end{cases}
+%% %% \]
+
+%% %% \[
+%% %% p(i) =
+%% %% \begin{cases}
+%% %% a  & i = 0\\
+%% %% b & i = 1 \\
+%% %% c & i = 2 \\
+%% %% d & i = 3 \\
+%% %% e & i = 4 \\
+%% %% f & i = 5 \\
+%% %% g & i = 6 \\
+%% %% h & i = 7
+%% %% \end{cases}
+%% %% \]
+
+%% $p$ with total size $m = 2^j$
+
+%% changes to
+
+%% \[
+%% p(i) =
+%% \begin{cases}
+%% p(1) + 2p(0) & i = 0\\
+%% p(2) & i = 1 \\
+%% p(3) & i = 2 \\
+%% p(4) & i = 3 \\
+%% p(5) & i = 4 \\
+%% p(6) & i = 5 \\
+%% p(7) & i = 6 \\
+%% 2^j - p(0) & i = 7 \\
+%% \end{cases}
+%% \]
+
+%% with total size $2^{j+1}$.
+
+%% The fpp changes from
+
+%% \[
+%% \varepsilon 8 \cdot 2^{-j} \left(\sum p(i) 2^{-i}\right)
+%% \]
+
+%% to
+
+%% \[
+%% 2^{-j + 2} \left(p(1) + 2p(0) + (2^j - p(0))2^{-7} + \sum_{i = 1}^{i < 7} p(i) 2^{-i+1}\right)
+%% \]
+
+%% if $p(0) < 3 \cdot 2^{j-2}$, then this is at most
+
+%% \[
+%% 2^{-j + 2} \left(p(1) + 2 \cdot  3 \cdot 2^{j-2} + (2^j -  3 \cdot 2^{j-2})2^{-7} + \sum_{i = 1}^{i < 7} p(i) 2^{-i+1}\right)
+%% \]
+
+%% \[
+%% 2^{-j + 2} \left(p(1) + 3 \cdot 2^{j-1} + (2^{j-2})2^{-7} + \sum_{i = 1}^{i < 7} p(i) 2^{-i+1}\right)
+%% \]
+
+%% \[
+%% 2^{-j+2} \left(p(1) + 3 \cdot 2^{j-1} + (2^{j-2})2^{-7} + \sum_{i = 1}^{i < 7} p(i) 2^{-i+1}\right)
+%% \]
+
+%% \[
+%% \varepsilon (2^{-j+2}p(1) + 3 \cdot 2^{1} + 2^{-7} + \sum_{i = 1}^{i < 7} p(i) 2^{-i-j+3}
+%% \]
+
+%% \[
+%% \varepsilon (2^{-j+2}p(1) + 12 + 2^{-7} + \sum_{i = 1}^{i < 7} p(i) 2^{-i-j+3}
+%% \]
+
+%% Everything except 12 is vanishing, so 
+
+%% \[
+%% \begin{cases}
+%% 2^{10} - 2 \cdot 2^2 & i = 1 \\
+%% 2^{11} - 3 \cdot 2^3 & i = 2 \\
+%% 2^{12} - 4 \cdot 2^4 & i = 3 \\
+%% 2^{13} - 5 \cdot 2^5 & i = 4 \\
+%% 2^{14} - 6 \cdot 2^6 & i = 5 \\
+%% 2^{15} - 7 \cdot 2^7 & i = 6 \\
+%% 2^{16} - 8 \cdot 2^8 & i = 7 \\
+%% \end{cases}
+%% \]
 
 
-%% In an elastic filter, the permuted key has length $\lg \nicefrac{1}{\varepsilon} + \lg m - \lg b$ while the range consists of all sequences of bits of length less than $\lg\lg \nicefrac{U}{n} + O(1)$.
-%% When the table is nearly full, meaning that further additions would likely fail, the size is doubled.
-%% This increases the size of the unstored bits by 1, so the number of stored bits would be smaller, as well.
-%% Instead of letting that happen, a bit is ``stolen'' from the range of sequences of bits.
+%% \[
+%% p(i) =
+%% \begin{cases}
+%%  -2 \cdot 2^2 + 10 \cdot 2^{10} & i = 0\\
+%% 2^{11} - 3 \cdot 2^3 & i = 1 \\
+%% 2^{12} - 4 \cdot 2^4 & i = 2 \\
+%% 2^{13} - 5 \cdot 2^5 & i = 3 \\
+%% 2^{14} - 6 \cdot 2^6 & i = 4 \\
+%% 2^{15} - 7 \cdot 2^7 & i = 5 \\
+%% 2^{16} - 8 \cdot 2^8 & i = 6 \\
+%% 2^{17} - 9 \cdot 2^9 & i = 7 \\
+%% \end{cases}
+%% \]
 
-%% This shortens the value in the range, but the range stays the same.
-%% If there are no bits to steal becuase the value is the empty string, {\em two} new values are generated to insert into the new, larger table: one with a one appended to the stored bits, one with a zero.
-%% This follows directly from \cite{psw}.
+%% \[
+%% p(i) =
+%% \begin{cases}
+%% - 5 \cdot 2^3 + 11 \cdot 2^{11} & i = 0\\
+%% 2^{12} - 4 \cdot 2^4 & i = 1 \\
+%% 2^{13} - 5 \cdot 2^5 & i = 2 \\
+%% 2^{14} - 6 \cdot 2^6 & i = 3 \\
+%% 2^{15} - 7 \cdot 2^7 & i = 4 \\
+%% 2^{16} - 8 \cdot 2^8 & i = 5 \\
+%% 2^{17} - 9 \cdot 2^9 & i = 6 \\
+%% 2^{17} - 9 \cdot 2^9 & i = 6 \\
+%% \end{cases}
+%% \]
+
+%% with $n = 2^{11} - 2^4 + 3 \cdot ^3$ after inserting $2^11$
+
+%% and then
+
+%% \[
+%% p(i) =
+%% \begin{cases}
+%% 4 \cdot 2^4 & i = 0\\
+%% 2^{4+i} & \text{otherwise}
+%% \end{cases}
+%% \]
+
+%% with $n = 2^{12} - 2^5 + 4 \cdot 2^4$
+
+
+%% following the pattern
+
+%% \[
+%% p(i) =
+%% \begin{cases}
+%% j \cdot 2^j & i = 0\\
+%% 2^{j+i} & \text{otherwise}
+%% \end{cases}
+%% \]
+
+%% when $n = j \cdot 2^j - 2^{j+1} + 2^{8+j}$ after inserting
+
+%% In this case, the false positive probability is 
+
+%% \[
+%% 2^{-5} \cdot (j \cdot 2^j - 2^{j+1} + 2^{8+j})^{-1}(j \cdot 2^j + 2^{-1}2^{j+1} + 2^{-2}2^{j+2} \dots)
+%% \]
+
+%% \[
+%% 2^{-5} \cdot (j \cdot 2^j - 2^{j+1} + 2^{8+j})^{-1}(j \cdot 2^j + 7\cdot2^j)
+%% \]
+
+%% \[
+%% 2^{-5} \cdot (2^j(j - 2 + 2^8))^{-1}2^j(j + 7)
+%% \]
+
+%% \[
+%% 2^{-5} (j - 2 + 2^8)^{-1}(j + 7)
+%% \]
+
+%% \[
+%% \frac{j+7}{2^5 (j - 2 + 2^8)}
+%% \]
+
+%% \end{proof}
+
+%% That is only approximated in PCFs, as the 
+
+%% The calculations of how many slots the accumulation of these doublings produces is the key calculation in the space consumption analysis in~\cite{psw}.
+%% That is crucial as well for the false positive rate
+%% For the concrete setting here, if the dictionary starts with $k = 0$ (each side having size 1 bucket), then after $m$ upsizes, if $m < 7$, $2^{m+2}(1 - \delta)$ keys have been inserted and the same number are in the dictionary.
+%% Half of the tails have length seven, a quarter have length six, and so on.
+%% The false positive probability is $2^{m+2}(1 - \delta) \cdot 2^{-m-8}(m \cdot 2^{-8}) = m(1-\delta)2^{-14}$, which is between $6.1E-5$ and $4.2E-4$.
+%% TODO: experimentally different. Make graph.
+%% %% check to see if the tail in that slot is a prefix of the 
+
+%% %% To look up a key
+
+%% %% Plastic cuckoo filters are based on this filter, but additionally add a value to each key.
+%% %% The value is the next $\lg d$ bits of the key, where $d$ is the growth factor.
+
+
+
+%% %% Plastic cuckoo filters are based on a type of bloomier filter.
+%% %% A bloomier filter is an AMQ supporting lookups, not just membership queries.
+%% %% Given a domain and range $D$ and $R$ where $D \subset U$ and $M$ is a map from $D$ to $R$, a query for $x$ in a bloomier filter for $M$ returns $M(x)$ if $x \in D$ and $\bot$ with probability $1-\varepsilon$ when $x \in U \backslash D$, and otherwise returns an arbitrary value in $R$.
+
+%% %% Next we will form a quotienting cuckoo map.
+%% %% A quotienting cuckoo map has a domain of $\ints_d$ and a range of $\ints_r$.
+%% %% A standard cuckoo map would use $d + r$ bits per unit of capacity.
+%% %% A quotienting cuckoo table uses $d + r + \lg b -  \lg m $ where $m$ is the capacity of the table and $b$ is the size of the bucket.
+
+
+%% %% In an elastic filter, the permuted key has length $\lg \nicefrac{1}{\varepsilon} + \lg m - \lg b$ while the range consists of all sequences of bits of length less than $\lg\lg \nicefrac{U}{n} + O(1)$.
+%% %% When the table is nearly full, meaning that further additions would likely fail, the size is doubled.
+%% %% This increases the size of the unstored bits by 1, so the number of stored bits would be smaller, as well.
+%% %% Instead of letting that happen, a bit is ``stolen'' from the range of sequences of bits.
+
+%% %% This shortens the value in the range, but the range stays the same.
+%% %% If there are no bits to steal becuase the value is the empty string, {\em two} new values are generated to insert into the new, larger table: one with a one appended to the stored bits, one with a zero.
+%% %% This follows directly from \cite{psw}.
 
 \section{Minimal plastic cuckoo filter}
 \label{mpcf}
@@ -459,7 +598,7 @@ The permutations are on values with length $k + 12$ and $k + 13$, where $2^k$ is
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
 MSlot := {fingerprint: `$\ints_2^7 \cup \ints_2^8$`, tail: `$\cup_{i \le 6} \ints_2^i$`}
-MBucket := MSlot$_\bot$[4]
+MBucket := MSlot`$_\bot$`[4]
 Level(k) := MBucket[2][2^k] `$\cup$` MBucket[2][2^(k+1)]
 Permutation(k) := `$S_{2^{k+12}} \times S_{2^{k+13}}$`
 MPCF(U, k) := {cursor: `$\ints_{32}$`,
@@ -469,7 +608,7 @@ MPCF(U, k) := {cursor: `$\ints_{32}$`,
 
 \end{lstlisting}
 \caption{The types of an MPCF.
-``$\times$'' should be interpreted as the Cartesian product.
+``$\times$'' means Cartesian product.
 }
 \end{figure}
 
@@ -479,21 +618,90 @@ This is because the implicitly-stored part of the key is one-bit longer in the l
 In an MPCF, upsize only increases the size of one of the levels, not the whole structure.
 As a result, the capacity of the filter tracks more closely the number of entries in the table.
 
-To lookup a value in an MPCF, apply each of the four permutations to the hashed key.
+A lookup operation in an MPCF first apply each of the four permutations to the hashed key.
 For the permutations on $k + 13$ bits, the first five bits indicate the level, the next $k$ or $k+1$ indicate the bucket, and the remaining 7 or 8 bits are the fingerprint.
 Lookup proceeds as it does in the PCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up.
 For the permutations on $k + 12$ bits, the first five bits again indicate the level.
 If the level has tables with $2^{k+1}$ buckets, the permuted key is ignored; to do otherwise would leave only $k+12 - 5 - (k+1) = 6$ bits for the fingerprint, which is not possible.
 Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+13$ case.
 
-
-Upsize only increases the size of one level.
-After 31 upsizes, the next one makes all of the levels the same size.
-At that point, two new permutations must be initialized to handle new longer key prefixes.
+%% Upsize only increases the size of one level.
+%% After 31 upsizes, the next one makes all of the levels the same size.
+%% At that point, two new permutations must be initialized to handle new longer key prefixes.
 
 During a kick operation, a slot may move between levels with differently-sized arrays of buckets.
 This poses no problem when the fingerprint has size 8, but when the fingerprint has size 7 and the level moved from has a bucket array of size $2^k$ and the level moved to has a bucket array of size $2^{k+1}$,  there are not enough bits in the fingerprint.
 As above, we steal bits from the tail, and, as above, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key.
+
+\section{Evaluation}
+
+For performance testing, we compare with the ``warmup'' filter from \cite{psw}, using block Bloom filters. \cite{block-bloom}
+We also equip both PCFs and MPCFs with variable sized stashes. \cite{stash}
+Finally, we set both filters to upsize when they are 90\% full or their stashes have size greater than 4.
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{deficiency}
+  \caption{
+    There is a lower bound on the amount of space that must be used to form an approximate membership query structure with a given false positive rate: $\lg \nicefrac{1}{\varepsilon}$ bits per element.
+    Any additional space is, in a sense, ``wasted''.
+    In another sense, this overstates the waste, as the best dynamic structures, like Bloom filters and semi-sorted cuckoo filters, do not achieve the lower bound.
+    Lower is better.
+  }
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{insert-deficiency}
+  \caption{
+    Comparing both the wasted space of each filter type with the absent lookup performance.
+    Lower left is better.
+  }
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{space}
+  \caption{
+    The amount of space used by each filter at the given size.
+    Lower is better.
+  }
+\end{figure}
+
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{insert}
+  \caption{
+    Insert times for filters.
+    Lower is better.
+  }
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{lookup-present}
+  \caption{
+    Lookup times for filters when the key is present.
+    Lower is better.
+  }
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{lookup-absent}
+  \caption{
+    Lookup times for filters.
+    The same pattern is seen for both present and absent elements; this is absent elements, which should exaggerate the penalty of logarithmic update in PBFs.
+    Lower is better.
+  }
+\end{figure}
+
+\subsection{Discussion}
+
+The MBCF offers lower space than the other two filters, but its performance is substantially worse.
+It has significant insertion time increases when it is hard to find a kick sequence; in this case the lookup operation repeatedly calls upsize until a place can be found for the element.
+This behavior is also seen in the PCF, though it is easier to understand there, as the filters start out after each upsize as at least half empty, which is not true for MPCFs.
+
+PBFs, which have an $\Omega(\lg n)$ lookup cost, come out ahead of both plastic filter in both insert and lookup costs except when over a million elements are stored.
+
+Performance for lookup is also cyclic as the size of the stashes grow and shrink, which corresponds to the fullness of the filter.
+
+TODO: compare with cuckoo filters and traditional Bloom filters
 
 %% InsertMPCF(input: U, mpcf: MPCF(U, k)) {
 %%   if (Lookup(input, mpcf)) return
@@ -607,22 +815,23 @@ As above, we steal bits from the tail, and, as above, if there are no bits to st
 %% Once the hash table occupancy exceeds some pre-set fill-factor $\alpha$, the two bucket arrays at location $c$ (the cursor) are doubled in size, and their old values are inserted into the table with the newly-doubled arrays.
 %% Once $c = 2^L$ and the doubling operation is complete, $c$ is reset to $0$ and the operators are swapped.
 
-TODO: variable-sized stashes
+TODO: explain that implementations use variable-sized stashes
 
-TODO: what is the fpp of the dictionary
+% TODO: what is the fpp of the dictionary
 
-TODO: permutation swapping
+% TODO: permutation swapping
 
-TODO: combining tails
+% TODO: combining tails
 
-TODO: hashing entropy enough when tail is long and head is short, or do all items in bucket b necessarily map to the same bucket c?
+% TODO: hashing entropy enough when tail is long and head is short, or do all items in bucket b necessarily map to the same bucket c?
 
-TODO: longer fingerprints lead to higher fill factors
+TODO: show that longer fingerprints lead to higher fill factors
 
-TODO: show phase change of when a filter can be filled with a given size
+%TODO: show phase change of when a filter can be filled with a given size
 
 TODO: Show how much time is spent in upsize
 
+TODO: show how stash limits lead to higher insert times and lower lookup times
 
 
 \bibliographystyle{alpha}

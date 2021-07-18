@@ -105,7 +105,7 @@ void swap(Level& x, Level& y) {
 
 // A cuckoo hash table is made up of sides (in some incarnations), rather than jut two
 // buckets from one array. Each side has a stash that holds any paths that couldn't fit.
-// This is useful for random-walk cuckoo hashing, in which the leftover path needs  place
+// This is useful for random-walk cuckoo hashing, in which the leftover path needs a place
 // to be stored so it doesn't invalidate old inserts.
 struct Side {
   Feistel hi, lo;
@@ -117,16 +117,7 @@ struct Side {
     for (uint64_t i = 0; i < kLevels; ++i) {
       levels[i].~Level();
       new (&levels[i]) Level(log_level_size);
-      //std::cout << "level " << std::dec << i << " " << std::hex << (size_t)(&levels[i])
-      //          << " " << (size_t)levels[i].data << std::endl;
     }
-  }
-  INLINE ~Side() {
-    /*
-    for (uint64_t i = 0; i < kLevels; ++i) {
-      levels[i].~Level();
-    }
-    */
   }
 
   INLINE Level& operator[](unsigned i) {
@@ -136,8 +127,8 @@ struct Side {
   INLINE const Level& operator[](unsigned i) const { return levels[i]; }
 
   // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
-  // succeded without anning anything new. Returns something else if that something else
-  // was displaced by the insert. That item must be inserted then
+  // succeded without adding anything new. Returns something else if that something else
+  // was displaced by the insert. That item must be inserted then.
   INLINE Path Insert(Path p, PcgRandom& rng) {
     auto result = levels[p.level].Insert(p, rng);
     assert(Find(p));
@@ -305,22 +296,38 @@ struct MinimalPlasticFilter {
    }
 
   INLINE bool FindHash(uint64_t k) const {
+    if (debug_lookup) {
+      std::cout << sides[0].stashes.size() + sides[0].stashes.size() << std::endl;
+    }
     for (int i : {0, 1}) {
       auto p = detail::minimal_plastic::ToPath(k, sides[i].lo, cursor, log_side_size, true);
-      if (p.tail != 0 && sides[i].Find(p)) return true;
+      if (debug_lookup) std::cout << std::boolalpha << (p.tail != 0) << std::endl;
+      if (p.tail != 0 && sides[i].Find(p)) {
+        debug_lookup = false;
+        return true;
+      }
       p = detail::minimal_plastic::ToPath(k, sides[i].hi, cursor, log_side_size, false);
-      if (p.tail != 0 && sides[i].Find(p)) return true;
+      if (debug_lookup) std::cout << std::boolalpha << (p.tail != 0) << std::endl;
+      if (p.tail != 0 && sides[i].Find(p)) {
+        debug_lookup = false;
+        return true;
+      }
     }
+    debug_lookup = false;
     return false;
   }
 
+uint64_t inserted_hashes = 0;
+mutable bool debug_lookup = false;
+
   // TODO: manage stash
   INLINE void InsertHash(uint64_t k) {
+    ++inserted_hashes;
     //auto countz = Count();
     //assert(occupied == countz);
 
     while (occupied > 0.90 * Capacity() || occupied + 4 >= Capacity() ||
-        sides[0].stashes.size() + sides[1].stashes.size() > 32) {
+        sides[0].stashes.size() + sides[1].stashes.size() > 8) {
       // if (sides[0].stashes.size() + sides[1].stashes.size() > 0) {
 
       // if (occupied > 0.80 * Capacity() || occupied + 4 >= Capacity()) {
@@ -328,10 +335,12 @@ struct MinimalPlasticFilter {
       // auto countz = Count();
       // assert(occupied == countz);
       Upsize();
+      //std::cout << cursor << " " << inserted_hashes << std::endl;
       if (cursor == 0) {
         // std::cout << occupied << " " << Capacity() << " " << SizeInBytes() <<
         // std::endl;
       }
+      //debug_lookup = true;
     }
     // TODO: only need one path here. Which one to pick?
     auto p =
