@@ -8,7 +8,7 @@
 \usepackage{amsthm}
 \usepackage{color}
 \usepackage{graphicx}
-\PassOptionsToPackage{hyphens}{url}\usepackage[pdftitle={Plastic cuckoo filters: growing a filter}]{hyperref}
+\PassOptionsToPackage{hyphens}{url}\usepackage[pdftitle={Stretching your data with plastic filters}]{hyperref}
 \usepackage{microtype}
 \usepackage[strings]{underscore}
 \usepackage{doi}
@@ -58,7 +58,7 @@
 
 \begin{document}
 
-\title{Plastic cuckoo filters: growing a filter}
+\title{Stretching your data with plastic filters}
 \author{Jim Apple \\
   jbapple@apache.org}
 
@@ -69,21 +69,27 @@
 
 \section{Introduction}
 While there are many filter structures that support approximate membership queries on sets with a given maximum size, the question of extensible (or {\em incremental} or {\em growable}) filters is little studied.
-The classic answer is to create a sequence of filters.
+The classic answer is to create a sequence of Bloom filters, possibly of increasing sizes and/or lower target false positive probability.
+Inserts occur on the last filter to be created and lookups must search each filter.
+
 Even when this keeps the false positive rate low, lookup times balloon from constant to logarithmic or even linear.~\cite{psw,logarithm,consistent-cuckoo} %The Dynamic Cuckoo Filter
+Additionally, the space usage can grow up to $\Omega(n \lg n)$, at which point a traditional hash table would do the same work in the same space.
 Later authors consider cuckoo filters in which, when the filter grows, the size of the fingerprint shrinks, thereby increasing the false positive probability.~\cite{logarithm,morton-journal,vacuum,rsqf}
 
-In \cite{psw}, the authors introduce a structure that performs lookups in $O(1)$ while still allowing the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created) all while using no more than $O(\lg \lg n + \lg (1/\varepsilon))$ words of space per element.
-Section~\ref{pcf} presents {\em plastic cuckoo filters}, a practical instantiation of this model, an outstanding challenge from \cite{psw}.
+In \cite{psw}, the authors introduce a structure that performs lookups in $O(1)$ time while still allowing the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created) all while using no more than $O(\lg \lg n + \lg (1/\varepsilon))$ words of space per element.
+Section~\ref{pcf} presents {\em plastic cuckoo filters} (``PCFs''), a practical instantiation of this model, an outstanding challenge from \cite{psw}.
 
 The structure in~\cite{psw} depends on \cite{succinct}.
 As noted in \cite{dysect}, dictionaries like \cite{succinct} do not directly address the problem of using low space when the dictionary is not near the maximum space it will need.
-For example, as a set grows from size $x$ to $2x$ in increments of one, the dictionary in \cite{succinct} will reconstruct the entire dictionary at least once.
-Furthermore, if the reconstruction increases the capacity from $y$ to $(1 + \delta)y$, $1/\lg(1+\delta)$ rebuilds will occur.
+For example, as a set grows from size $n$ to $2n$ in increments of one, the dictionary in \cite{succinct} will reconstruct the entire dictionary at least once.
+Furthermore, if each reconstruction increases the capacity from $m$ to $(1 + \delta)m$, $1/\lg(1+\delta)$ rebuilds will occur.
 Finally, non-power-of-two sizes pose challenges for quotienting, a technique needed to reduce the space usage by up to one bit per element.~\cite{change-your-base, cleary-quotient}
 
-Section~\ref{mpcf} presents minimal plastic filters based on~\cite{dysect}.
-This version of filter re-allocates and refills the table only once for each time the table doubles in size, but does so without increasing the capacity and space usage of the table beyond a small percentage over the size of the data contained within.
+Section~\ref{mpcf} presents {\em minimal plastic cuckoo filters} (``MPCFs'') based on~\cite{dysect}.
+MPCFs re-allocate and refills the table only once for each time the table doubles in size, but do so without increasing the capacity and space usage of the table beyond a small percentage over the size of the data contained within.
+
+Section~\ref{eval} presents {\em plastic block filters}, a variation of the ``warm-up'' structure from \cite{psw}.
+That section also describes experimental performance results on all plastic filters.
 
 \section{Plastic cuckoo filters}
 \label{pcf}
@@ -97,20 +103,20 @@ Plastic cuckoo filters (``PCFs'') are approximate membership query structures th
   This takes $O(1)$ expected time.
   It can fail when the filter is nearly full.
 \item {\bf Lookup} takes a key and returns \verb|True| if the key is in the structure and \verb|False| with probability $1-\varepsilon$ if the key is not in the structure.
-  This is called a {\em membership test}.
   It takes $O(1)$ worst-case time
 \item {\bf Upsize} doubles the capacity of the filter in $\Theta(n)$ time.
 \end{itemize}
 
 We use quotienting cuckoo tables (as in backyard cuckoo hashing~\cite{backyard}) to store the data in a plastic cuckoo filter.
 The quotienting table uses permutation hash functions to transform the input key into two different hash values such that either can be used to reconstruct a portion of the original key.
-Then the top $\lg n - O(1)$ bits are omitted from the stored values, since these are implicitly stored in the location of the bucket.
-In this way, data can be moved from one sub-table to the other via key reconstruction, even without storing the key.
 
-An element consists of two groups of bits: one of size 8, and the other of size up to 7.
+The top $\lg n - O(1)$ bits are omitted from the stored hash values, since these are implicitly stored in the location of the key within the table.
+In this way, data can be moved from one sub-table to the other via key reconstruction, even without storing the key explicitly.
+
+An element consists of two groups of bits: one of size 10, and the other of size up to 5.
 The former is called the fingerprint and the latter is called the tail.
 A bucket consists of four (possibly empty) slots, each of which can hold one element.
-A side consists of $2^k$ buckets for some $k$ as well as a permutation on $\ints_{2^{k+8}}$.
+A side consists of $2^k$ buckets for some $k$ as well as a permutation on $\ints_2^{k+10}$.\footnote{We do not distinguish between $\ints_2^z$ and $\ints_{2^z}$.}
 A PCF consists of two sides and one hash function that produces a 64-bit key.
 The two sides have the same number of buckets but different permutations.
 
@@ -118,10 +124,10 @@ A lookup begins by hashing a key with the PCF's hash function.
 Then the lookup operation does the following:
 
 \begin{enumerate}
-\item Applies a permutation to the most-significant $k+8$ bits in the key.
-\item Reserves the next 7 bits of the key; this will be the key's tail.
+\item Applies a permutation to the most-significant $k+10$ bits in the key.
+\item Reserves the next 5 bits of the key; this will be the key's tail.
 \item Using the most-significant $k$ bits in the result, selects a bucket.
-(The remaining 8 bits in the permuted value are the fingerprint.)
+(The remaining 10 bits in the permuted value are the fingerprint.)
 \item Checks to see if any slot contains an element with an identical fingerprint.
 If so, checks if the element's tail is a prefix of the key's tail.
 If yes, returns \verb|True|.
@@ -130,13 +136,26 @@ Otherwise, returns \verb|False|.
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
-Element := {fingerprint: `$\ints_2^8$`, tail: `$\cup_{i \le 7} \ints_2^i$`}
+Element := {fingerprint: `$\ints_2^10$`, tail: `$\cup_{i \le 5} \ints_2^i$`}
 Slot := Element`$_\bot$`
 Bucket := Slot[4]
-Side(k) := {Bucket[2^k], Permutation: `$S_{2^{k+8}}$`}
+Side(k) := {Bucket[2^k], Permutation: `$S_{2^{k+10}}$`}
 PCF(U, k) := {Side(k)[2], HashFunction: `$U \to \ints_2^{64}$`}
+\end{lstlisting}
+\caption{\protect
+The types of a PCF.
+  $S_i$ is the symmetric group on $\ints_i$.
+  \texttt{T}$_\bot$ means the type \texttt{T} extended with the element $\bot$, indicating ``null'' or ``empty''.
+  As above, pseudocode will not make a distinction between $\ints_2^i$ and $\ints_{2^i}$.
+  \texttt{T[n]} denotes an array of $n$ values of type $T$.
+  Structs are denoted by curly brackets \{\}, and members of structs can be referenced by their name or by their type.
+  For instance, if \texttt{s} is a \texttt{Side(k)}, then \texttt{s.Bucket} and \texttt{s.Permutation} are both meaningful expressions.
+}
+\end{figure}
 
-LookupBucket(fingerprint, tail bucket) {
+\begin{figure}
+\begin{lstlisting}[escapeinside={`}{`}]
+LookupBucket(fingerprint, tail, bucket) {
   for (element : bucket) {
     if (element.fingerprint == fingerprint
         && element.tail IsPrefixOf tail) {
@@ -149,18 +168,15 @@ LookupBucket(fingerprint, tail bucket) {
 Lookup(input: U, pcf: PCF(U, k)) {
   hashed := pcf.HashFunction(input)
   for (side : pcf.Side[0], pcf.Side[1]) {
-    permuted := side.Permutation(hashed[0, k+8))
-    tail := hashed[k+8, k+15)
+    permuted := side.Permutation(hashed[0, k+10))
+    tail := hashed[k+10, k+15)
     bucket := side.Bucket[permuted[0, k)]
-    if LookupBucket(permuted[k, k+8), tail, bucket) return True
+    if LookupBucket(permuted[k, k+10), tail, bucket) return True
   }
   return False
 }
 \end{lstlisting}
-\caption{The types of a PCF and the lookup operation.
-  $S_i$ is the symmetric group on $\ints_i$.
-  $T_\bot$ means the type $T$ extended with the element $\bot$, indicating ``null'' or ``empty''.
-  Pseudocode will not make a distinction between $\ints_2^i$ and $\ints_{2^i}$.
+\caption{The lookup operation on PCFs.
 }
 \end{figure}
 
@@ -168,35 +184,28 @@ The insert operation first searches for the key, and, if found, returns.
 Otherwise, insert places the key's fingerprint and tail in an empty slot, if one is found.
 If none is found, insert selects an occupied slot from the bucket to {\em kick}: the element in this slot will be moved to the other side.
 
-The kick operation first reconstructs the high order $k + 8$ bits of the key by concatenating the $k$ bits of the bucket index and the $8$ bits of the fingerprint, then applying that side's permutation in reverse to the value.
+The kick operation first reconstructs the high order $k + 10$ bits of the key by concatenating the $k$ bits of the bucket index and the $10$ bits of the fingerprint, then applying that side's permutation in reverse to the value.
 Using the same tail (this does not get permuted), the kick operation then recursively inserts the data into the opposite side using the insert algorithm described above.
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
-InsertPCF(input: U, pcf: PCF(U, k)) {
-  if (Lookup(input, pcf)) return
-  hashed := pcf.HashFunction(input)
-  InsertSide(hashed[0, k+8), hashed[k+8, k+15),
-             pcf.Side[0], pcf.Side[1])
-}
-
 InsertBucket(fingerprint, tail, bucket) {
   new_element := {fingerprint := fingerprint, tail: tail}
   for(slot : bucket) {
     if (slot == `$\bot$`) {
       slot := new_element
-      return
+      return `$\bot$`
     }
   }
   swap(new_element, RandomSlotIn(bucket))
   return new_element
 }
 
-InsertSide(hashed: `$\ints_2^{k+8}$`, tail: `$\cup_{i \le 7} \ints_2^i$`,
+InsertSide(hashed: `$\ints_2^{k+10}$`, tail: `$\cup_{i \le 5} \ints_2^i$`,
            side: Side(k), otherSide: Side(k)) {
   permuted := side.Permutation(hashed)
   bucket := side.Bucket[permuted[0, k)]
-  new_element = InsertBucket(permuted[k, k+8), tail, bucket)
+  new_element = InsertBucket(permuted[k, k+10), tail, bucket)
   if (new_element == `$\bot$`) return
   Kick(side, otherSide, permuted[0, k), new_element)
 }
@@ -207,22 +216,30 @@ Kick(side: Side(k), otherSide: Side(k),
   hashed := side.Permutation`$^{-1}$`(permuted)
   InsertSide(hashed, element.tail, otherSide, side)
 }
+
+InsertPCF(input: U, pcf: PCF(U, k)) {
+  if (Lookup(input, pcf)) return
+  hashed := pcf.HashFunction(input)
+  InsertSide(hashed[0, k+10), hashed[k+10, k+15),
+             pcf.Side[0], pcf.Side[1])
+}
 \end{lstlisting}
 \caption{Pseudocode for the insert operation on PCFs}
 \end{figure}
 
 The upsize operation begins by creating a new PCF.
 To transfer the data, it uses the kick algorithm, but needs an alteration, since the number of buckets is now $2^{k+1}$.
-To produce a key with that many bits, upsize first reconstructs the $k+8$ bits of the key that were used to construct the bucket index and fingerprint.
+To produce a key with that many bits, upsize first reconstructs the $k+10$ bits of the key that were used to construct the bucket index and fingerprint.
 Then a bit is ``stolen'' from the tail and appended onto the end of the key.
-Since the tail was taken unaltered from the key, this gives $k+9$ bits of the original key.
+Since the tail was taken unaltered from the key, this gives $k+11$ bits of the original key.
 The new tail is now decreased in size by one.
 The key and the new tail of it can now be inserted into one of the sides of the new PCF as described above.
 
 This works as long as the tail has positive length.
 If the tail has length zero, there is nothing to steal from.
-Instead, two candidate keys are created from the reverse-permuted $k+8$ bits by appending a zero and a one.
+Instead, two candidate keys are created from the reverse-permuted $k+10$ bits by appending a zero and a one.
 It's indeterminate which one of these was in the original key, so both are inserted.
+\cite{psw} show that the fpp is less than $2^{-8}$, although in PCF filters the actual value will be smaller, since the tail is checked as well.
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
@@ -585,7 +602,10 @@ The previous structure suffers from a step-function space usage:
 at each point, the structure has a size which is a power of two, sometimes allocating much more space than will be needed.
 To address this, this section describes a similar structure using DySECT to reduce the space usage to only what is needed.~\cite{dysect}
 
-In a minimal plastic cuckoo filter (``MPCF''), each element has a fingerprint of size 7 or 8 and a tail of size up to 6.
+A DySECT table consists of some number of {\em levels} (256 in the original work).
+As the table gets more and more full, the table grows by doubling the size of one of its levels..
+
+In a minimal plastic cuckoo filter (``MPCF''), each element has a fingerprint of size 8 or 9 and a tail of size up to 5.
 A bucket consists of four (possibly empty) slots, each of which can hold one element.
 A level consists of two tables of the same size, each with $2^k$ buckets for some $k$.
 The table consists of four permutations, one hash function, $32$ levels, and one cursor pointing to some index in the set of levels.
@@ -594,11 +614,11 @@ Levels at location less than the cursor have the larger size.
 If all levels have the same size, the cursor must be 0.
 
 The permutations are grouped by side, two for each.
-The permutations are on values with length $k + 12$ and $k + 13$, where $2^k$ is the size of the smallest table, in buckets.
+The permutations are on values with length $k + 13$ and $k + 14$, where $2^k$ is the size of the smallest table, measured in buckets.
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
-MElement := {fingerprint: `$\ints_2^7 \cup \ints_2^8$`, tail: `$\cup_{i \le 6} \ints_2^i$`}
+MElement := {fingerprint: `$\ints_2^8 \cup \ints_2^9$`, tail: `$\cup_{i \le 5} \ints_2^i$`}
 MSlot := MElement`$_\bot$`
 MBucket := MSlot[4]
 Level(k) := MBucket[2][2^k] `$\cup$` MBucket[2][2^(k+1)]
@@ -614,30 +634,38 @@ MPCF(U, k) := {cursor: `$\ints_{32}$`,
 }
 \end{figure}
 
-If there are larger and smaller levels, then every element in the larger levels has a fingerprint of size 7, not 8.
+If there are larger and smaller levels, then every element in the larger levels has a fingerprint of size 8, not 9.
 This is because the implicitly-stored part of the key is one-bit longer in the larger levels.
 
 In an MPCF, upsize only increases the size of one of the levels, not the whole structure.
 As a result, the capacity of the filter tracks more closely the number of entries in the table.
 
-A lookup operation in an MPCF first apply each of the four permutations to the hashed key.
-For the permutations on $k + 13$ bits, the first five bits indicate the level, the next $k$ or $k+1$ indicate the bucket, and the remaining 7 or 8 bits are the fingerprint.
+A lookup operation in an MPCF first applies each of the four permutations to the hashed key.
+For the permutations on $k + 14$ bits, the first five bits indicate the level, the next $k$ or $k+1$ indicate the bucket, and the remaining 8 or 9 bits are the fingerprint.
 Lookup proceeds as it does in the PCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up.
-For the permutations on $k + 12$ bits, the first five bits again indicate the level.
-If the level has tables with $2^{k+1}$ buckets, the permuted key is ignored; to do otherwise would leave only $k+12 - 5 - (k+1) = 6$ bits for the fingerprint, which is not possible.
-Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+13$ case.
+For the permutations on $k + 13$ bits, the first five bits again indicate the level.
+If the level has tables with $2^{k+1}$ buckets, the permuted key is not used for lookup; to do otherwise would leave only $k+13 - 5 - (k+1) = 7$ bits for the fingerprint, which is not possible.
+That key is simply skipped and the lookup continues with the next key. %See Figure \ref{mpcf-insert}.
+Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+14$ case.
 
 %% Upsize only increases the size of one level.
 %% After 31 upsizes, the next one makes all of the levels the same size.
 %% At that point, two new permutations must be initialized to handle new longer key prefixes.
 
 During a kick operation, an element may move between levels with differently-sized arrays of buckets.
-This poses no problem when the fingerprint has size 8, but when the fingerprint has size 7 and the level moved from has a bucket array of size $2^k$ and the level moved to has a bucket array of size $2^{k+1}$,  there are not enough bits in the fingerprint.
+This poses no problem when the fingerprint has size 9, but when the fingerprint has size 8 and the level moved from has a bucket array of size $2^k$ and the level moved to has a bucket array of size $2^{k+1}$,  there are not enough bits in the fingerprint.
 As above, we steal bits from the tail, and, as above, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key.
 
-\section{Evaluation}
+Pseudo code for lookup, insert, and upsize are available in Appendix \ref{mpcf-appendix}.
 
-For performance testing, we compare with the ``warmup'' filter from \cite{psw}, using block Bloom filters. \cite{block-bloom}
+\section{Evaluation}
+\label{eval}
+
+TODO: reference github libfilter
+
+TODO: compare standard bloom filters, block bloom filters, filters with exponentially decreasing fpp, and cuckoo filters
+
+For performance testing, we compare with the ``warm-up'' filter from \cite{psw}, using block Bloom filters, which we call Plastic block filters (``PBFs''). \cite{block-bloom}
 We also equip both PCFs and MPCFs with variable sized stashes. \cite{stash}
 Finally, we set both filters to upsize when they are 90\% full or their stashes have size greater than 4.
 
@@ -651,19 +679,18 @@ Finally, we set both filters to upsize when they are 90\% full or their stashes 
   }
 \end{figure}
 
-\begin{figure}
-  \includegraphics[width=\textwidth]{insert-deficiency}
-  \caption{
-    Comparing both the wasted space of each filter type with the absent lookup performance.
-    Lower left is better.
-  }
-\end{figure}
+%% \begin{figure}
+%%   \includegraphics[width=\textwidth]{insert-deficiency}
+%%   \caption{
+%%     Comparing both the wasted space of each filter type with the absent lookup performance.
+%%     Lower left is better.
+%%   }
+%% \end{figure}
 
 \begin{figure}
   \includegraphics[width=\textwidth]{space}
   \caption{
-    The amount of space used by each filter at the given size.
-    Lower is better.
+    The amount of space used by each filter at the given number of keys inserted.
   }
 \end{figure}
 
@@ -672,7 +699,7 @@ Finally, we set both filters to upsize when they are 90\% full or their stashes 
   \includegraphics[width=\textwidth]{insert}
   \caption{
     Insert times for filters.
-    Lower is better.
+TODO: the dip is an artifact; redo with more samples and longer time between timer start \& stop.
   }
 \end{figure}
 
@@ -680,22 +707,19 @@ Finally, we set both filters to upsize when they are 90\% full or their stashes 
   \includegraphics[width=\textwidth]{lookup-present}
   \caption{
     Lookup times for filters when the key is present.
-    Lower is better.
   }
 \end{figure}
 
 \begin{figure}
   \includegraphics[width=\textwidth]{lookup-absent}
   \caption{
-    Lookup times for filters.
-    The same pattern is seen for both present and absent elements; this is absent elements, which should exaggerate the penalty of logarithmic update in PBFs.
-    Lower is better.
+    Lookup times for filters when the key is absent.
   }
 \end{figure}
 
 \subsection{Discussion}
 
-The MBCF offers lower space than the other two filters, but its performance is substantially worse.
+The MPCF offers lower space than the other two filters, but its performance is substantially worse.
 It has significant insertion time increases when it is hard to find a kick sequence; in this case the insert operation repeatedly calls upsize until a place can be found for the element.
 This behavior is also seen in the PCF, though it is easier to understand there, as the filters start out after each upsize as at least half empty, which is not true for MPCFs.
 This cyclic behavior was noted in the original DySECT paper. \cite{dysect}
@@ -843,6 +867,7 @@ TODO: show how stash limits lead to higher insert times and lower lookup times
 
 \appendix
 \section{MPCF pseudocode}
+\label{mpcf-appendix}
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
@@ -969,5 +994,5 @@ UpsizeMPCF(key: U, mpcf: MPCF(U, k)) {
 %%  LocalWords:  InsertSide InsertBucket RandomSlotIn otherSide PCFs
 %%  LocalWords:  Concat upsize doublings DySECT MPCF MSlot MBucket
 %%  LocalWords:  upsizes TODO fpp LookupSide mpcf MLookup MInsertSide
-%%  LocalWords:  MInsertPermuted permuteds MPCFs InsertMPCF
-%%  LocalWords:  UpsizeMPCF
+%%  LocalWords:  MInsertPermuted permuteds MPCFs InsertMPCF MElement
+%%  LocalWords:  UpsizeMPCF PBFs
