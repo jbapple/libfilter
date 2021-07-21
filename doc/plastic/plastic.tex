@@ -906,7 +906,7 @@ MLookup(input: U, mpcf: PCF(U, k)) {
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
 MInsertSide(level_number: `$\ints_{32}$`, bucket_number: `$\ints_2^k \cup \ints_2^{k+1}$`,
-            fingerprint `$\ints_2^7 \cup \ints_2^8$`, tail: `$\sum_{i \le 6}\ints_2^i$`, side: `$\ints_2$`,
+            fingerprint `$\ints_2^8 \cup \ints_2^9$`, tail: `$\sum_{i \le 5}\ints_2^i$`, side: `$\ints_2$`,
             mpcf: MPCF(U, k)) {
   bucket := mpcf.Level[level_number][bucket_number]
   new_slot := InsertBucket(fingerprint, tail, bucket)
@@ -919,10 +919,10 @@ MInsertSide(level_number: `$\ints_{32}$`, bucket_number: `$\ints_2^k \cup \ints_
   MInsertPermuted(permuted, tail, side, mpcf)
 }
 
-MInsertPermuted(permuted: `$\ints_2^{k+12} \cup \ints_2^{k+13}$`, tail: `$\sum_{i \le 6}\ints_2^i$`, side: `$\ints_2$`,
+MInsertPermuted(permuted: `$\ints_2^{k+13} \cup \ints_2^{k+14}$`, tail: `$\sum_{i \le 5}\ints_2^i$`, side: `$\ints_2$`,
                 mpcf: MPCF(U, k)) {
   level_number := permuted[0, 5)
-  if (|permuted| == k + 13) {
+  if (|permuted| == k + 14) {
     middle := if (level_number `$\ge$` mpcf.cursor) then k+5 else k+6
     MInsertSide(level_number, permuted[5, middle),
                 permuted[middle, k+13), tail, 1 - side)
@@ -952,12 +952,12 @@ MInsertPermuted(permuted: `$\ints_2^{k+12} \cup \ints_2^{k+13}$`, tail: `$\sum_{
 \begin{lstlisting}[escapeinside={`}{`}]
 InsertMPCF(key: U, mpcf: MPCF(U, k)) {
   hashed := mpcf.HashFunction(key)
-  permuted := mpcf.Permutation[0](hashed[0, k+13))
+  permuted := mpcf.Permutation[0](hashed[0, k+14))
   level_number := permuted[0, 5)
   middle := if (level_number `$\ge$` mpcf.cursor) then k+5 else k+6
   bucket_number := permuted[5, middle)
-  fingerprint := permuted[middle, k+13)
-  tail := hashed[k+13, k+19)
+  fingerprint := permuted[middle, k+14)
+  tail := hashed[k+14, k+19)
   MInsertSide(level_number,  bucket_number, fingerprint, tail, 0)
 }
 \end{lstlisting}
