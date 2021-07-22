@@ -91,7 +91,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
       base.sample_type = "insert_nanos";
       base.payload = 1.0 *
                      chrono::duration_cast<chrono::nanoseconds>(insert_time).count() /
-                     min(to_insert.size(), static_cast<uint64_t>(next));
+                     min(to_insert.size(), static_cast<uint64_t>(next - last));
       result.push_back(base);
       cout << base.CSV() << endl;
 
