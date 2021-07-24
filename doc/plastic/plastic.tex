@@ -15,7 +15,9 @@
 \usepackage{nicefrac}
 \usepackage{listings}
 %\usepackage{todonotes}
-\usepackage{epigraph}
+%\usepackage{epigraph}
+\usepackage{tikz}
+
 
 \newtheorem{theorem}{Theorem}
 
@@ -68,6 +70,7 @@
 %\epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}{Shakespeare}
 
 \section{Introduction}
+
 While there are many filter structures that support approximate membership queries on sets with a given maximum size, the question of extensible (or {\em incremental} or {\em growable}) filters is little studied.
 The classic answer is to create a sequence of Bloom filters, possibly of increasing sizes and/or lower target false positive probability.
 Inserts occur on the last filter to be created and lookups must search each filter.
@@ -136,7 +139,7 @@ Otherwise, returns \verb|False|.
 
 \begin{figure}
 \begin{lstlisting}[escapeinside={`}{`}]
-Element := {fingerprint: `$\ints_2^10$`, tail: `$\cup_{i \le 5} \ints_2^i$`}
+Element := {fingerprint: `$\ints_2^{10}$`, tail: `$\cup_{i \le 5} \ints_2^i$`}
 Slot := Element`$_\bot$`
 Bucket := Slot[4]
 Side(k) := {Bucket[2^k], Permutation: `$S_{2^{k+10}}$`}
@@ -661,6 +664,16 @@ Pseudo code for lookup, insert, and upsize are available in Appendix \ref{mpcf-a
 \section{Evaluation}
 \label{eval}
 
+TODO: graph different MPCF variants based on level size, fingerprint size
+
+TODO: graph raw fpp?
+
+TODO: graph fill factor
+
+TODO: mergeability
+
+TODO: freeze/thaw operations with ribbon filters
+
 TODO: reference github libfilter
 
 TODO: compare standard bloom filters, block bloom filters, filters with exponentially decreasing fpp, and cuckoo filters
@@ -925,7 +938,7 @@ MInsertPermuted(permuted: `$\ints_2^{k+13} \cup \ints_2^{k+14}$`, tail: `$\sum_{
   if (|permuted| == k + 14) {
     middle := if (level_number `$\ge$` mpcf.cursor) then k+5 else k+6
     MInsertSide(level_number, permuted[5, middle),
-                permuted[middle, k+13), tail, 1 - side)
+                permuted[middle, k+14), tail, 1 - side)
     return
   }
   if (level_number `$\ge$` mpcf.cursor) {
@@ -938,7 +951,7 @@ MInsertPermuted(permuted: `$\ints_2^{k+13} \cup \ints_2^{k+14}$`, tail: `$\sum_{
     permuteds := {permuted0, permuted1})
   }
   for (p : permuteds) {
-    MInsertSide(level_number, p[5, k+5), p[k+5, k+12), tail, 1 - side)
+    MInsertSide(level_number, p[5, k+5), p[k+5, k+13), tail, 1 - side)
   }
 }
 
