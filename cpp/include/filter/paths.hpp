@@ -28,7 +28,7 @@ namespace detail {
 
 namespace minimal_plastic {
 
-thread_local const constexpr int kLogLevels = 1;
+thread_local const constexpr int kLogLevels = 3;
 thread_local const constexpr uint64_t kLevels = 1ul << kLogLevels;
 
 // From the paper, kTailSize is the log of the number of times the size will

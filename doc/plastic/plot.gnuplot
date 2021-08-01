@@ -1,7 +1,8 @@
 # incremental-0.001-stashes-8-007.txt
 # incremental-0.001-stashes-8-if-80p-002.txt
 # incremental-0.001-8-slices-stashes-8-if-90p-001.txt
-
+# incremental-0.001-stashes-8-true-found-001.txt
+# 004-levels-75p-001.txt
 
 set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'bits-per-item.eps';
@@ -21,17 +22,18 @@ plot '< grep fpp incremental-0.001-stashes-8-007.txt | grep Min   | sort -n -t ,
 set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'ideal-bits-per-item.eps';
 unset grid;
-unset logscale y;
+set logscale y;
 set logscale x;
 set xlabel "keys inserted";
-set ylabel "bits per key"
+set ylabel "false positive probability"
 set datafile separator ",";
 unset format y
+set format y '%g%%'
 unset yrange
-set title "Bits per key"
-plot '< grep fpp incremental-0.001-stashes-8-007.txt | grep Min   | sort -n -t , -k 3' using 3:(-log($6)/log(2)) with lines lw 9 title "MPCF", \
-     "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"E | sort -n -t , -k 3" using 3:(-log($6)/log(2)) with linespoints title "PCF", \
-     "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"B | sort -n -t , -k 3" using 3:(-log($6)/log(2)) with lines title "PBF"
+set title "Empirical false positive probabilty after adding N keys"
+plot '< grep fpp incremental-0.001-stashes-8-007.txt | grep Min   | sort -n -t , -k 3' using 3:(100*$6) with lines lw 9 title "MPCF", \
+     "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"E | sort -n -t , -k 3" using 3:(100*$6) with linespoints title "PCF", \
+     "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"B | sort -n -t , -k 3" using 3:(100*$6) with lines title "PBF"
 
 # efficiency: number of bytes per item compared to the minimum needed
 # lower is better
@@ -78,8 +80,8 @@ set xlabel "keys inserted";
 set ylabel "nanoseconds";
 set title "Insert performance"
 unset format y;
-plot "< grep insert incremental-0.001-stashes-8-007.txt | grep   Min | sort -n -t , -k 3" using 3:6 with linespoints title "MPCF", \
-     "< grep insert incremental-0.001-stashes-8-007.txt | grep \\\"E | sort -n -t , -k 3" using 3:6 with lines lw 9 title "PCF", \
+plot "< grep insert incremental-0.001-stashes-8-007.txt | grep   Min | sort -n -t , -k 3" using 3:6 with lines lw 9 title "MPCF", \
+     "< grep insert incremental-0.001-stashes-8-007.txt | grep \\\"E | sort -n -t , -k 3" using 3:6 with linespoints title "PCF", \
      "< grep insert incremental-0.001-stashes-8-007.txt | grep \\\"B | sort -n -t , -k 3" using 3:6 with lines title "PBF"
 
 # lookup time; lower is better
@@ -114,6 +116,7 @@ plot "< grep find_present incremental-0.001-stashes-8-007.txt | grep   Min | sor
      "< grep find_present incremental-0.001-stashes-8-007.txt | grep \\\"E | sort -n -t , -k 3" using 3:6 with linespoints title "PCF", \
      "< grep find_present incremental-0.001-stashes-8-007.txt | grep \\\"B | sort -n -t , -k 3" using 3:6 with lines title "PBF"
 
+
 # space usage; lower is better
 set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'space.eps'
@@ -127,9 +130,9 @@ set xlabel "keys inserted";
 set ylabel "bytes occupied";
 unset format y;
 set title "Space used"
-plot "< grep fpp incremental-0.001-stashes-8-007.txt | grep   Min | sort -n -t , -k 3" using 3:4  lw 9 title "MPCF", \
+plot "< grep fpp incremental-0.001-stashes-8-007.txt | grep   Min | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MPCF", \
      "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"E | sort -n -t , -k 3" using 3:4 with linespoints title "PCF", \
-     "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"B | sort -n -t , -k 3" using 3:4 with lines title "PBF"
+     "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"B | sort -n -t , -k 3" using 3:4 with lines title "PBF",
 
 # x axis is find time, y axis is fpp efficiency. lower left is better
 # set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";

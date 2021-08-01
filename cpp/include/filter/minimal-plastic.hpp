@@ -95,6 +95,17 @@ struct Level {
     return false;
   }
 
+  // INLINE bool Find(Path p) const {
+  //   assert(p.tail != 0);
+  //   uint64_t b;
+  //   memcpy(&b, &data[p.bucket], sizeof(b));
+  //   b = b >> kTailSize;
+  //   b = b & 0x03ff03ff03ff03ff;
+  //   auto m = p.fingerprint * 0x0001000100010001;
+  //   auto c = b^m;
+  //   return (c - 0x0001000100010001) & 0x8000800080008000;
+  // }
+
   friend void swap(Level&, Level&);
 };
 
@@ -167,7 +178,7 @@ struct MinimalPlasticFilter {
     return result;
   }
 
- protected:
+ public:
   detail::minimal_plastic::Side sides[2];
   uint64_t cursor;
   uint64_t log_side_size;
@@ -297,10 +308,11 @@ struct MinimalPlasticFilter {
 
   INLINE bool FindHash(uint64_t k) const {
     if (debug_lookup) {
-      std::cout << sides[0].stashes.size() + sides[0].stashes.size() << std::endl;
+      std::cout << sides[0].stashes.size() + sides[1].stashes.size() << std::endl;
     }
     for (int i : {0, 1}) {
-      auto p = detail::minimal_plastic::ToPath(k, sides[i].lo, cursor, log_side_size, true);
+       auto p = detail::minimal_plastic::ToPath(k, sides[i].lo, cursor, log_side_size, true);
+
       if (debug_lookup) std::cout << std::boolalpha << (p.tail != 0) << std::endl;
       if (p.tail != 0 && sides[i].Find(p)) {
         debug_lookup = false;
@@ -326,7 +338,7 @@ mutable bool debug_lookup = false;
     //auto countz = Count();
     //assert(occupied == countz);
 
-    while (occupied > 0.90 * Capacity() || occupied + 4 >= Capacity() ||
+    while (occupied > 0.875 * Capacity() || occupied + 4 >= Capacity() ||
         sides[0].stashes.size() + sides[1].stashes.size() > 8) {
       // if (sides[0].stashes.size() + sides[1].stashes.size() > 0) {
 

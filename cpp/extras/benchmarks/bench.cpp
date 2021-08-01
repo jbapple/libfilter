@@ -69,7 +69,6 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
   Sample base;
   base.filter_name = FILTER_TYPE::Name();
   //base.ndv = to_insert.size();
-  
 
   vector<Sample> result;
 

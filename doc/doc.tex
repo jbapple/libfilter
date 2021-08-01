@@ -36,7 +36,7 @@ The central ideas are:
 \begin{enumerate}
 \item Use block Bloom filters to reduce the number of cache lines to access down to one.~\cite{block}
 \item Within each block, use a ``split'' Bloom filter that sets one bit in each of several sections, rather than several bits in one section.~\cite{split-bloom}
-\item Use eight hash functions to use in order to fit cleanly into SIMD lanes.\footnote{Four or sixteen would work, too.}
+\item Use eight hash functions in order to fit cleanly into SIMD lanes.\footnote{Four or sixteen would work, too.}
 \end{enumerate}
 
 A value is inserted in a split block Bloom filter, by first selecting one 256-bit block from the filter by hashing the key once.
