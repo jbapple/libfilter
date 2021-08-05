@@ -26,7 +26,7 @@ namespace filter {
 
 namespace detail {
 
-namespace minimal_plastic {
+namespace minimal_taffy {
 
 thread_local const constexpr int kLogLevels = 5;
 thread_local const constexpr uint64_t kLevels = 1ul << kLogLevels;
@@ -345,6 +345,6 @@ INLINE Path RePath(Path p, const Feistel& from_short, const Feistel& from_long,
   return q2;
 }
 
-}  // namespace minimal_plastic
+}  // namespace minimal_taffy
 }  // namespace detail
 }  // namespace filter

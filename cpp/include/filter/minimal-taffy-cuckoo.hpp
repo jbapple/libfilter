@@ -27,7 +27,7 @@ namespace filter {
 
 namespace detail {
 
-namespace minimal_plastic {
+namespace minimal_taffy {
 
 struct Bucket {
   Slot data[kBuckets] = {};
@@ -132,7 +132,7 @@ struct Side {
   }
 
   INLINE Level& operator[](unsigned i) {
-    assert(i < detail::minimal_plastic::kLevels);
+    assert(i < detail::minimal_taffy::kLevels);
     return levels[i];
   }
   INLINE const Level& operator[](unsigned i) const { return levels[i]; }
@@ -169,26 +169,26 @@ INLINE void swap(Side& x, Side& y) {
   swap(x.stashes, y.stashes);
 }
 
-}  // namespace minimal_plastic
+}  // namespace minimal_taffy
 }  // namespace detail
 
-struct MinimalPlasticFilter {
+struct MinimalTaffyCuckooFilter {
   INLINE static const char* Name() {
     thread_local const constexpr char result[] = "MinPlastic";
     return result;
   }
 
  public:
-  detail::minimal_plastic::Side sides[2];
+  detail::minimal_taffy::Side sides[2];
   uint64_t cursor;
   uint64_t log_side_size;
-  detail::PcgRandom rng = {detail::minimal_plastic::kLogBuckets};
+  detail::PcgRandom rng = {detail::minimal_taffy::kLogBuckets};
   const uint64_t* entropy;
 
  public:
   uint64_t occupied = 0;
 
-  MinimalPlasticFilter(MinimalPlasticFilter&&);
+  MinimalTaffyCuckooFilter(MinimalTaffyCuckooFilter&&);
   /*
   ElasticFilter(const ElasticFilter& that)
       : sides{{(int)that.log_side_size, that.entropy},
@@ -200,7 +200,7 @@ struct MinimalPlasticFilter {
         occupied(that.occupied) {
     for (int i = 0; i < 2; ++i) {
       memcpy(sides[i].data, that.sides[i].data,
-             sizeof(detail::minimal_plastic::Bucket) << that.log_side_size);
+             sizeof(detail::minimal_taffy::Bucket) << that.log_side_size);
     }
   }
   */
@@ -212,20 +212,20 @@ struct MinimalPlasticFilter {
   }
   */
 
-  // ~MinimalPlasticFilter() {
+  // ~MinimalTaffyCuckooFilter() {
   //   std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
   // }
 
   uint64_t Capacity() const {
-    return 2 + 2 * detail::minimal_plastic::kBuckets *
-                   ((1ul << log_side_size) * detail::minimal_plastic::kLevels +
+    return 2 + 2 * detail::minimal_taffy::kBuckets *
+                   ((1ul << log_side_size) * detail::minimal_taffy::kLevels +
                     (1ul << log_side_size) * cursor);
   }
 
   uint64_t SizeInBytes() const {
-    return sizeof(detail::minimal_plastic::Slot) * Capacity() +
-           2 * (sizeof(detail::minimal_plastic::Path) -
-                sizeof(detail::minimal_plastic::Slot));
+    return sizeof(detail::minimal_taffy::Slot) * Capacity() +
+           2 * (sizeof(detail::minimal_taffy::Path) -
+                sizeof(detail::minimal_taffy::Slot));
   }
 
  protected:
@@ -235,9 +235,9 @@ struct MinimalPlasticFilter {
     uint64_t result = 0;
     for (int s = 0; s < 2; ++s) {
       result += sides[s].stashes.size();
-      for (unsigned k = 0; k < detail::minimal_plastic::kLevels; ++k) {
+      for (unsigned k = 0; k < detail::minimal_taffy::kLevels; ++k) {
         for (uint64_t i = 0; i < (1ull + (k < cursor)) << log_side_size; ++i) {
-          for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
+          for (int j = 0; j < detail::minimal_taffy::kBuckets; ++j) {
             if (sides[s][k][i][j].tail != 0) ++result;
           }
         }
@@ -252,9 +252,9 @@ struct MinimalPlasticFilter {
         stash.Print();
         std::cout << std::endl;
       }
-      for (unsigned k = 0; k < detail::minimal_plastic::kLevels; ++k) {
+      for (unsigned k = 0; k < detail::minimal_taffy::kLevels; ++k) {
         for (uint64_t i = 0; i < (1ull + (k < cursor)) << log_side_size; ++i) {
-          for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
+          for (int j = 0; j < detail::minimal_taffy::kBuckets; ++j) {
             if (sides[s][k][i][j].tail) {
               sides[s][k][i][j].Print();
               std::cout << std::endl;
@@ -272,7 +272,7 @@ struct MinimalPlasticFilter {
       sides[s].stash.Print();
       std::cout << std::endl;
       for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
-        for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
+        for (int j = 0; j < detail::minimal_taffy::kBuckets; ++j) {
           sides[s][i][j].Print();
           std::cout << std::endl;
         }
@@ -280,14 +280,14 @@ struct MinimalPlasticFilter {
     }
   }
   */
-  MinimalPlasticFilter(int log_side_size, const uint64_t* entropy)
+  MinimalTaffyCuckooFilter(int log_side_size, const uint64_t* entropy)
       : sides{{log_side_size, entropy}, {log_side_size, entropy + 12}},
         cursor(0),
         log_side_size(log_side_size) {
     Print();
   }
 
-  static MinimalPlasticFilter CreateWithBytes(uint64_t /*bytes*/) {
+  static MinimalTaffyCuckooFilter CreateWithBytes(uint64_t /*bytes*/) {
     thread_local constexpr const uint64_t kEntropy[24] = {
         0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
         0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f,
@@ -296,12 +296,12 @@ struct MinimalPlasticFilter {
         0xd30480ab74084edc, 0xd72483670ec14df3, 0x0414954940374787, 0x8cd86adfda93493f,
         0x50d61c3272a24ccb, 0x40cb1e4f0da34cc3, 0xb88f09c3af35472e, 0x8de6d01bb8a849a5};
 
-    return MinimalPlasticFilter(
+    return MinimalTaffyCuckooFilter(
         0,
-        // std::max(1.0, log(1.0 * bytes / 2 / detail::minimal_plastic::kBuckets /
-        //                   sizeof(detail::minimal_plastic::Slot) /
-        //                   detail::minimal_plastic::kBuckets /
-        //                   detail::minimal_plastic::kLevels) /
+        // std::max(1.0, log(1.0 * bytes / 2 / detail::minimal_taffy::kBuckets /
+        //                   sizeof(detail::minimal_taffy::Slot) /
+        //                   detail::minimal_taffy::kBuckets /
+        //                   detail::minimal_taffy::kLevels) /
         //                   log(2)),
         kEntropy);
    }
@@ -311,14 +311,14 @@ struct MinimalPlasticFilter {
       std::cout << sides[0].stashes.size() + sides[1].stashes.size() << std::endl;
     }
     for (int i : {0, 1}) {
-       auto p = detail::minimal_plastic::ToPath(k, sides[i].lo, cursor, log_side_size, true);
+       auto p = detail::minimal_taffy::ToPath(k, sides[i].lo, cursor, log_side_size, true);
 
       if (debug_lookup) std::cout << std::boolalpha << (p.tail != 0) << std::endl;
       if (p.tail != 0 && sides[i].Find(p)) {
         debug_lookup = false;
         return true;
       }
-      p = detail::minimal_plastic::ToPath(k, sides[i].hi, cursor, log_side_size, false);
+      p = detail::minimal_taffy::ToPath(k, sides[i].hi, cursor, log_side_size, false);
       if (debug_lookup) std::cout << std::boolalpha << (p.tail != 0) << std::endl;
       if (p.tail != 0 && sides[i].Find(p)) {
         debug_lookup = false;
@@ -356,7 +356,7 @@ mutable bool debug_lookup = false;
     }
     // TODO: only need one path here. Which one to pick?
     auto p =
-        detail::minimal_plastic::ToPath(k, sides[0].hi, cursor, log_side_size, false);
+        detail::minimal_taffy::ToPath(k, sides[0].hi, cursor, log_side_size, false);
     Insert(0, p, 128);
     return true;
   }
@@ -373,7 +373,7 @@ mutable bool debug_lookup = false;
 
   enum class InsertResult { Ok, Stashed, Failed };
 
-  inline InsertResult Insert(int side, detail::minimal_plastic::Path p, int ttl) {
+  inline InsertResult Insert(int side, detail::minimal_taffy::Path p, int ttl) {
     assert(p.tail != 0);
     // std::cout << "Begin insert ";
     // p.Print();
@@ -394,8 +394,8 @@ mutable bool debug_lookup = false;
           if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
           return InsertResult::Stashed;
         }
-        detail::minimal_plastic::Path q = p;
-        detail::minimal_plastic::Path r = sides[i].Insert(p, rng);
+        detail::minimal_taffy::Path q = p;
+        detail::minimal_taffy::Path r = sides[i].Insert(p, rng);
         if (r.tail == 0) {
           // Found an empty slot
           ++occupied;
@@ -409,7 +409,7 @@ mutable bool debug_lookup = false;
 
           return InsertResult::Ok;
         }
-        detail::minimal_plastic::Path extra;
+        detail::minimal_taffy::Path extra;
         auto next = RePath(r, sides[i].lo, sides[i].hi, sides[1 - i].lo, sides[1 - i].hi,
                            log_side_size, log_side_size, cursor, cursor, &extra);
         if (extra.tail != 0) {
@@ -428,33 +428,33 @@ mutable bool debug_lookup = false;
   }
 
 
-  friend void swap(MinimalPlasticFilter&, MinimalPlasticFilter&);
+  friend void swap(MinimalTaffyCuckooFilter&, MinimalTaffyCuckooFilter&);
 
   // Double the size of one level of the filter
   void Upsize() {
     // std::cout << "Upsize " << std::dec << cursor << " "
-    //           << ((2u << log_side_size) * sizeof(detail::minimal_plastic::Bucket))
+    //           << ((2u << log_side_size) * sizeof(detail::minimal_taffy::Bucket))
     //           << " " << occupied << std::endl;
     // for (uint64_t i = 1; i != 0; i *= 2) {
     //   if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
     //   Unstash(i);
     // }
     // std::cout << sides[0].stashes.size() + sides[1].stashes.size() << std::endl;
-    detail::minimal_plastic::Bucket* last_data[2] = {sides[0][cursor].data, sides[1][cursor].data};
+    detail::minimal_taffy::Bucket* last_data[2] = {sides[0][cursor].data, sides[1][cursor].data};
     {
-      detail::minimal_plastic::Bucket* next[2];
-      next[0] = new detail::minimal_plastic::Bucket[2 << log_side_size]();
-      next[1] = new detail::minimal_plastic::Bucket[2 << log_side_size]();
+      detail::minimal_taffy::Bucket* next[2];
+      next[0] = new detail::minimal_taffy::Bucket[2 << log_side_size]();
+      next[1] = new detail::minimal_taffy::Bucket[2 << log_side_size]();
       sides[0][cursor].data = next[0];
       sides[1][cursor].data = next[1];
     }
     cursor = cursor + 1;
-    detail::minimal_plastic::Path p;
+    detail::minimal_taffy::Path p;
     p.level = cursor - 1;
 
-    std::vector<detail::minimal_plastic::Path> stashes[2] = {
-        std::vector<detail::minimal_plastic::Path>(),
-        std::vector<detail::minimal_plastic::Path>()};
+    std::vector<detail::minimal_taffy::Path> stashes[2] = {
+        std::vector<detail::minimal_taffy::Path>(),
+        std::vector<detail::minimal_taffy::Path>()};
     using std::swap;
     swap(stashes[0], sides[0].stashes);
     swap(stashes[1], sides[1].stashes);
@@ -468,7 +468,7 @@ mutable bool debug_lookup = false;
         // std::cout << "stash" << std::endl;
         //Unstash(500);
 
-        detail::minimal_plastic::Path q, r;
+        detail::minimal_taffy::Path q, r;
         r = RePathUpsize(stash, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
         auto ttl = 128;
         assert(r.tail != 0);
@@ -484,12 +484,12 @@ mutable bool debug_lookup = false;
       // std::cout << (s == 0 ? "left" : "right") << std::endl;
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         p.bucket = i;
-        for (int j = 0; j < detail::minimal_plastic::kBuckets; ++j) {
+        for (int j = 0; j < detail::minimal_taffy::kBuckets; ++j) {
           if (last_data[s][i][j].tail == 0) continue;
           --occupied;
           p.SetSlot(last_data[s][i][j]);
           assert(p.tail != 0);
-          detail::minimal_plastic::Path q, r;
+          detail::minimal_taffy::Path q, r;
           r = RePathUpsize(p, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
           auto ttl = 128;
           assert(r.tail != 0);
@@ -502,7 +502,7 @@ mutable bool debug_lookup = false;
       }
     }
 
-    if (cursor == detail::minimal_plastic::kLevels) {
+    if (cursor == detail::minimal_taffy::kLevels) {
       cursor = 0;
       ++log_side_size;
       using namespace std;
@@ -512,7 +512,7 @@ mutable bool debug_lookup = false;
   }
 };
 
-INLINE void swap(MinimalPlasticFilter& x, MinimalPlasticFilter& y) {
+INLINE void swap(MinimalTaffyCuckooFilter& x, MinimalTaffyCuckooFilter& y) {
   using std::swap;
   swap(x.sides[0], y.sides[0]);
   swap(x.sides[1], y.sides[1]);

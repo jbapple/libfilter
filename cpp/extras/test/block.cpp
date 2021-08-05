@@ -26,8 +26,8 @@ template <typename F>
 class NdvFppTest : public ::testing::Test {};
 
 using BlockTypes = ::testing::Types<BlockFilter, ScalarBlockFilter>;
-using CreateWithBytes = ::testing::Types<MinimalPlasticFilter, BlockFilter, ScalarBlockFilter, ElasticFilter>;
-using CreateWithNdvFpp = ::testing::Types<BlockElasticFilter>;
+using CreateWithBytes = ::testing::Types<MinimalTaffyCuckooFilter, BlockFilter, ScalarBlockFilter, TaffyCuckooFilter>;
+using CreateWithNdvFpp = ::testing::Types<TaffyBlockFilter>;
 
 TYPED_TEST_SUITE(BlockTest, BlockTypes);
 TYPED_TEST_SUITE(BytesTest, CreateWithBytes);

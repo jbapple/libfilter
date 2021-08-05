@@ -122,14 +122,10 @@ Popular approximate membership query structures such as Bloom filters, counting 
 In fact, Pagh, Segev, and Wieder (FOCS '13) show that the minimum size of a filter must be super-linear in $n$ if such a structure can increase in capacity as new elements are added.
 This paper explores three instantiations of such a structure and compares them experimentally.
 The resulting code is available for general use.\footnote{\url{https://github.com/jbapple/libfilter}}
-\epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}
+%\epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}
 \end{abstract}
 
-
-
-
 \maketitle
-
 
 \section{Introduction}
 
@@ -145,10 +141,6 @@ In \cite{psw}, the authors introduce a structure that performs lookups in $O(1)$
 Section~\ref{tcf} presents {\em taffy cuckoo filters} (``TCFs''), a practical instantiation of this model, an outstanding challenge from \cite{psw}.
 
 TCFs, because of their resize operation, are sometimes only 50\% full.
-%As noted in \cite{dysect}, dictionaries like \cite{succinct} do not directly address the problem of using low space when the dictionary is not near the maximum space it will need.
-%For example, as a set grows from size $n$ to $2n$ in increments of one, the dictionary in \cite{succinct} will reconstruct the entire dictionary at least once.
-%Furthermore, if each reconstruction increases the capacity from $m$ to $(1 + \delta)m$, $1/\lg(1+\delta)$ rebuilds will occur.
-%Finally, non-power-of-two sizes pose challenges for quotienting, a technique needed to reduce the space usage by up to one bit per element.~\cite{change-your-base, cleary-quotient}
 Section~\ref{mtcf} presents {\em minimal taffy cuckoo filters} (``MTCFs'') based on~\cite{dysect}.
 MTCFs re-allocate and refill the table only once for each time the table doubles in size, but do so without increasing the capacity and space usage of the table beyond a small percentage over the size of the data contained within.
 
@@ -177,54 +169,55 @@ That is, they create a sequence of Bloom filters with the following pairs for th
 \]
 
 This leads to a storage footprint of more than $(\lg n + \lg (1/\epsilon)) / \ln 2$ bits per element and a query time of $\lg^2 n + \lg (n/\varepsilon)$.
-\cite{psw} reduce this to $\lg n$ by using a dictionary like \cite{succinct} that has $O(1)$ query time per filter.
-They also reduce the space usage to  by using the sequence $\langle \varepsilon / i^2,  2^i \rangle$, rather than  $\langle \varepsilon / 2^i,  2^i \rangle$.
+\cite{psw} reduces this to $\lg n$ by using a dictionary like \cite{succinct} that has $O(1)$ query time per filter.
+They also reduce the space usage to $O(n \lg \lg n)$ by using the sequence $\langle \varepsilon / i^2,  2^i \rangle$, rather than  $\langle \varepsilon / 2^i,  2^i \rangle$.
 
-\cite{psw} also present a filter with the same space usage but $O(1)$ query time.
-This filter maintains a dictionary from $n$ to a pair of values, one of bit length $\lg n + \lg (1/\varepsilon)$ and one of bit length {\itshape up to} $\lg \lg N$, where $N$ will be the largest size of the data structure.
-After every $2^i$ insertions, a new dictionary is created mapping from $2n$ to a pair of values, one of bit length $1 + \lg n + \lg (1/\varepsilon)$ and one of bit length up to $\lg \lg N$.
-The extra bit needed in the first value of the co-domain is acquired by stealing a high order bit from the second value.
+\cite{psw} also presents a filter with the same space usage but $O(1)$ query time.
+This filter maintains a map where they keys are bit strings of length $\lg n + \lg (1/\varepsilon)$ and the values are bit strings of length up to $\lg \lg N$, where $N$ will be the largest size of the data structure.
+After every $2^i$ insertions, a new map is created where the keys are one bit longer.
+The extra bit in the key is acquired by stealing a high order bit from the value.
 This shrinks the second value by one bit.
-If there is nothing to be stolen, two elements of the co-domain are generated, one with a new 0 appended, one with a 1; both are inserted into the dictionary.
+If there is nothing to be stolen, two elements of the co-domain are generated, one with a new 0 appended, one with a 1; both are inserted into the map with associated value the empty string.
 
 \subsection{Succinct dictionaries}
 
-Dictionaries of size $n$ from $U$ to $V$ can be stored in $n (\lg U + \lg V - \lg n + 1)$ bits.
+Maps of size $n$ with keys from $U$ and values from $V$ can be stored in $n (\lg U + \lg V - \lg n + 1)$ bits.
 The oldest example of this is \cite{knuth}; the technique is generally called quotienting. \cite{quotient-filter}
 Taffy filters are based on quotienting in cuckoo hash tables, as used in \cite{backyard}.
-There, two arrays are established to hold $\lg U + \lg V - \lg n + O(1)$ bits.
+There, two arrays are established to hold bit-strings of length $\lg U + \lg V - \lg n + O(1)$.
 A key is stored by using one of two permutations, one each per array.
-A value of length $\lg U + \lg V$ is reduced to one of $\lg U + \lg V - \lg n + O(1)$ by storing each value in the slot corresponding to the first $\lg n - O(1)$ bits of its permuted value.
+A key-value pair of bit length $\lg U + \lg V$ is reduced to one of $\lg U + \lg V - \lg n + O(1)$ by storing each value in the slot corresponding to the first $\lg n - O(1)$ bits of its permuted value.
 This number of bits can then be omitted from the stored value.
-When a value needs to be kicked between tables, as in inserts to a cuckoo hash table, the un-permuted value is reconstructed using the slot index and the stored value.
+When a value needs to be kicked between tables, as inserts in a cuckoo hash table must do, the un-permuted value is reconstructed using the slot index and the stored value.
 It can then be permuted by the other permutation and inserted in the other array.
-For details see Section \ref{tcf} and Figure \ref{tcf-insert}, line 21.
+For details, see Section \ref{tcf}. % and Figure \ref{tcf-insert}, line 21.
 
 \subsection{Compact extensible dictionaries}
 
-Hash tables used to accommodate sets with unknown size in advance typically do so by doubling in capacity.
-This means that at least 50\% of the space goes unused.
+Hash tables used to accommodate sets without a size known in advance typically do so by doubling in capacity.
+This means that at least 50\% of the space goes unused at points, with an average unused percentage of at least 25\%.
 Constructions like \cite{succinct} are able to mitigate this, but they are largely theoretical.
 Instead, \cite{dysect} uses the cuckoo hashing kick operation to incrementally resize a hash table.
 First, the table is broken up into equal sized sub-arrays that can be resized independently.
-When the table gets close to full, one of the sub-arrays is doubled in size.
-Eventually all will have been doubled in size, thereby causing the whole table to have doubled in size.
+When the table gets close to full, exactly one of the sub-arrays is doubled in size.
+This frees up room that's available in future kick sequences, and the new space will slowly be filled.
+Eventually all arrays will have been doubled in size, thereby causing the whole table to have doubled in size without going through a phase with as low as 50\% space usage.
 
 \section{Taffy cuckoo filters}
 \label{tcf}
 Taffy cuckoo filters (``TCFs'') are approximate membership query structures that offer the following operations:
 
 \begin{itemize}
-\item {\bf Create} initializes an empty filter with the given size
+\item {\bf Create} initializes an empty filter with the given size.
   %and false positive probability, and expected {\em growth factor}.
   %A growth factor is the maximum number of doublings the structure must be able to undergo while maintaining the given false positive probability.
 \item {\bf Insert} adds a key to the filter.
   This takes $O(1)$ expected time.
   It can fail when the filter is nearly full.
 \item {\bf Lookup} takes a key and returns \verb|True| if the key is in the structure and \verb|False| with probability $1-\varepsilon$ if the key is not in the structure.
-  It takes $O(1)$ worst-case time
+  It takes $O(1)$ worst-case time.
 \item {\bf Upsize} doubles the capacity of the filter in $\Theta(n)$ time.
-\item {\bf Union} adds the items from another filter of size $m$ in $O(m)$ time.
+% \item {\bf Union} adds the items from another filter of size $m$ in $O(m)$ time.
 %% \item {\bf Intersection} Produces a new filter with only the items in both input filters, taking O(min(m,n)) time
 \end{itemize}
 
@@ -1016,10 +1009,10 @@ The stash limitations for the TCF and MTCF are very low - tuned for a linear sea
 It is not necessary they be unstructured - giving structure to the stash, as in \cite{backyard}, could allow the stash to grow and the fill factor to go higher without needing to upsize.
 
 There is a fourth structure supporting sets of unknown sizes described in \cite{unknown-prefix}.
-This structure is mostly theoretical and depends onn a certain type of prefix search with large embedded constants.
+This structure is mostly theoretical and depends on a certain type of prefix search structure with large embedded constants.
 A practical version of this may be possible to build.
 
-For the TCF, alternate quotienting dictionaries, including \cite{raman-practical} or \cite{quotient-filter}, could potentially improve performance.
+For the TCF, alternate quotienting dictionaries, including \cite{raman-practical}, \cite{broom}, or \cite{quotient-filter}, could potentially improve performance.
 
 Finally, testing taffy filters in various applications requiring the use of extensible approximate membership query structure would be of interest.
 

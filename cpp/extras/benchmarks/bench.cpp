@@ -262,9 +262,9 @@ int main(int argc, char** argv) {
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
     BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, fpp);
-     BenchWithBytes<MinimalPlasticFilter>(reps, bytes, 1.05, to_insert, to_find);
-     BenchWithBytes<ElasticFilter>(reps, bytes, 1.05, to_insert, to_find);
-     BenchGrowWithNdvFpp<BlockElasticFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
+     BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
+     BenchWithBytes<TaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
+     BenchGrowWithNdvFpp<TaffyBlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
      BenchWithNdvFpp<BlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
     // BenchWithBytes<BlockFilter>(reps, bytes, to_insert, to_find);
 

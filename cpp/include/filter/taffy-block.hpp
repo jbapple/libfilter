@@ -2,7 +2,7 @@
 
 namespace filter {
 
-struct BlockElasticFilter {
+struct TaffyBlockFilter {
   BlockFilter* levels[64] = {};
   uint64_t sizes[64];
   int cursor = 0;
@@ -10,7 +10,7 @@ struct BlockElasticFilter {
   int64_t ttl = 0;
   double fpp;
 
-  ~BlockElasticFilter() {
+  ~TaffyBlockFilter() {
     for (int i = 0; i < cursor; ++i) {
       delete levels[i];
       levels[i] = nullptr;
@@ -18,7 +18,7 @@ struct BlockElasticFilter {
   }
 
  protected:
-  BlockElasticFilter(uint64_t ndv, double fpp) : last_ndv(ndv), ttl(ndv), fpp(fpp) {
+  TaffyBlockFilter(uint64_t ndv, double fpp) : last_ndv(ndv), ttl(ndv), fpp(fpp) {
     levels[0] = new BlockFilter(BlockFilter::CreateWithNdvFpp(ndv, fpp / 1.65));
     ++cursor;
     for (uint64_t x = 0; x < 32; ++x) {
@@ -29,11 +29,11 @@ struct BlockElasticFilter {
   }
 
  public:
-  static BlockElasticFilter CreateWithNdvFpp(uint64_t ndv, double fpp) {
-    return BlockElasticFilter(ndv, fpp);
+  static TaffyBlockFilter CreateWithNdvFpp(uint64_t ndv, double fpp) {
+    return TaffyBlockFilter(ndv, fpp);
   }
 
-  static const char* Name() { return "BlockElastic"; }
+  static const char* Name() { return "TaffyBlock"; }
 
   uint64_t SizeInBytes() const {
     uint64_t result = 0;

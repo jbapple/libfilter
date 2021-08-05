@@ -203,7 +203,7 @@ struct Side {
 
 }  // namespace detail
 
-struct ElasticFilter {
+struct TaffyCuckooFilter {
   INLINE static const char* Name() {
     thread_local const constexpr char result[] = "Elastic";
     return result;
@@ -218,8 +218,8 @@ struct ElasticFilter {
  public:
   uint64_t occupied = 0;
 
-  ElasticFilter(ElasticFilter&&);
-  ElasticFilter(const ElasticFilter& that)
+  TaffyCuckooFilter(TaffyCuckooFilter&&);
+  TaffyCuckooFilter(const TaffyCuckooFilter& that)
       : sides{{(int)that.log_side_size, that.entropy},
               {(int)that.log_side_size, that.entropy + 4}},
         log_side_size(that.log_side_size),
@@ -231,13 +231,13 @@ struct ElasticFilter {
              sizeof(detail::Bucket) << that.log_side_size);
     }
   }
-  ElasticFilter& operator=(const ElasticFilter& that) {
-    this->~ElasticFilter();
-    new (this) ElasticFilter(that);
+  TaffyCuckooFilter& operator=(const TaffyCuckooFilter& that) {
+    this->~TaffyCuckooFilter();
+    new (this) TaffyCuckooFilter(that);
     return *this;
   }
 
-  ~ElasticFilter() {
+  ~TaffyCuckooFilter() {
     //std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
   }
 
@@ -277,18 +277,18 @@ struct ElasticFilter {
     }
   }
 
-  ElasticFilter(int log_side_size, const uint64_t* entropy)
+  TaffyCuckooFilter(int log_side_size, const uint64_t* entropy)
       : sides{{log_side_size, entropy}, {log_side_size, entropy + 6}},
         log_side_size(log_side_size),
         entropy(entropy) {}
 
-  static ElasticFilter CreateWithBytes(uint64_t bytes) {
+  static TaffyCuckooFilter CreateWithBytes(uint64_t bytes) {
     thread_local constexpr const uint64_t kEntropy[13] = {
         0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
         0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f,
         0x28a31cec9f6d4484, 0x688f3fe9de7245f6, 0x1dc17831966b41a2, 0xf227166e425e4b0c,
         0x15ab11b1a6bf4ea8};
-    return ElasticFilter(
+    return TaffyCuckooFilter(
         std::max(1.0,
                  log(1.0 * bytes / 2 / detail::kBuckets / sizeof(detail::Slot)) / log(2)),
         kEntropy);
@@ -401,7 +401,7 @@ struct ElasticFilter {
     return Insert(s, q, ttl);
   }
 /*
-  void Union(const ElasticFilter& x) {
+  void Union(const TaffyCuckooFilter& x) {
     assert(x.log_side_size <= log_side_size);
     for (int s : {0, 1}) {
       for (uint64_t b = 0; b < (1ul << x.log_side_size); ++b) {
@@ -421,13 +421,13 @@ struct ElasticFilter {
     }
   }
 */
-  friend void swap(ElasticFilter&, ElasticFilter&);
+  friend void swap(TaffyCuckooFilter&, TaffyCuckooFilter&);
 
   // Take an item from slot sl with bucket index i, a filter u that sl is in, a side that
   // sl is in, and a filter to move sl to, does so, potentially inserting TWO items in t,
   // as described in the paper.
-  INLINE void UpsizeHelper(detail::Slot sl, uint64_t i, ElasticFilter* u, int s,
-                           ElasticFilter& t) {
+  INLINE void UpsizeHelper(detail::Slot sl, uint64_t i, TaffyCuckooFilter* u, int s,
+                           TaffyCuckooFilter& t) {
     if (sl.tail == 0) return;
     detail::Path p;
     static_cast<detail::Slot&>(p) = sl;
@@ -458,7 +458,7 @@ struct ElasticFilter {
   // Double the size of the filter
   void Upsize() {
     //std::cout << Capacity() << std::endl;
-    ElasticFilter t(1 + log_side_size, entropy);
+    TaffyCuckooFilter t(1 + log_side_size, entropy);
 
     std::vector<detail::Path> stashes[2] = {std::vector<detail::Path>(),
                                             std::vector<detail::Path>()};
@@ -488,7 +488,7 @@ struct ElasticFilter {
   }
 };
 
-INLINE void swap(ElasticFilter& x, ElasticFilter& y) {
+INLINE void swap(TaffyCuckooFilter& x, TaffyCuckooFilter& y) {
   using std::swap;
   swap(x.sides[0], y.sides[0]);
   swap(x.sides[1], y.sides[1]);
