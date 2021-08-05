@@ -16,9 +16,9 @@
 #include <vector>            // for vector, allocator
 
 #include "filter/block.hpp"  // for BlockFilter, ScalarBlockFilter (ptr o...
-#include "filter/elastic.hpp"
-#include "filter/block-elastic.hpp"
-#include "filter/minimal-plastic.hpp"
+#include "filter/taffy-cuckoo.hpp"
+#include "filter/taffy-block.hpp"
+#include "filter/minimal-taffy-cuckoo.hpp"
 #include "util.hpp"          // for Rand
 #include "cuckoofilter.h"
 

@@ -1,7 +1,7 @@
 #include "filter/block.hpp"
-#include "filter/elastic.hpp"
-#include "filter/block-elastic.hpp"
-#include "filter/minimal-plastic.hpp"
+#include "filter/taffy-cuckoo.hpp"
+#include "filter/taffy-block.hpp"
+#include "filter/minimal-taffy-cuckoo.hpp"
 
 #include <cstdint>  // for uint64_t
 #include <unordered_set>
