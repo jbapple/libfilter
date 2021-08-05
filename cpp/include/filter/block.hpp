@@ -93,7 +93,7 @@ template <void (*INSERT_HASH)(uint64_t, libfilter_block*),
           bool (*FIND_HASH)(uint64_t, const libfilter_block*)>
 struct SpecificBF : GenericBF {
  public:
-  void InsertHash(uint64_t hash) { INSERT_HASH(hash, &payload_); }
+  bool InsertHash(uint64_t hash) { INSERT_HASH(hash, &payload_); return true; }
   bool FindHash(uint64_t hash) const { return FIND_HASH(hash, &payload_); }
   SpecificBF(GenericBF&& x) : GenericBF(std::move(x)) {}
   SpecificBF& operator=(GenericBF&& that) {

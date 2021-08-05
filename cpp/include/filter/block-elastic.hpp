@@ -54,10 +54,11 @@ struct BlockElasticFilter {
     ttl = last_ndv;
   }
 
-  void InsertHash(uint64_t h) {
+  bool InsertHash(uint64_t h) {
     if (ttl <= 0) Upsize();
     levels[cursor - 1]->InsertHash(h);
     --ttl;
+    return true;
   }
 
   bool FindHash(uint64_t h) const {

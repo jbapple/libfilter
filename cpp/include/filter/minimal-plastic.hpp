@@ -333,12 +333,12 @@ uint64_t inserted_hashes = 0;
 mutable bool debug_lookup = false;
 
   // TODO: manage stash
-  INLINE void InsertHash(uint64_t k) {
+  INLINE bool InsertHash(uint64_t k) {
     ++inserted_hashes;
     //auto countz = Count();
     //assert(occupied == countz);
 
-    while (occupied > 0.875 * Capacity() || occupied + 4 >= Capacity() ||
+    while (occupied > 0.9 * Capacity() || occupied + 4 >= Capacity() ||
         sides[0].stashes.size() + sides[1].stashes.size() > 8) {
       // if (sides[0].stashes.size() + sides[1].stashes.size() > 0) {
 
@@ -358,6 +358,7 @@ mutable bool debug_lookup = false;
     auto p =
         detail::minimal_plastic::ToPath(k, sides[0].hi, cursor, log_side_size, false);
     Insert(0, p, 128);
+    return true;
   }
 
   // INLINE void Unstash(int ttl) {

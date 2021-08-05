@@ -308,13 +308,14 @@ struct ElasticFilter {
 
   INLINE uint64_t Capacity() const { return  2 * detail::kBuckets * (1ul << log_side_size); }
 
-  INLINE void InsertHash(uint64_t k) {
+  INLINE bool InsertHash(uint64_t k) {
     // 95% is achievable, generally,but give it some room
     while (occupied > 0.90 * Capacity() || occupied + 4 >= Capacity() || sides[0].stash.size() + sides[1].stash.size() > 8) {
       Upsize();
       //std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
     }
     Insert(0, detail::ToPath(k, sides[0].f, log_side_size));
+    return true;
   }
 
  protected:
@@ -399,7 +400,27 @@ struct ElasticFilter {
     // }
     return Insert(s, q, ttl);
   }
-
+/*
+  void Union(const ElasticFilter& x) {
+    assert(x.log_side_size <= log_side_size);
+    for (int s : {0, 1}) {
+      for (uint64_t b = 0; b < (1ul << x.log_side_size); ++b) {
+        for (int i = 0; i < kBuckets; ++i) {
+          if (x.sides[s][b][i].tail == 0) continue;
+          detail::Path p;
+          p.bucket = b;
+          b.tail = x.sides[s][b][i].tail;
+          b.fingerprint = x.sides[s][b][i].fingerprint;
+          uint64_t hash = FromPathNoTail(p, x.sides[s].f, x.log_side_size);
+          int (w = x.log_side_size; w < log_side_size; ++w) {
+            if () {
+            }
+          }
+        }
+      }
+    }
+  }
+*/
   friend void swap(ElasticFilter&, ElasticFilter&);
 
   // Take an item from slot sl with bucket index i, a filter u that sl is in, a side that
