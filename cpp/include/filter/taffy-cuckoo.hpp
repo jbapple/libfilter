@@ -205,7 +205,7 @@ struct Side {
 
 struct TaffyCuckooFilter {
   INLINE static const char* Name() {
-    thread_local const constexpr char result[] = "Elastic";
+    thread_local const constexpr char result[] = "TaffyCuckoo";
     return result;
   }
 

@@ -174,7 +174,7 @@ INLINE void swap(Side& x, Side& y) {
 
 struct MinimalTaffyCuckooFilter {
   INLINE static const char* Name() {
-    thread_local const constexpr char result[] = "MinPlastic";
+    thread_local const constexpr char result[] = "MinTaffy";
     return result;
   }
 
