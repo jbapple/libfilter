@@ -102,6 +102,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
 
   // insert_nanos:
   double last = 0, next = 1;
+  Rand r;
   while (last < to_insert.size()) {
     const auto start = s.now();
     for (uint64_t i = last; i < min(to_insert.size(), static_cast<uint64_t>(next)); ++i) {
@@ -114,6 +115,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
     const auto finish = s.now();
     base.ndv_start = last;
     base.ndv_finish = next;
+
     if (base.ndv_finish > base.ndv_start) {
       base.bytes = filter.SizeInBytes();
       const auto insert_time = static_cast<std::chrono::duration<double>>(finish - start);
@@ -127,8 +129,8 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
       uint64_t found = 0;
       for (unsigned j = 0; j < reps; ++j) {
         const auto start = s.now();
-        for (unsigned i = 0; i < to_find.size(); ++i) {
-          found += filter.FindHash(to_find[i]);
+        for (unsigned i = 0; i < 1000 * 1000; ++i) {
+          found += filter.FindHash(to_find[r() % static_cast<uint64_t>(next)]);
         }
         const auto finish = s.now();
         const auto find_time = static_cast<std::chrono::duration<double>>(finish - start);
@@ -141,13 +143,13 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
       }
 
       base.sample_type = "fpp";
-      base.payload = 1.0 * found / to_find.size();
+      base.payload = 1.0 * found / 1000 / 1000 / reps;
       result.push_back(base);
       cout << base.CSV() << endl;
       for (unsigned j = 0; j < reps; ++j) {
         const auto start = s.now();
-        for (unsigned i = 0; i < to_find.size(); ++i) {
-          found += filter.FindHash(to_insert[i % static_cast<uint64_t>(next)]);
+        for (uint64_t i = 0; i < 1000 * 1000; ++i) {
+          found += filter.FindHash(to_insert[r() % static_cast<uint64_t>(next)]);
         }
         const auto finish = s.now();
         const auto find_time = static_cast<std::chrono::duration<double>>(finish - start);
@@ -211,7 +213,7 @@ void Samples(uint64_t ndv, vector<uint64_t>& to_insert, vector<uint64_t>& to_fin
   for (unsigned i = 0; i < ndv; ++i) {
     to_insert.push_back(r());
   }
-  for (unsigned i = 0; i < (1000 * 1000); ++i) {
+  for (unsigned i = 0; i < ndv; ++i) {
     to_find.push_back(r());
   }
 }

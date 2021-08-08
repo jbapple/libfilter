@@ -5,8 +5,13 @@
 # 004-levels-75p-001.txt
 # all-bench-100000000.txt
 # cuckoo-12-ndv-100000000-bench.txt
+# 12cm,6.4cm
 
-set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+
+set terminal postscript eps enhanced color size 9cm,6cm
+#font "libertine"
+#fontfile "/usr/share/fonts/opentype/linux-libertine/LinBiolinum_K.otf"
+#fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'bits-per-item.eps';
 unset grid;
 unset logscale y;
@@ -15,19 +20,19 @@ set xlabel "keys inserted";
 set ylabel "bits per key"
 set datafile separator ",";
 unset format y
-set yrange [0:64]
+set yrange [0:60]
 set key bottom left
-set title "Bits per key"
+#set title "Bits per key"
 plot '< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(8*$4/$3) with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints title "TCF", \
      "< grep fpp all-bench-100000000.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(8*$4/$3) with lines title "TBF", \
      "< grep fpp all-bench-100000000.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints  lw 1  title "CF", \
      "< grep fpp all-bench-100000000.txt | grep Simd        | sort -n -t , -k 3" using 3:(8*$4/$3) with lines lw 5  title "SBBF"
 
-set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'ideal-bits-per-item.eps';
 unset grid;
-set logscale y;
+set logscale y 10;
 set logscale x;
 set xlabel "keys inserted";
 set ylabel "false positive probability"
@@ -35,8 +40,8 @@ set datafile separator ",";
 unset format y
 set format y '%g%%'
 unset yrange
-set key bottom center
-set title "Empirical false positive probabilty after adding N keys"
+set key bottom left
+#set title "Empirical false positive probabilty after adding N keys"
 plot '< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(100*$6) with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(100*$6) with linespoints title "TCF", \
      "< grep fpp all-bench-100000000.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(100*$6) with lines title "TBF", \
@@ -45,7 +50,7 @@ plot '< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3'
 
 # # efficiency: number of bytes per item compared to the minimum needed
 # # lower is better
-# set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+# set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 # set output 'overage.eps';
 # unset grid;
 # set logscale y;
@@ -62,7 +67,7 @@ plot '< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3'
 
 # # efficiency: number of bytes per item compared to the minimum needed
 # # lower is better
-# set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+# set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 # set output 'deficiency.eps';
 # unset grid;
 # unset logscale y;
@@ -77,7 +82,7 @@ plot '< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3'
 #      "< grep fpp incremental-0.001-stashes-8-007.txt | grep \\\"B | sort -n -t , -k 3" using 3:(100 - 100/(8*($4/$3)/-(log($6)/log(2)))) with lines title "TBF
 
 # insert time; lower is better
-set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'insert.eps'
 unset grid;
 set logscale y 2;
@@ -86,7 +91,7 @@ set key bottom left;
 set datafile separator ",";
 set xlabel "keys inserted";
 set ylabel "nanoseconds";
-set title "Insert performance"
+#set title "Insert performance"
 unset format y;
 plot "< grep insert all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 9 title "MTCF", \
      "< grep insert all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with linespoints title "TCF", \
@@ -95,16 +100,17 @@ plot "< grep insert all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k
      "< grep insert all-bench-100000000.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 5  title "SBBF"
 
 # lookup time; lower is better
-set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'lookup-absent.eps'
 unset grid;
-set logscale y 2;
 set logscale x;
-set key bottom right;
+unset logscale y;
+set xrange [*:100000000];
+set key top left;
 set datafile separator ",";
 set xlabel "keys inserted";
 set ylabel "nanoseconds";
-set title "Lookup performance (absent)"
+#set title "Lookup performance (absent)"
 unset format y;
 plot "< grep find_missing all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 9 title "MTCF", \
      "< grep find_missing all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with linespoints title "TCF", \
@@ -113,16 +119,16 @@ plot "< grep find_missing all-bench-100000000.txt | grep MinTaffy    | sort -n -
      "< grep find_missing all-bench-100000000.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines  lw 5  title "SBBF"
 
 # lookup time; lower is better
-set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'lookup-present.eps'
 unset grid;
-set logscale y 2;
+unset logscale y;
 set logscale x;
-set key bottom right;
+set key top left;
 set datafile separator ",";
 set xlabel "keys inserted";
 set ylabel "nanoseconds";
-set title "Lookup performance (present)"
+#set title "Lookup performance (present)"
 unset format y;
 plot "< grep find_present all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 9 title "MTCF", \
      "< grep find_present all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with linespoints title "TCF", \
@@ -133,7 +139,7 @@ plot "< grep find_present all-bench-100000000.txt | grep MinTaffy    | sort -n -
 
 
 # space usage; lower is better
-set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'space.eps'
 unset grid;
 unset logscale y;
@@ -144,7 +150,7 @@ set xrange[1:100000000];
 set xlabel "keys inserted";
 set ylabel "bytes occupied";
 unset format y;
-set title "Space used"
+#set title "Space used"
 plot "< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:4 with linespoints title "TCF", \
      "< grep fpp all-bench-100000000.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:4 with lines title "TBF", \
@@ -152,7 +158,7 @@ plot "< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3"
      "< grep fpp all-bench-100000000.txt | grep Simd        | sort -n -t , -k 3" using 3:4 with lines lw 5 title "SBBF"
 
 # x axis is find time, y axis is fpp efficiency. lower left is better
-# set terminal postscript eps enhanced color size 12cm,6.4cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+# set terminal postscript eps enhanced color size 9cm,4.5cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 # set output 'insert-deficiency.eps'
 # unset grid;
 # unset logscale y;
