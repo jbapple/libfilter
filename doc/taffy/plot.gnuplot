@@ -87,7 +87,7 @@ set output 'insert.eps'
 unset grid;
 set logscale y 2;
 set logscale x;
-set key bottom left;
+set key top left;
 set datafile separator ",";
 set xlabel "keys inserted";
 set ylabel "nanoseconds";
