@@ -137,7 +137,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
         base.sample_type = "find_missing_nanos";
         base.payload = 1.0 *
                        chrono::duration_cast<chrono::nanoseconds>(find_time).count() /
-                       to_find.size();
+                       1000 / 1000;
         result.push_back(base);
         cout << base.CSV() << endl;
       }
@@ -156,7 +156,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
         base.sample_type = "find_present_nanos";
         base.payload = 1.0 *
                        chrono::duration_cast<chrono::nanoseconds>(find_time).count() /
-                       static_cast<uint64_t>(to_find.size());
+                       1000 / 1000;
         result.push_back(base);
         cout << base.CSV() << endl;
       }
