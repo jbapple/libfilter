@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdlib.h>
 #include <stdint.h>
 
 static const uint64_t libfilter_hash_entropy_bytes =

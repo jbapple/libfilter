@@ -20,6 +20,7 @@ uint64_t libfilter_block_bytes_needed(double ndv, double fpp) {
 __attribute__((visibility("hidden"))) int libfilter_block_calloc(uint64_t heap_space,
                                                                  uint64_t bucket_bytes,
                                                                  libfilter_block* here) {
+  heap_space = (heap_space > bucket_bytes) ? heap_space : bucket_bytes;
   const libfilter_region_alloc_result allocated =
       libfilter_alloc_at_most(heap_space, bucket_bytes);
   if (0 == allocated.block_bytes) return -1;

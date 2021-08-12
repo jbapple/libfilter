@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <cstring>
 
+#if defined(__LZCNT__)
+#include <immintrin.h>
+#endif
+
 namespace filter {
 namespace detail {
 

@@ -275,9 +275,9 @@ In quotient filters, the universe $V$ is empty and the universe $U$ has size $N/
 Values in the universe $U$ are derived by hashing keys (from any universe) and taking the low-order $\lg n + \lg (1/\varepsilon)$ bits: if $h$ is a hash function and $x$ is a key, the key in $U$ to be stored is $h(x) \bmod n/\varepsilon$.
 
 Quotienting can also be used with cuckoo hash tables.
-Cuckoo hash tables maintain two or more locations for each key-value pair, which could be stored in any of them.~\cite{cuckoo-journal}
-When a new element is inserted, if its locations are full, it evicts an existing element out of one of the locations, making that evicted element the new element that needs to be placed somewhere.
-However, because more than one hash function is used and because eviction occurs, it must be possible to translate from a location-element pair to an alternate location-element pair for the same key
+Cuckoo hash tables maintain $k \ge 1$ locations for each key-value pair, which could be stored in any of them.~\cite{cuckoo-journal}
+When a new element is inserted, if its locations are full, it evicts an existing element out of one of the locations; that evicted element must then be placed in one of its $k$ locations, and so on.
+Because more than one hash function is used and because eviction occurs, it must be possible to translate from a location-element pair to an alternate location-element pair for the same key
 %% Let $k$ be the number of locations and let $h_i$ for $0 \le i < k$ be the hash functions that map 
 
 %% It thus
@@ -285,13 +285,12 @@ However, because more than one hash function is used and because eviction occurs
 %% The quotienting reconstruction of the key described above does not fully translate to cuckoo hash tables: reconstruction requires a single slot number.
 %% If reconstruction followed the pattern above, it would be possible to reconstruct two non-equal keys for the same element, just depending on which of its two or more slots the element was stored in.
 
-Backyard cuckoo hashing handles this by using $k$ different hash functions, if $k$ is the number of slots each key-value pair gets mapped to.~\cite{backyard}
+Backyard cuckoo hashing handles this by using $k$ different hash functions.~\cite{backyard}
 Upon insert, each new key-value pair is first hashed with the $k$ hash functions, then $k$ locations are identified via quotienting.
 That is, an element $x$ maps to $h_i(x)$ for $i < k$, and then the slot $h_i(x) \bmod n$ is checked.
-Since eviction occurs, it must be possible to map $h_i(x)$ to $h_j(x)$ for $i \ne j$.
 Backyard cuckoo hashing does this by making each hash function a permutation as well, which allows the mapping via $h_j(h_i^{-1}(h_i(x))) = h_j(x)$.
 
-Taffy filters use this permutation-quotienting technique with cuckoo hashing, extending backyard cuckoo hashing to the realm of the practical.
+Taffy filters use this permutation-quotienting technique with cuckoo hashing, extending the theory result from backyard cuckoo hashing into practice.
 
 \subsection{Compact extensible dictionaries}
 
@@ -1013,6 +1012,8 @@ Pseudocode for lookup, insert, and upsize are available in Appendix~\ref{mtcf-ap
 \label{eval}
 
 TODO: evaluate starting taffy filters with more starting elements: maybe 1024
+
+TODO: aarch64
 
 In each graph, TBFs are configured for a maximum fpp of 0.1\%.
 %In case the insert operation fails, it calls Upsize until a place can be found for the element.

@@ -127,14 +127,27 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
       cout << base.CSV() << endl;
 
       uint64_t found = 0;
+      uint64_t dummy = 0;
       for (unsigned j = 0; j < reps; ++j) {
         const auto start = s.now();
         for (unsigned i = 0; i < 1000 * 1000; ++i) {
           found += filter.FindHash(to_find[r() % static_cast<uint64_t>(next)]);
         }
         const auto finish = s.now();
-        const auto find_time = static_cast<std::chrono::duration<double>>(finish - start);
+        for (unsigned i = 0; i < 1000 * 1000; ++i) {
+          dummy += to_find[r() % static_cast<uint64_t>(next)];
+        }
+        const auto finality = s.now();
+        auto find_time = static_cast<std::chrono::duration<double>>(finish - start);
         base.sample_type = "find_missing_nanos";
+        base.payload = 1.0 *
+                       chrono::duration_cast<chrono::nanoseconds>(find_time).count() /
+                       1000 / 1000;
+        result.push_back(base);
+        cout << base.CSV() << endl;
+
+        find_time = static_cast<std::chrono::duration<double>>(finality - finish);
+        base.sample_type = "to_fin_base";
         base.payload = 1.0 *
                        chrono::duration_cast<chrono::nanoseconds>(find_time).count() /
                        1000 / 1000;
@@ -152,8 +165,20 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
           found += filter.FindHash(to_insert[r() % static_cast<uint64_t>(next)]);
         }
         const auto finish = s.now();
-        const auto find_time = static_cast<std::chrono::duration<double>>(finish - start);
+        for (uint64_t i = 0; i < 1000 * 1000; ++i) {
+          found += to_insert[r() % static_cast<uint64_t>(next)];
+        }
+        const auto finality = s.now();
+        auto find_time = static_cast<std::chrono::duration<double>>(finish - start);
         base.sample_type = "find_present_nanos";
+        base.payload = 1.0 *
+                       chrono::duration_cast<chrono::nanoseconds>(find_time).count() /
+                       1000 / 1000;
+        result.push_back(base);
+        cout << base.CSV() << endl;
+
+        find_time = static_cast<std::chrono::duration<double>>(finality - finish);
+        base.sample_type = "to_ins_base";
         base.payload = 1.0 *
                        chrono::duration_cast<chrono::nanoseconds>(find_time).count() /
                        1000 / 1000;
@@ -161,7 +186,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
         cout << base.CSV() << endl;
       }
   // Force the FindHash value to be calculated:
-      if (found) {
+      if (found & dummy) {
         // do something nearly nilpotent that the compiler can't figure out is a no-op
         result.push_back(base);
         result.pop_back();

@@ -18,7 +18,7 @@
 #include <iostream>
 #include <utility>
 
-#include "immintrin.h"
+// #include "immintrin.h"
 
 #include "util.hpp"
 #include "paths.hpp"
@@ -119,6 +119,7 @@ void swap(Level& x, Level& y) {
 // This is useful for random-walk cuckoo hashing, in which the leftover path needs a place
 // to be stored so it doesn't invalidate old inserts.
 struct Side {
+  // TODO: can use identity for one side
   Feistel hi, lo;
   Level levels[kLevels];
   std::vector<Path> stashes;

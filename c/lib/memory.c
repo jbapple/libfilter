@@ -97,7 +97,7 @@ __attribute__((visibility("hidden"))) bool libfilter_mmappable(uint64_t max_byte
   if (alignment > HUGE_PAGE_SIZE) return false;
   const uint64_t guarantee_alignment = libfilter_guarantee(max_bytes, alignment);
   const uint64_t truncate_hugepage = libfilter_truncate(max_bytes, HUGE_PAGE_SIZE);
-  return truncate_hugepage >= guarantee_alignment;
+  return truncate_hugepage > 0 && truncate_hugepage >= guarantee_alignment;
 }
 #endif
 
