@@ -97,7 +97,7 @@ plot "< grep insert all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k
      "< grep insert all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
      "< grep insert all-bench-100000000.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
      "< grep insert all-bench-100000000.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
-     "< grep insert all-bench-100000000.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 3 title "SBBF"
+     "< grep insert all-bench-100000000.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1 title "SBBF"
 
 # lookup time; lower is better
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";

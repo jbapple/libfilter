@@ -1044,10 +1044,19 @@ Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the
 During an evict operation, an element may move between levels with differently-sized arrays of buckets.
 This poses no problem when the fingerprint has size 9, but when the fingerprint has size 8 and the level moved {\em from} has a bucket array of size $2^k$ and the level moved {\em to} has a bucket array of size $2^{k+1}$, there are not enough bits in the fingerprint.
 As above, we steal bits from the tail, and, as above, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key.
+See Figure~\ref{mtcf-state-transition}
 
 \begin{figure}
   \includegraphics[width=\columnwidth]{mtcf-state-transition}
-\caption{\label{mtcf-state-transition}}
+\caption{\label{mtcf-state-transition}
+This diagram illustrates the transitions an element can go through when evicted.
+The diagram can be read as ``an element in state A can become an element in state B when evicted''.
+The states indicate the lengths of the level, fingerprint, and tail.
+When a level's index is less than the cursor, its length is twice what it would be if its index were higher.
+In any of the four states, an eviction may move an element from that state to itself.
+For instance, an element in a long level can be evicted to stay in a long level, and the same can be said of an element with a long fingerprint (which must necessarily be in a short level).
+For elements in a short level with a short fingerprint and no tail, when they are evicted to an element in a long level, two elements are created, as it is impossible to steal a bit from the empty tail.
+}
 \end{figure}
 
 Pseudocode for lookup, insert, and upsize are available in Appendix~\ref{mtcf-appendix}.
@@ -1058,12 +1067,10 @@ Pseudocode for lookup, insert, and upsize are available in Appendix~\ref{mtcf-ap
 
 TODO: evaluate starting taffy filters with more starting elements: maybe 1024
 
-TODO: aarch64
-
 In each graph, TBFs are configured for a maximum fpp of 0.1\%.
 %In case the insert operation fails, it calls Upsize until a place can be found for the element.
 All taffy filters are configured with an initial capacity of 1, however the MTCF has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
-All experiments were performed on an Intel i7-7800X with 96GB of memory and SMT turned on.
+All experiments were performed on an Intel i7-7800X with 96GB of memory and SMT turned on, except where noted
 
 For performance testing, we equip both TCFs and MTCFs with variable sized stashes.~\cite{stash}
 We set both filters to upsize when they are 90\% full or their stashes have size greater than 4.
@@ -1169,7 +1176,7 @@ TBFs are the fastest, with the exception of absent lookups for filters with over
 {arm-lookup-both}
   \caption{
     \label{arm-lookup-both}
-    Lookup times for filters, m6g.medium
+    Lookup times for filters on an AWS S3 m6g.medium with an ARM-based Graviton2.
   }
 \end{figure}
 
