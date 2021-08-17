@@ -7,6 +7,8 @@
 //
 // See "How to Approximate A Set Without Knowing Its Size In Advance", by
 // Rasmus Pagh, Gil Segev, and Udi Wieder
+//
+// TODO: Union, Intersection, iteration, Freeze/Thaw, serialize/deserialized
 
 #pragma once
 
@@ -17,8 +19,6 @@
 #include <cstring>
 #include <iostream>
 #include <utility>
-
-// #include "immintrin.h"
 
 #include "util.hpp"
 
@@ -174,7 +174,6 @@ struct Side {
     for (auto& path : stash) {
       if (path.tail != 0 && p.bucket == path.bucket &&
           p.fingerprint == path.fingerprint && IsPrefixOf(path.tail, p.tail)) {
-        // std::cout << "match\n";
         return true;
       }
     }
@@ -182,7 +181,6 @@ struct Side {
     for (int i = 0; i < kBuckets; ++i) {
       if (b[i].tail == 0) continue;
       if (b[i].fingerprint == p.fingerprint && IsPrefixOf(b[i].tail, p.tail)) {
-        //std::cout << "match\n";
         return true;
       }
     }
@@ -218,7 +216,6 @@ struct TaffyCuckooFilter {
  public:
   uint64_t occupied = 0;
 
-  TaffyCuckooFilter(TaffyCuckooFilter&&);
   TaffyCuckooFilter(const TaffyCuckooFilter& that)
       : sides{{(int)that.log_side_size, that.entropy},
               {(int)that.log_side_size, that.entropy + 4}},
@@ -231,14 +228,11 @@ struct TaffyCuckooFilter {
              sizeof(detail::Bucket) << that.log_side_size);
     }
   }
+
   TaffyCuckooFilter& operator=(const TaffyCuckooFilter& that) {
     this->~TaffyCuckooFilter();
     new (this) TaffyCuckooFilter(that);
     return *this;
-  }
-
-  ~TaffyCuckooFilter() {
-    //std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
   }
 
   uint64_t SizeInBytes() const {
@@ -312,7 +306,6 @@ struct TaffyCuckooFilter {
     // 95% is achievable, generally,but give it some room
     while (occupied > 0.90 * Capacity() || occupied + 4 >= Capacity() || sides[0].stash.size() + sides[1].stash.size() > 8) {
       Upsize();
-      //std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
     }
     Insert(0, detail::ToPath(k, sides[0].f, log_side_size));
     return true;
@@ -320,11 +313,9 @@ struct TaffyCuckooFilter {
 
  protected:
   // After Stashed result, HT is close to full and should be upsized
-  enum class InsertResult { Ok, Stashed, Failed };
-
   // After ttl, stash the input and return Stashed. Pre-condition: at least one stash is
   // empty. Also, p is a left path, not a right one.
-  INLINE InsertResult Insert(int s, detail::Path p, int ttl) {
+  INLINE bool Insert(int s, detail::Path p, int ttl) {
     //if (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) return InsertResult::Failed;
     detail::Side* both[2] = {&sides[s], &sides[1 - s]};
     while (true) {
@@ -339,12 +330,12 @@ struct TaffyCuckooFilter {
         if (p.tail == 0) {
           // Found an empty slot
           ++occupied;
-          return InsertResult::Ok;
+          return true;
         }
         if (p == q) {
           // Combined with or already present in a slot. Success, but no increase in
           // filter size
-          return InsertResult::Ok;
+          return true;
         }
         auto tail = p.tail;
         if (ttl <= 0) {
@@ -353,7 +344,7 @@ struct TaffyCuckooFilter {
           // pre-condition for this method.
           both[i]->stash.push_back(p);
           ++occupied;
-          return InsertResult::Stashed;
+          return false;
         }
         --ttl;
         // translate p to beign a path about the right half of the table
@@ -368,59 +359,11 @@ struct TaffyCuckooFilter {
 
   // This method just increases ttl until insert succeeds.
   // TODO: upsize when insert fails with high enough ttl?
-  INLINE InsertResult Insert(int s, detail::Path q) {
+  INLINE bool Insert(int s, detail::Path q) {
     int ttl = 32;
-    //If one stash is empty, we're fine. Only go here if both stashes are full
-    // while (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) {
-    //   ttl = 2 * ttl;
-// #if defined(__clang)
-// #pragma unroll
-// #else
-// #pragma GCC unroll 2
-// #endif
-//       for (int i = 0; i < 2; ++i) {
-//         int t = s^i;
-//         // remove stash value
-//         for (auto p : sides[t].stash) {
-//         sides[t].stash.tail = 0;
-//         --occupied;
-//         // Insert it. We know this will succeed, as one stash is now empty, but we hope it
-//         // succeeds with Ok, not Stashed.
-//         InsertResult result = Insert(t, p, ttl);
-//         assert(result != InsertResult::Failed);
-//         // At least one stash is now free. Can now do the REAL insert (after the loop)
-//         if (result == InsertResult::Ok) break;
-//       }
-    // }
-    // Can totally punt here. IOW, the stashes are ALWAYS full, since we don't even try
-    // very hard not to fill them!
-    // while (occupied > 0.9 * Capacity() || occupied + 4 > Capacity() ||
-    //        sides[0].stash.size() + sides[1].stash.size() > 32) {
-    //   Upsize();
-    // }
     return Insert(s, q, ttl);
   }
-/*
-  void Union(const TaffyCuckooFilter& x) {
-    assert(x.log_side_size <= log_side_size);
-    for (int s : {0, 1}) {
-      for (uint64_t b = 0; b < (1ul << x.log_side_size); ++b) {
-        for (int i = 0; i < kBuckets; ++i) {
-          if (x.sides[s][b][i].tail == 0) continue;
-          detail::Path p;
-          p.bucket = b;
-          b.tail = x.sides[s][b][i].tail;
-          b.fingerprint = x.sides[s][b][i].fingerprint;
-          uint64_t hash = FromPathNoTail(p, x.sides[s].f, x.log_side_size);
-          int (w = x.log_side_size; w < log_side_size; ++w) {
-            if () {
-            }
-          }
-        }
-      }
-    }
-  }
-*/
+
   friend void swap(TaffyCuckooFilter&, TaffyCuckooFilter&);
 
   // Take an item from slot sl with bucket index i, a filter u that sl is in, a side that
@@ -440,7 +383,7 @@ struct TaffyCuckooFilter {
       // Still no tail! :-)
       p.tail = sl.tail;
       t.Insert(0, p);
-      // change theraw value by just one bit: its last
+      // change the raw value by just one bit: its last
       q |= (1ul << (64 - u->log_side_size - detail::kHeadSize - 1));
       p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
       p.tail = sl.tail;
@@ -457,7 +400,6 @@ struct TaffyCuckooFilter {
 
   // Double the size of the filter
   void Upsize() {
-    //std::cout << Capacity() << std::endl;
     TaffyCuckooFilter t(1 + log_side_size, entropy);
 
     std::vector<detail::Path> stashes[2] = {std::vector<detail::Path>(),
@@ -470,10 +412,7 @@ struct TaffyCuckooFilter {
     sides[0].stash.clear();
     sides[1].stash.clear();
     for (int s : {0, 1}) {
-      // std::cout << (s == 0 ? "left" : "right") << std::endl;
       for (auto stash : stashes[s]) {
-        // std::cout << "stash" << std::endl;
-        //Unstash(500);
         UpsizeHelper(stash, stash.bucket, this, s, t);
       }
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
