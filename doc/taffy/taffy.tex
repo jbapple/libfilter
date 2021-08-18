@@ -16,8 +16,20 @@
 
 
 % \documentclass[letterpaper]{article}
-\documentclass[sigconf, nonacm]{acmart}
+\documentclass[sigconf]{acmart}
 %\documentclass[manuscript,screen,review]{acmart}
+
+\setcopyright{acmcopyright}
+\copyrightyear{2021}
+\acmYear{2021}
+\acmDOI{10.1145/1122445.1122456}
+
+\acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
+  Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
+\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+  June 03--05, 2018, Woodstock, NY}
+\acmPrice{15.00}
+\acmISBN{978-1-4503-XXXX-X/18/06}
 
 \pdfoutput=1
 
@@ -154,31 +166,32 @@ The resulting code is open source and available for general use.
 \end{abstract}
 
 \maketitle
-%%% do not modify the following VLDB block %%
-%%% VLDB block start %%%
-\pagestyle{\vldbpagestyle}
-\begingroup\small\noindent\raggedright\textbf{PVLDB Reference Format:}\\
-\vldbauthors. \vldbtitle. PVLDB, \vldbvolume(\vldbissue): \vldbpages, \vldbyear.\\
-\href{https://doi.org/\vldbdoi}{doi:\vldbdoi}
-\endgroup
-\begingroup
-\renewcommand\thefootnote{}\footnote{\noindent
-This work is licensed under the Creative Commons BY-NC-ND 4.0 International License. Visit \url{https://creativecommons.org/licenses/by-nc-nd/4.0/} to view a copy of this license. For any use beyond those covered by this license, obtain permission by emailing \href{mailto:info@vldb.org}{info@vldb.org}. Copyright is held by the owner/author(s). Publication rights licensed to the VLDB Endowment. \\
-\raggedright Proceedings of the VLDB Endowment, Vol. \vldbvolume, No. \vldbissue\ %
-ISSN 2150-8097. \\
-\href{https://doi.org/\vldbdoi}{doi:\vldbdoi} \\
-}\addtocounter{footnote}{-1}\endgroup
-%%% VLDB block end %%%
 
 %%% do not modify the following VLDB block %%
-%%% VLDB block start %%%
-\ifdefempty{\vldbavailabilityurl}{}{
-\vspace{.3cm}
-\begingroup\small\noindent\raggedright\textbf{PVLDB Artifact Availability:}\\
-The source code, data, and/or other artifacts have been made available at \url{\vldbavailabilityurl}.
-\endgroup
-}
-%%% VLDB block end %%%
+%% %%% VLDB block start %%%
+%% \pagestyle{\vldbpagestyle}
+%% \begingroup\small\noindent\raggedright\textbf{PVLDB Reference Format:}\\
+%% \vldbauthors. \vldbtitle. PVLDB, \vldbvolume(\vldbissue): \vldbpages, \vldbyear.\\
+%% \href{https://doi.org/\vldbdoi}{doi:\vldbdoi}
+%% \endgroup
+%% \begingroup
+%% \renewcommand\thefootnote{}\footnote{\noindent
+%% This work is licensed under the Creative Commons BY-NC-ND 4.0 International License. Visit \url{https://creativecommons.org/licenses/by-nc-nd/4.0/} to view a copy of this license. For any use beyond those covered by this license, obtain permission by emailing \href{mailto:info@vldb.org}{info@vldb.org}. Copyright is held by the owner/author(s). Publication rights licensed to the VLDB Endowment. \\
+%% \raggedright Proceedings of the VLDB Endowment, Vol. \vldbvolume, No. \vldbissue\ %
+%% ISSN 2150-8097. \\
+%% \href{https://doi.org/\vldbdoi}{doi:\vldbdoi} \\
+%% }\addtocounter{footnote}{-1}\endgroup
+%% %%% VLDB block end %%%
+
+%% %%% do not modify the following VLDB block %%
+%% %%% VLDB block start %%%
+%% \ifdefempty{\vldbavailabilityurl}{}{
+%% \vspace{.3cm}
+%% \begingroup\small\noindent\raggedright\textbf{PVLDB Artifact Availability:}\\
+%% The source code, data, and/or other artifacts have been made available at \url{\vldbavailabilityurl}.
+%% \endgroup
+%% }
+%% %%% VLDB block end %%%
 
 
 \section{Introduction}
