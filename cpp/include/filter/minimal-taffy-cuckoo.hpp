@@ -18,8 +18,6 @@
 #include <iostream>
 #include <utility>
 
-// #include "immintrin.h"
-
 #include "util.hpp"
 #include "paths.hpp"
 
@@ -95,17 +93,6 @@ struct Level {
     return false;
   }
 
-  // INLINE bool Find(Path p) const {
-  //   assert(p.tail != 0);
-  //   uint64_t b;
-  //   memcpy(&b, &data[p.bucket], sizeof(b));
-  //   b = b >> kTailSize;
-  //   b = b & 0x03ff03ff03ff03ff;
-  //   auto m = p.fingerprint * 0x0001000100010001;
-  //   auto c = b^m;
-  //   return (c - 0x0001000100010001) & 0x8000800080008000;
-  // }
-
   friend void swap(Level&, Level&);
 };
 
@@ -119,7 +106,7 @@ void swap(Level& x, Level& y) {
 // This is useful for random-walk cuckoo hashing, in which the leftover path needs a place
 // to be stored so it doesn't invalidate old inserts.
 struct Side {
-  // TODO: can use identity for one side
+  // TODO: can use identity for one side?
   Feistel hi, lo;
   Level levels[kLevels];
   std::vector<Path> stashes;
@@ -190,32 +177,6 @@ struct MinimalTaffyCuckooFilter {
   uint64_t occupied = 0;
 
   MinimalTaffyCuckooFilter(MinimalTaffyCuckooFilter&&);
-  /*
-  ElasticFilter(const ElasticFilter& that)
-      : sides{{(int)that.log_side_size, that.entropy},
-              {(int)that.log_side_size, that.entropy + 12}},
-        cursor(0),
-        log_side_size(that.log_side_size),
-        rng(that.rng),
-        entropy(that.entropy),
-        occupied(that.occupied) {
-    for (int i = 0; i < 2; ++i) {
-      memcpy(sides[i].data, that.sides[i].data,
-             sizeof(detail::minimal_taffy::Bucket) << that.log_side_size);
-    }
-  }
-  */
-  /*
-  ElasticFilter& operator=(const ElasticFilter& that) {
-    this->~ElasticFilter();
-    new (this) ElasticFilter(that);
-    return *this;
-  }
-  */
-
-  // ~MinimalTaffyCuckooFilter() {
-  //   std::cout << occupied << " " << Capacity() << " " << SizeInBytes() << std::endl;
-  // }
 
   uint64_t Capacity() const {
     return 2 + 2 * detail::minimal_taffy::kBuckets *
@@ -231,7 +192,6 @@ struct MinimalTaffyCuckooFilter {
 
  protected:
   // Verifies the occupied field:
-
   uint64_t Count() const {
     uint64_t result = 0;
     for (int s = 0; s < 2; ++s) {
@@ -267,20 +227,6 @@ struct MinimalTaffyCuckooFilter {
   }
 
  public:
-  /*
-  void Print() const {
-    for (int s = 0; s < 2; ++s) {
-      sides[s].stash.Print();
-      std::cout << std::endl;
-      for (uint64_t i = 0; i < 1ull << log_side_size; ++i) {
-        for (int j = 0; j < detail::minimal_taffy::kBuckets; ++j) {
-          sides[s][i][j].Print();
-          std::cout << std::endl;
-        }
-      }
-    }
-  }
-  */
   MinimalTaffyCuckooFilter(int log_side_size, const uint64_t* entropy)
       : sides{{log_side_size, entropy}, {log_side_size, entropy + 12}},
         cursor(0),
@@ -297,6 +243,7 @@ struct MinimalTaffyCuckooFilter {
         0xd30480ab74084edc, 0xd72483670ec14df3, 0x0414954940374787, 0x8cd86adfda93493f,
         0x50d61c3272a24ccb, 0x40cb1e4f0da34cc3, 0xb88f09c3af35472e, 0x8de6d01bb8a849a5};
 
+    // TODO: start with a size other than 0
     return MinimalTaffyCuckooFilter(
         0,
         // std::max(1.0, log(1.0 * bytes / 2 / detail::minimal_taffy::kBuckets /
@@ -333,27 +280,12 @@ struct MinimalTaffyCuckooFilter {
 uint64_t inserted_hashes = 0;
 mutable bool debug_lookup = false;
 
-  // TODO: manage stash
   INLINE bool InsertHash(uint64_t k) {
     ++inserted_hashes;
-    //auto countz = Count();
-    //assert(occupied == countz);
 
     while (occupied > 0.9 * Capacity() || occupied + 4 >= Capacity() ||
         sides[0].stashes.size() + sides[1].stashes.size() > 8) {
-      // if (sides[0].stashes.size() + sides[1].stashes.size() > 0) {
-
-      // if (occupied > 0.80 * Capacity() || occupied + 4 >= Capacity()) {
-
-      // auto countz = Count();
-      // assert(occupied == countz);
       Upsize();
-      //std::cout << cursor << " " << inserted_hashes << std::endl;
-      if (cursor == 0) {
-        // std::cout << occupied << " " << Capacity() << " " << SizeInBytes() <<
-        // std::endl;
-      }
-      //debug_lookup = true;
     }
     // TODO: only need one path here. Which one to pick?
     auto p =
@@ -362,37 +294,16 @@ mutable bool debug_lookup = false;
     return true;
   }
 
-  // INLINE void Unstash(int ttl) {
-  //   for (int i : {0, 1}) {
-  //     auto p = sides[i].stash;
-  //     if (p.tail == 0) continue;
-  //     sides[i].stash.tail = 0;
-  //     --occupied;
-  //     Insert(i, p, ttl);
-  //   }
-  // }
-
   enum class InsertResult { Ok, Stashed, Failed };
 
   inline InsertResult Insert(int side, detail::minimal_taffy::Path p, int ttl) {
     assert(p.tail != 0);
-    // std::cout << "Begin insert ";
-    // p.Print();
-    // std::cout << std::endl;
     while (true) {
       for (int i : {side, 1 - side}) {
-        //auto countz = Count();
-        //assert(occupied == countz);
         --ttl;
-        if (ttl < -1000 && ((-ttl & (-ttl - 1)) == 0)) {
-          std::cout << std::dec << (-ttl) << std::endl;
-          std::cout << occupied << " " << Capacity() << " " << sides[0].stashes.size()
-                    << " " << sides[1].stashes.size() << std::endl;
-        }
         if (ttl < 0) {
           sides[i].stashes.push_back(p);
           ++occupied;
-          if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
           return InsertResult::Stashed;
         }
         detail::minimal_taffy::Path q = p;
@@ -400,21 +311,17 @@ mutable bool debug_lookup = false;
         if (r.tail == 0) {
           // Found an empty slot
           ++occupied;
-          if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
           return InsertResult::Ok;
         }
         if (r == q) {
           // Combined with or already present in a slot. Success, but no increase in
           // filter size
-          if (ttl < -1000) std::cout << std::dec << (-ttl) << std::endl;
-
           return InsertResult::Ok;
         }
         detail::minimal_taffy::Path extra;
         auto next = RePath(r, sides[i].lo, sides[i].hi, sides[1 - i].lo, sides[1 - i].hi,
                            log_side_size, log_side_size, cursor, cursor, &extra);
         if (extra.tail != 0) {
-          // std::cout << "Recurse insert" << std::endl;
           Insert(1 - i, extra, ttl);
         }
         // TODO: what if insert returns stashed? Do we need multiple states? Maybe green , yellow red?
@@ -422,8 +329,6 @@ mutable bool debug_lookup = false;
         // or retry if there aren't two stashes open at this time.
         p = next;
         assert(p.tail != 0);
-        //Print();
-        //std::cout << "------------------------\n";
       }
     }
   }
@@ -433,14 +338,6 @@ mutable bool debug_lookup = false;
 
   // Double the size of one level of the filter
   void Upsize() {
-    // std::cout << "Upsize " << std::dec << cursor << " "
-    //           << ((2u << log_side_size) * sizeof(detail::minimal_taffy::Bucket))
-    //           << " " << occupied << std::endl;
-    // for (uint64_t i = 1; i != 0; i *= 2) {
-    //   if (sides[0].stash.tail == 0 && sides[1].stash.tail == 0) break;
-    //   Unstash(i);
-    // }
-    // std::cout << sides[0].stashes.size() + sides[1].stashes.size() << std::endl;
     detail::minimal_taffy::Bucket* last_data[2] = {sides[0][cursor].data, sides[1][cursor].data};
     {
       detail::minimal_taffy::Bucket* next[2];
@@ -464,25 +361,18 @@ mutable bool debug_lookup = false;
     sides[0].stashes.clear();
     sides[1].stashes.clear();
     for (int s : {0, 1}) {
-      // std::cout << (s == 0 ? "left" : "right") << std::endl;
       for (auto stash : stashes[s]) {
-        // std::cout << "stash" << std::endl;
-        //Unstash(500);
-
         detail::minimal_taffy::Path q, r;
         r = RePathUpsize(stash, sides[s].lo, sides[s].hi, log_side_size, cursor - 1, &q);
         auto ttl = 128;
         assert(r.tail != 0);
         if (q.tail != 0) {
-          //std::cout << "Recurse insert" << std::endl;;
           Insert(s, q, ttl);
         }
         Insert(s, r, ttl);
-        // std::cout << "done stash" << std::endl;
       }
     }
     for (int s: {0,1}) {
-      // std::cout << (s == 0 ? "left" : "right") << std::endl;
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         p.bucket = i;
         for (int j = 0; j < detail::minimal_taffy::kBuckets; ++j) {
@@ -495,7 +385,6 @@ mutable bool debug_lookup = false;
           auto ttl = 128;
           assert(r.tail != 0);
           if (q.tail != 0) {
-            //std::cout << "Recurse insert" << std::endl;
             Insert(s, q, ttl);
           }
           Insert(s, r, ttl);
@@ -509,7 +398,6 @@ mutable bool debug_lookup = false;
       using namespace std;
       for (int i : {0, 1}) swap(sides[i].lo, sides[i].hi);
     }
-    // std::cout << "End Upsize" << std::endl;
   }
 };
 

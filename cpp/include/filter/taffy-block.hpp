@@ -24,7 +24,6 @@ struct TaffyBlockFilter {
     for (uint64_t x = 0; x < 32; ++x) {
       sizes[x] = BlockFilter::MinSpaceNeeded(
           ndv << x, fpp / pow(cursor + 1, 2) * 6 / pow(3.1415, 2));
-      //std::cout << sizes[x] << std::endl;
     }
   }
 
@@ -47,9 +46,6 @@ struct TaffyBlockFilter {
 
     last_ndv *= 2;
     levels[cursor] = new BlockFilter(BlockFilter::CreateWithBytes(sizes[cursor]));
-    //        last_ndv, fpp / pow(cursor + 1, 2) * 6 / pow(3.1415, 2)));
-    // std::cout << cursor << " " << last_ndv << " " << levels[cursor]->SizeInBytes()
-    //        << std::endl;
     ++cursor;
     ttl = last_ndv;
   }

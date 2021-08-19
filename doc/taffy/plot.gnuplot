@@ -31,16 +31,16 @@ plot '< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3'
 
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'ideal-bits-per-item.eps';
-unset grid;
+set grid noxtics ytics;
 set logscale y 10;
 set logscale x;
 set xlabel "keys inserted";
 set ylabel "false positive probability"
 set datafile separator ",";
-unset format y
-set format y '%g%%'
-unset yrange
-set key bottom left
+unset format y;
+set format y '%g%%';
+set yrange [0.01:3];
+set key bottom left;
 #set title "Empirical false positive probabilty after adding N keys"
 plot '< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(100*$6) with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(100*$6) with linespoints title "TCF", \

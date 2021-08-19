@@ -7,20 +7,20 @@
 //
 // The sample_type can be "insert_nanos", "find_nanos", or "fpp".
 
-#include <chrono>            // for nanoseconds, duration, duration_cast
-#include <cstdint>           // for uint64_t
-#include <iostream>          // for operator<<, basic_ostream, endl, istr...
-#include <sstream>           // for basic_istringstream
-#include <string>            // for string, operator<<, operator==
-#include <tuple>             // for tuple
-#include <vector>            // for vector, allocator
+#include <chrono>    // for nanoseconds, duration, duration_cast
+#include <cstdint>   // for uint64_t
+#include <iostream>  // for operator<<, basic_ostream, endl, istr...
+#include <sstream>   // for basic_istringstream
+#include <string>    // for string, operator<<, operator==
+#include <tuple>     // for tuple
+#include <vector>    // for vector, allocator
 
-#include "filter/block.hpp"  // for BlockFilter, ScalarBlockFilter (ptr o...
-#include "filter/taffy-cuckoo.hpp"
-#include "filter/taffy-block.hpp"
-#include "filter/minimal-taffy-cuckoo.hpp"
-#include "util.hpp"          // for Rand
 #include "cuckoofilter.h"
+#include "filter/block.hpp"  // for BlockFilter, ScalarBlockFilter (ptr o...
+#include "filter/minimal-taffy-cuckoo.hpp"
+#include "filter/taffy-block.hpp"
+#include "filter/taffy-cuckoo.hpp"
+#include "util.hpp"  // for Rand
 
 using namespace filter;
 
@@ -185,7 +185,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
         result.push_back(base);
         cout << base.CSV() << endl;
       }
-  // Force the FindHash value to be calculated:
+      // Force the FindHash value to be calculated:
       if (found & dummy) {
         // do something nearly nilpotent that the compiler can't figure out is a no-op
         result.push_back(base);
@@ -289,13 +289,9 @@ int main(int argc, char** argv) {
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
     BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, fpp);
-     BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
-     BenchWithBytes<TaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
-     BenchGrowWithNdvFpp<TaffyBlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
-     BenchWithNdvFpp<BlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
-    // BenchWithBytes<BlockFilter>(reps, bytes, to_insert, to_find);
-
+    BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
+    BenchWithBytes<TaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
+    BenchGrowWithNdvFpp<TaffyBlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
+    BenchWithNdvFpp<BlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
   }
-  //using TupleType = tuple<BlockFilter, ElasticFilter, BlockElasticFilter>;
-
 }

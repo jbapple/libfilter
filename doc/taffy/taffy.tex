@@ -234,7 +234,9 @@ Section~\ref{conclusion} concludes with open questions.
 
 TODO: address space usage problem as $\varepsilon$ shrinks and $k$ increases well past 8.
 For example, since ideal $k$ is $lg (1/\varepsilon)$, once $\varepsilon < 2^{-16}$, we should really double the block size.
-In the Pagh \etal{} structure, this can happen when the target fpp is $2^-8$ but there are 13 different SBBFs
+In the Pagh \etal{} structure, this can happen when the target fpp is $2^{-8}$ but there are 13 different SBBFs
+
+TODO: mention name ``sectorized Bloom filters'' from Columbia group (Kenneth A. Ross?)
 
 A standard Bloom filter sets $\lg (1/\varepsilon)$ bits in an array of size $m$, storing $m \ln 2 / \lg(1/\varepsilon)$ distinct elements.~\cite{bloom-original}
 This causes $\lg (1/\varepsilon)$ cache misses and requires the same number of hash function applications.
@@ -283,8 +285,6 @@ This bounds the occupancy of the table below $1/2$.~\cite{cuckoo-journal,load-th
 To improve the fill factor, cuckoo tables are usually implemented with finite-sized buckets instead of slots, where buckets can hold two or more elements.~\cite{buckets,load-thresholds}
 Cuckoo filters, taffy cuckoo filters, and minimum taffy cuckoo filters all use buckets of size four.~\cite{cuckoo}
 
-% TODO: other previous work: broom filter, KPR tables, Morton filters, vector quotient filters
-
 \subsection{Succinct dictionaries with quotienting}
 \label{quotienting}
 
@@ -330,7 +330,7 @@ In order to calculate $h_j(x)$, each hash function $h_i$ is a permutation with a
 
 Taffy cuckoo filters and Minimal taffy cuckoo filters are practical implementations of the theory of quotienting cuckoo hash tables.
 
-TODO: make one hash permutation the identity?
+%% TODO: make one hash permutation the identity?
 
 \subsection{Filters that can grow}
 
@@ -673,16 +673,16 @@ If the lookup fails, iteration proceeds to the next element.
 Otherwise, the shorter bit string of the two elements is inserted into the intersection.
 Note that this may sometimes be the element from the smaller TCF, since the tails have variable length
 
-TODO: pseudocode and an analysis of the fpp.
-For union, it should be the sum of the input fpp, minus their product, but need to explain that, since we earlier said all filters have the same low fpp.
-For intersection, the situation is tricky.
-We can depend on the inserted strings to be at least as long as the shortest strings in the larger dictionary.
+%% TODO: pseudocode and an analysis of the fpp.
+%% For union, it should be the sum of the input fpp, minus their product, but need to explain that, since we earlier said all filters have the same low fpp.
+%% For intersection, the situation is tricky.
+%% We can depend on the inserted strings to be at least as long as the shortest strings in the larger dictionary.
 
 This support for union and intersection is in contrast to TBFs, which do not support for iteration or intersection.
 TBFs do support union, but at a cost: while union operations on TCFs produce a filter with the sum of the false positive probabilities of the input filters, unions on TBFs performs like union in Bloom filters.
 If one Bloom filter has a fraction $\alpha$ of its bits set and another $\beta$, the union has $\alpha + \beta - \alpha \beta$ of its bits set in expectation.
-This increases the probability of a false positive from $\alpha^k + \beta^k$, where $k$ is the number of hash functions, to $(\alpha + \beta - \alpha \beta)^k$.
-For instance, when $\alpha = \beta = 0.5$ and $k = 8$, the false positive rate goes up by a factor of $0.75^8/0.5^8 \approx 25.63$, much more than the factor of $2$ with TCFs.
+%This increases the probability of a false positive from $\alpha^k + \beta^k$, where $k$ is the number of hash functions, to $(\alpha + \beta - \alpha \beta)^k$.
+For instance, when $\alpha = \beta = 0.5$ and $k = 8$, the false positive rate goes up by a factor of $0.75^8/0.5^8 \approx 25.63$. %, much more than the factor of $2$ with TCFs.
 
 \paragraph{Freeze and Thaw}
 TCFs also support {\em freeze} and {\em thaw} operations.
@@ -1246,7 +1246,7 @@ MTCFs moderate this pattern, but do not eliminate it.
 
 % TODO: freeze/thaw operations with ribbon filters
 
-% TODO: compare standard bloom filters, block bloom filters, filters with exponentially decreasing fpp, and cuckoo filters
+% TODO: compare standard bloom filters, filters with exponentially decreasing fpp
 
 
 \begin{figure}
