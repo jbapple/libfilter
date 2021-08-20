@@ -115,7 +115,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor, vector<uint64_t>& 
   Rand r;
   while (last < to_insert.size()) {
     const auto start = s.now();
-    for (uint64_t i = last; i < min(to_insert.size(), static_cast<uint64_t>(next)); ++i) {
+    for (uint64_t i = last; i < min(to_insert.size(), static_cast<size_t>(next)); ++i) {
       if (not filter.InsertHash(to_insert[i])) {
         next = i;
         to_insert.resize(i);
@@ -134,7 +134,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor, vector<uint64_t>& 
       // static_cast<uint64_t>(next)) - last?
       base.payload = 1.0 *
                      chrono::duration_cast<chrono::nanoseconds>(insert_time).count() /
-                     min(to_insert.size(), static_cast<uint64_t>(next - last));
+                     min(to_insert.size(), static_cast<size_t>(next - last));
       result.push_back(base);
       cout << base.CSV() << endl;
 
