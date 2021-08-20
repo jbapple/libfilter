@@ -7,12 +7,14 @@
 //
 // The sample_type can be "insert_nanos", "find_nanos", or "fpp".
 
+#include <algorithm>
 #include <chrono>    // for nanoseconds, duration, duration_cast
 #include <cstdint>   // for uint64_t
 #include <iostream>  // for operator<<, basic_ostream, endl, istr...
 #include <sstream>   // for basic_istringstream
 #include <string>    // for string, operator<<, operator==
 #include <tuple>     // for tuple
+#include <utility>
 #include <vector>    // for vector, allocator
 
 #include "cuckoofilter.h"
