@@ -19,6 +19,7 @@
 #include <cstring>
 #include <iostream>
 #include <utility>
+#include <vector>
 
 #include "util.hpp"
 
