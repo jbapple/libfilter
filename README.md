@@ -1,7 +1,7 @@
 ![](https://github.com/jbapple/libfilter/workflows/c-cpp/badge.svg?branch=master)
 
 This repository provides implementations of blocked Bloom filters and
-tarry filters for C, C++, and Java. Blocked filters use slightly
+taffy filters for C, C++, and Java. Blocked filters use slightly
 more space than traditional Bloom filters but are much faster, while
 taffy filters can scale to any size, even if the final size is not
 known in advance.

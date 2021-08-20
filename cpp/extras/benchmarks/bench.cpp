@@ -29,7 +29,14 @@ using namespace std;
 // TODO: since we're printing out stats directly, there is no reason to return any values
 // from the benchmarking functions.
 
-// A single statistic. sample_type must be "insert_nanos", "find_nanos", or "fpp".
+// A single statistic. sample_type must be "insert_nanos", "find_missing_nanos",
+// "find_present_nanos", "to_fin_base", "to_ins_base", or "fpp".
+//
+// "to_fin_base" is how long it takes just to iterate over the absent elements being
+// found. This can be subtracted from find_missing_nanos to remove the baseline cost and
+// focus on the find cost only.
+//
+// "to_ins_base" is the same, but for the present elements.
 struct Sample {
   string filter_name = "", sample_type = "";
   uint64_t ndv_start = 0;
@@ -87,14 +94,15 @@ struct CuckooShim {
   static CuckooShim CreateWithNdvFpp(uint64_t ndv, double) { return CuckooShim(ndv); }
 };
 
-
+// Does the actual benchmarking work. Repeasts `reps` times, samples grow by
+// `growth_factor`.
+//
+// TODO: does all the printing. Why bother returning a value at all?
 template <typename FILTER_TYPE>
-vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
-                         vector<uint64_t>& to_insert,
+vector<Sample> BenchHelp(uint64_t reps, double growth_factor, vector<uint64_t>& to_insert,
                          const vector<uint64_t>& to_find, FILTER_TYPE& filter) {
   Sample base;
   base.filter_name = FILTER_TYPE::Name();
-  //base.ndv = to_insert.size();
 
   vector<Sample> result;
 
@@ -120,6 +128,8 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
       base.bytes = filter.SizeInBytes();
       const auto insert_time = static_cast<std::chrono::duration<double>>(finish - start);
       base.sample_type = "insert_nanos";
+      // TODO: shouldn't the denominator be min(to_insert.size(),
+      // static_cast<uint64_t>(next)) - last?
       base.payload = 1.0 *
                      chrono::duration_cast<chrono::nanoseconds>(insert_time).count() /
                      min(to_insert.size(), static_cast<uint64_t>(next - last));
@@ -127,6 +137,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
       cout << base.CSV() << endl;
 
       uint64_t found = 0;
+      // Just something to force computation so the optimizer doesn't fully elide a loop
       uint64_t dummy = 0;
       for (unsigned j = 0; j < reps; ++j) {
         const auto start = s.now();
@@ -201,11 +212,6 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor,
   return result;
 }
 
-// Returns a single "insert_nanos" statistic, a single "fpp" statistic, and `reps`
-// "find_nanos" statistics. FILTER_TYPE must support CreateWithBytes(), InsertHash(), and
-// FindHash().
-//
-// Also prints each statistic to stdout as soon as it is generated.
 template <typename FILTER_TYPE>
 vector<Sample> BenchWithBytes(uint64_t reps, uint64_t bytes, double growth_factor,
                               vector<uint64_t>& to_insert,
@@ -226,13 +232,12 @@ vector<Sample> BenchWithNdvFpp(uint64_t reps, double growth_factor,
 template <typename FILTER_TYPE>
 vector<Sample> BenchGrowWithNdvFpp(uint64_t reps, double growth_factor,
                                    vector<uint64_t>& to_insert,
-                                   const vector<uint64_t>& to_find, uint64_t ndv,
+                                   const vector<uint64_t>& to_find, uint64_t,
                                    double fpp) {
   auto filter = FILTER_TYPE::CreateWithNdvFpp(32, fpp);
   return BenchHelp(reps, growth_factor, to_insert, to_find, filter);
 }
 
-// Calls Bench() on each member of a parameter pack
 void Samples(uint64_t ndv, vector<uint64_t>& to_insert, vector<uint64_t>& to_find) {
   Rand r;
   for (unsigned i = 0; i < ndv; ++i) {

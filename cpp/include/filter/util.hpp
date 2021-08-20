@@ -19,7 +19,7 @@ INLINE constexpr uint64_t Mask(int w, uint64_t x) { return x & ((1ul << w) - 1);
 // Feistel is a permutation that is also a hash function, based on a Feistel permutation.
 struct Feistel {
   // The salt for the hash functions. The component hash function is strong
-  // multiply-shift. TODO: really only need four salts here, not 6.
+  // multiply-shift.
   uint64_t keys[2][2];
 
   INLINE constexpr uint64_t Lo(int, int, int w, uint64_t x) const { return Mask(w, x); }

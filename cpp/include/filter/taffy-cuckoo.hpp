@@ -1,6 +1,6 @@
 // Usable under the terms in the Apache License, Version 2.0.
 //
-// The elastic filter can, unlike Cuckoo filters and Bloom filters, increase in size to
+// The taffy filter can, unlike Cuckoo filters and Bloom filters, increase in size to
 // accommodate new items as the working set grows, without major degradation to the
 // storage efficiency (size * false positive probability). Roughly speaking, it is a
 // cuckoo hash table that uses "quotienting" for a succinct representation.
@@ -8,7 +8,7 @@
 // See "How to Approximate A Set Without Knowing Its Size In Advance", by
 // Rasmus Pagh, Gil Segev, and Udi Wieder
 //
-// TODO: Union, Intersection, iteration, Freeze/Thaw, serialize/deserialized
+// TODO: Union, Intersection, iteration, Freeze/Thaw, serialize/deserialize
 
 #pragma once
 

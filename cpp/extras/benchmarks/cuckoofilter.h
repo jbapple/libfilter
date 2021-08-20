@@ -1,8 +1,12 @@
+// Copied from the original cuckoo filter github repo
+
 #ifndef CUCKOO_FILTER_CUCKOO_FILTER_H_
 #define CUCKOO_FILTER_CUCKOO_FILTER_H_
 
 #include <assert.h>
+
 #include <algorithm>
+#include <random>
 
 // See Martin Dietzfelbinger, "Universal hashing and k-wise independent random
 // variables via integer arithmetic without primes".

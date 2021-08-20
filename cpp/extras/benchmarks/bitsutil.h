@@ -1,3 +1,5 @@
+// Copied from the original cuckoo filter github repo
+
 #ifndef CUCKOO_FILTER_BITS_H_
 #define CUCKOO_FILTER_BITS_H_
 

@@ -2,6 +2,8 @@
 //
 // HalftimeHash is a descendant of Badger and EHC. The article "HalftimeHash: modern
 // hashing without 64-bit multipliers or finite fields" describes it in more detail.
+//
+// TODO: update to most recent HH version
 
 #if defined(__x86_64)
 #include <immintrin.h>

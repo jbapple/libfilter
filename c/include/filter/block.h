@@ -20,6 +20,8 @@
 
 #if defined (__x86_64)
 #include <immintrin.h>
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
 #endif
 
 #include "hash.h"
@@ -203,7 +205,6 @@ __attribute__((always_inline)) inline bool libfilter_block_find_hash(
 
 #elif defined(__ARM_NEON) || defined(__ARM_NEON__)
 #define LIBFILTER_BLOCK_SIMD
-#include<arm_neon.h>
 
 typedef struct {
   uint32x4_t payload[2];
@@ -212,13 +213,8 @@ typedef struct {
 __attribute__((always_inline)) inline uint32x8_t libfilter_block_simd_make_mask(
     uint64_t hash) {
   const uint32x4_t ones = vmovq_n_u32(1);
-  uint32_t x[2][4] = {{
-                      0x47b6137b,
-                      0x44974d91, 0x8824ad5b,
-                      0xa2b7289d},
-                      {                     0x705495c7,
-                                            0x2df1424b, 0x9efc4947,
-                                            0x5c6bfb31}};
+  uint32_t x[2][4] = {{0x47b6137b, 0x44974d91, 0x8824ad5b, 0xa2b7289d},
+                      {0x705495c7, 0x2df1424b, 0x9efc4947, 0x5c6bfb31}};
   uint32x8_t rehash;
   rehash.payload[0] = vld1q_u32(x[0]);
   rehash.payload[1] = vld1q_u32(x[1]);
@@ -241,7 +237,7 @@ __attribute__((always_inline)) inline void libfilter_block_simd_add_hash(
     uint64_t hash, libfilter_block *here) {
   const uint64_t bucket_idx = libfilter_block_index(hash, here->num_buckets_);
   const uint32x8_t mask = libfilter_block_simd_make_mask(hash);
-  uint32_t * bucket = here->block_.block;
+  uint32_t *bucket = here->block_.block;
   bucket += bucket_idx * 8;
   uint32x8_t real_bucket;
   real_bucket.payload[0] = vld1q_u32(&bucket[0]);
@@ -257,7 +253,7 @@ __attribute__((always_inline)) inline bool libfilter_block_simd_find_hash(
     uint64_t hash, const libfilter_block *here) {
   const uint64_t bucket_idx = libfilter_block_index(hash, here->num_buckets_);
   const uint32x8_t mask = libfilter_block_simd_make_mask(hash);
-  uint32_t * bucket = here->block_.block;
+  uint32_t *bucket = here->block_.block;
   bucket += bucket_idx * 8;
   uint32x8_t real_bucket;
   real_bucket.payload[0] = vld1q_u32(&bucket[0]);

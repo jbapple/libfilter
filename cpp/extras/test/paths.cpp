@@ -65,33 +65,6 @@ TEST(Main, ToFromTo) {
   }
 }
 
-
-// TEST(Main, RePathIdentity) {
-//   uint64_t entropy[4] = {1, 0, 1, 0};
-//   Feistel identity(entropy);
-//   uint64_t xbase = 0x1234'5678'9abc'def0;
-//   auto low_level = 16;
-//   for (int i = 0; i < 64; ++i) {
-//     for (int cursor = 0; cursor < 32; ++cursor) {
-//       for (bool is_short : {true, false}) {
-//         auto x = xbase << i;
-//         auto p = ToPath(x, identity, cursor, low_level, is_short);
-//         if (p.tail == 0) continue;
-//         Path r;
-//         auto q = RePath(p, identity, identity, identity, identity, low_level, cursor,
-//                         cursor, &r);
-//         EXPECT_EQ(r.tail, 0u);
-//         EXPECT_EQ(p.level, q.level);
-//         EXPECT_EQ(p.bucket, q.bucket);
-//         EXPECT_EQ(p.fingerprint, q.fingerprint);
-//         EXPECT_EQ(p.long_fp, q.long_fp);
-//         EXPECT_EQ(p.tail, q.tail);
-//       }
-//     }
-//   }
-// }
-
-
 TEST(Main, RePathHalfIdentity) {
   uint64_t entropy[4] = {1, 0, 1, 0};
   Feistel identity(entropy);
@@ -184,7 +157,7 @@ TEST(Main, RePathShortLongIdentity) {
   EXPECT_GE(count, 100u);
 }
 
-
+// Test RePath when there are two outputs
 TEST(Main, RePathDouble) {
   uint64_t entropy[4] = {1, 0, 1, 0};
   Feistel identity(entropy);

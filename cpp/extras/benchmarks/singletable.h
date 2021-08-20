@@ -1,7 +1,10 @@
+// Copied from the original cuckoo filter github repo
+
 #ifndef CUCKOO_FILTER_SINGLE_TABLE_H_
 #define CUCKOO_FILTER_SINGLE_TABLE_H_
 
 #include <assert.h>
+#include <string.h>
 
 #include <sstream>
 
