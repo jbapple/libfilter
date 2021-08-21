@@ -101,29 +101,6 @@ TYPED_TEST(NdvFppTest, StartEmpty) {
   return StartEmptyHelp(x, ndv);
 }
 
-// Test that the hash value of a filter changes when something is added
-TYPED_TEST(BlockTest, HashChanges) {
-  auto ndv = 40000;
-  auto x = TypeParam::CreateWithBytes(ndv);
-  vector<uint64_t> entropy(libfilter_hash_tabulate_entropy_bytes / sizeof(uint64_t));
-  vector<uint64_t> hashes(ndv);
-  Rand r;
-  for (unsigned i = 0; i < entropy.size(); ++i) {
-    entropy[i] = r();
-  }
-  for (int i = 0; i < ndv; ++i) {
-    hashes[i] = r();
-  }
-  unordered_set<uint64_t> old_hashes;
-  for (auto h : hashes) {
-    if (x.FindHash(h)) continue;
-    x.InsertHash(h);
-    auto after = x.SaltedHash(entropy.data());
-    EXPECT_EQ(old_hashes.find(after), old_hashes.end());
-    old_hashes.insert(after);
-  }
-}
-
 // Test that Scalar and Simd variants are identical
 TYPED_TEST(BlockTest, Buddy) {
   if (TypeParam::is_simd) {

@@ -24,7 +24,6 @@
 #include <arm_neon.h>
 #endif
 
-#include "hash.h"
 #include "memory.h"             // for libfilter_region
 
 
@@ -86,12 +85,6 @@ struct libfilter_block_struct {
   uint64_t num_buckets_;
   libfilter_region block_;
 };
-
-inline uint64_t libfilter_block_hash(const libfilter_block *here,
-                                     const uint64_t entropy[]) {
-  return libfilter_hash_tabulate(entropy, (const char *)here->block_.block,
-                                 here->num_buckets_ * 32);
-}
 
 // TODO: write docs for this
 libfilter_block libfilter_block_clone(const libfilter_block *);
