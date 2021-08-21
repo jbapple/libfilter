@@ -18,7 +18,11 @@
 #include <stdbool.h>            // for bool, false, true
 #include <stdint.h>             // for uint64_t
 
+#if defined (__x86_64)
 #include <immintrin.h>
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
+#endif
 
 #include "hash.h"
 #include "memory.h"             // for libfilter_region
@@ -58,10 +62,10 @@ bool libfilter_block_equals(const libfilter_block *, const libfilter_block *);
 
 inline void libfilter_block_scalar_add_hash(uint64_t hash, libfilter_block *);
 inline bool libfilter_block_scalar_find_hash(uint64_t hash, const libfilter_block *);
-#if defined(__AVX2__)
+#if defined(__AVX2__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
 inline void libfilter_block_simd_add_hash(uint64_t hash, libfilter_block *);
 inline bool libfilter_block_simd_find_hash(uint64_t hash, const libfilter_block *);
-#endif  // __AVX2__
+#endif
 
 #if defined(LIBFILTER_BLOCK_SIMD)
 #error "An exported feature macro cannot be defined"
@@ -198,6 +202,77 @@ __attribute__((always_inline)) inline bool libfilter_block_find_hash(
     uint64_t hash, const libfilter_block *here) {
   return libfilter_block_simd_find_hash(hash, here);
 }
+
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define LIBFILTER_BLOCK_SIMD
+
+typedef struct {
+  uint32x4_t payload[2];
+} uint32x8_t;
+
+__attribute__((always_inline)) inline uint32x8_t libfilter_block_simd_make_mask(
+    uint64_t hash) {
+  const uint32x4_t ones = vmovq_n_u32(1);
+  uint32_t x[2][4] = {{0x47b6137b, 0x44974d91, 0x8824ad5b, 0xa2b7289d},
+                      {0x705495c7, 0x2df1424b, 0x9efc4947, 0x5c6bfb31}};
+  uint32x8_t rehash;
+  rehash.payload[0] = vld1q_u32(x[0]);
+  rehash.payload[1] = vld1q_u32(x[1]);
+  uint32x8_t hash_data;
+  hash_data.payload[0] = vmovq_n_u32(hash);
+  hash_data.payload[1] = vmovq_n_u32(hash);
+
+  hash_data.payload[0] = vmulq_u32(hash_data.payload[0], rehash.payload[0]);
+  hash_data.payload[1] = vmulq_u32(hash_data.payload[1], rehash.payload[1]);
+
+  hash_data.payload[0] = vshrq_n_u32(hash_data.payload[0], 32 - 5);
+  hash_data.payload[1] = vshrq_n_u32(hash_data.payload[1], 32 - 5);
+
+  hash_data.payload[0] = vshlq_u32(ones, (int32x4_t)hash_data.payload[0]);
+  hash_data.payload[1] = vshlq_u32(ones, (int32x4_t)hash_data.payload[1]);
+  return hash_data;
+}
+
+__attribute__((always_inline)) inline void libfilter_block_simd_add_hash(
+    uint64_t hash, libfilter_block *here) {
+  const uint64_t bucket_idx = libfilter_block_index(hash, here->num_buckets_);
+  const uint32x8_t mask = libfilter_block_simd_make_mask(hash);
+  uint32_t *bucket = here->block_.block;
+  bucket += bucket_idx * 8;
+  uint32x8_t real_bucket;
+  real_bucket.payload[0] = vld1q_u32(&bucket[0]);
+  real_bucket.payload[1] = vld1q_u32(&bucket[4]);
+  uint32x8_t tmp;
+  tmp.payload[0] = vorrq_u32(real_bucket.payload[0], mask.payload[0]);
+  tmp.payload[1] = vorrq_u32(real_bucket.payload[1], mask.payload[1]);
+  vst1q_u32(&bucket[0], tmp.payload[0]);
+  vst1q_u32(&bucket[4], tmp.payload[1]);
+}
+
+__attribute__((always_inline)) inline bool libfilter_block_simd_find_hash(
+    uint64_t hash, const libfilter_block *here) {
+  const uint64_t bucket_idx = libfilter_block_index(hash, here->num_buckets_);
+  const uint32x8_t mask = libfilter_block_simd_make_mask(hash);
+  uint32_t *bucket = here->block_.block;
+  bucket += bucket_idx * 8;
+  uint32x8_t real_bucket;
+  real_bucket.payload[0] = vld1q_u32(&bucket[0]);
+  real_bucket.payload[1] = vld1q_u32(&bucket[4]);
+
+  uint32x4_t out0 = vandq_u32(real_bucket.payload[0], mask.payload[0]);
+  uint32x4_t out1 = vandq_u32(real_bucket.payload[1], mask.payload[1]);
+  return vminvq_u32(out0) && vminvq_u32(out1);
+}
+
+__attribute__((always_inline)) inline void libfilter_block_add_hash(
+    uint64_t hash, libfilter_block *here) {
+  return libfilter_block_simd_add_hash(hash, here);
+}
+
+__attribute__((always_inline)) inline bool libfilter_block_find_hash(
+    uint64_t hash, const libfilter_block *here) {
+  return libfilter_block_simd_find_hash(hash, here);
+}
 #else
 __attribute__((always_inline)) inline void libfilter_block_add_hash(
     uint64_t hash, libfilter_block *here) {
@@ -208,6 +283,7 @@ __attribute__((always_inline)) inline bool libfilter_block_find_hash(
     uint64_t hash, const libfilter_block *here) {
   return libfilter_block_scalar_find_hash(hash, here);
 }
+
 #endif
 
 #undef LIBFILTER_INTERNAL_HASH_SEEDS
