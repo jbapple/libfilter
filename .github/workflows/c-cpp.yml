@@ -18,6 +18,6 @@ jobs:
     - name: make
       run: make world
     - name: run C++ tests
-      run: cpp/extras/test/block.exe
+      run: cpp/extras/test/block.exe && cpp/extras/test/paths.exe
     - name: run Java tests
       run: mvn -f ./java/ test
