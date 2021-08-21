@@ -57,7 +57,7 @@ uint64_t libfilter_block_bytes_needed_detail(double ndv, double fpp, double word
 }
 
 uint64_t libfilter_block_capacity_detail(uint64_t bytes, double fpp, double word_bits,
-                                  double bucket_words, double hash_bits) {
+                                         double bucket_words, double hash_bits) {
   uint64_t result = 1;
   // TODO: unify this exponential + binary search with the bytes needed function above
   while (libfilter_block_fpp_detail(result, bytes, word_bits, bucket_words, hash_bits) < fpp) {
