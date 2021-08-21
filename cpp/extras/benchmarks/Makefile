@@ -12,7 +12,7 @@ clean:
 	rm -f fpps.exe fpps.o fpps.d fpps.d.new
 	rm -f hash.exe hash.o hash.d hash.d.new
 
-export CXXFLAGS += -O3 -ggdb3
+export CXXFLAGS += -O3 -ggdb3 -DNDEBUG
 
 include $(DEFAULT_RECIPE)
 
