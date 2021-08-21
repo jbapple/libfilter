@@ -22,10 +22,10 @@ LINKS=
 
 include $(DEFAULT_RECIPE)
 
-libfilter.so: util.o memory.o block.o hash.o Makefile
+libfilter.so: util.o memory.o block.o Makefile
 	$(CC) -fPIC -shared -o libfilter.so util.o memory.o block.o
 
-libfilter.a: util.o memory.o block.o hash.o Makefile
+libfilter.a: util.o memory.o block.o Makefile
 	ar rcs libfilter.a util.o memory.o block.o
 
 clean:
