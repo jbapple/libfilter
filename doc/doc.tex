@@ -36,10 +36,10 @@ The central ideas are:
 \begin{enumerate}
 \item Use block Bloom filters to reduce the number of cache lines to access down to one.~\cite{block}
 \item Within each block, use a ``split'' Bloom filter that sets one bit in each of several sections, rather than several bits in one section.~\cite{split-bloom}
-\item Use eight hash functions to use in order to fit cleanly into SIMD lanes.\footnote{Four or sixteen would work, too.}
+\item Use eight hash functions in order to fit cleanly into SIMD lanes.\footnote{Four or sixteen would work, too.}
 \end{enumerate}
 
-A value is inserted in a split block Bloom filter, by first selecting one 256-bit block from the filter by hashing the key once.
+A value is inserted in a split block Bloom filter by first selecting one 256-bit block from the filter by hashing the key once.
 Then the key is hashed eight more times to a range of $[0,32)$ using SIMD instructions and multiply-shift universal hashing: $h_{s_i}(x) = \lfloor(s_i \cdot x) / 2^{27}\rfloor$, where $s_i$ are odd seeds.~\cite{multiply-shift}
 One bit is set in each of eight contiguous 32-bit lanes within the 256-bit block using the results of the eight hash functions.
 Lookup is symmetric; deletions are not supported; code is available at the end of this document.
