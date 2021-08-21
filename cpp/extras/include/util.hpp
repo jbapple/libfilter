@@ -10,12 +10,13 @@ class Rand {
   //
   // The fastest generator using 64-bit arith., but not suited for huge jobs.
   // Est. capacity = 2^51 bytes. Register pressure = 4. State size = 128 bits.
-
+public:
   static uint64_t rotl(uint64_t d, int lrot) {
     return (d << (lrot)) | (d >> (8 * sizeof(d) - (lrot)));
   }
 
   uint64_t xState, yState;  // set to nonzero seed
+  uint64_t initXState, initYState;  // set to nonzero seed
 
   uint64_t romuDuoJr_random() {
     uint64_t xp = xState;
@@ -28,7 +29,6 @@ class Rand {
  public:
   Rand() {
     std::random_device raw("/dev/urandom");
-    // constexpr auto kDigits = std::numeric_limits<std::random_device::result_type>::digits;
 
     xState = raw();
     xState = xState << 32;
@@ -37,6 +37,9 @@ class Rand {
     yState = raw();
     yState = yState << 32;
     yState |= raw();
+
+    initXState = xState;
+    initYState = yState;
   }
 
   std::uint64_t operator()() { return romuDuoJr_random(); }
