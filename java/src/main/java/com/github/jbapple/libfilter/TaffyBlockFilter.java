@@ -2,9 +2,8 @@ package com.github.jbapple.libfilter;
 
 import java.lang.Math;
 import java.lang.NullPointerException;
-// #include "block.hpp"
 
-class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable {
+public class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable, Filter {
   private BlockFilter[] levels;
   private int[] sizes;
   private int cursor;
@@ -114,6 +113,7 @@ class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable {
     ttl = lastNdv;
   }
 
+  @Override
   public boolean AddHash32(int h) {
     if (ttl <= 0) Upsize();
     levels[cursor - 1].AddHash32(h);
@@ -121,6 +121,7 @@ class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable {
     return true;
   }
 
+  @Override
   public boolean FindHash32(int h) {
     for (int i = 0; i < cursor; ++i) {
       if (levels[i].FindHash32(h)) return true;
@@ -128,6 +129,7 @@ class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable {
     return false;
   }
 
+  @Override
   public boolean AddHash64(long h) {
     if (ttl <= 0) Upsize();
     levels[cursor - 1].AddHash64(h);
@@ -135,6 +137,7 @@ class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable {
     return true;
   }
 
+  @Override
   public boolean FindHash64(long h) {
     for (int i = 0; i < cursor; ++i) {
       if (levels[i].FindHash64(h)) return true;

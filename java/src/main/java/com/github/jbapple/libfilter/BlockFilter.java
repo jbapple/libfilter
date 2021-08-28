@@ -14,7 +14,7 @@ import org.apache.commons.math3.special.Gamma;
  *      advantage of SIMD instructions.
  * </ol>
  */
-public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
+public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
   @Override
   public int compareTo(BlockFilter o) {
     // TODO: this is not lexicographic
@@ -224,13 +224,15 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 64-bit hash value of the element you wish to insert
    */
-  public void AddHash64(long hash) {
+  @Override
+  public boolean AddHash64(long hash) {
     int bucket_idx = Index(hash, payload.length / 8);
     int[] mask = {0xca11, 8, 6, 7, 5, 3, 0, 9};
     MakeMask(hash, mask);
     for (int i = 0; i < 8; ++i) {
       payload[bucket_idx * 8 + i] = mask[i] | payload[bucket_idx * 8 + i];
     }
+    return true;
   }
 
   /**
@@ -245,6 +247,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 64-bit hash value of the element you are checking the presence of
    */
+  @Override
   public boolean FindHash64(long hash) {
     int bucket_idx = Index(hash, payload.length / 8);
     int[] mask = {0xca11, 8, 6, 7, 5, 3, 0, 9};
@@ -266,7 +269,8 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 32-bit hash value of the element you wish to insert
    */
-  public void AddHash32(int hash) {
+  @Override
+  public boolean AddHash32(int hash) {
     long hash64 = (((REHASH_32 * (long) hash) >>> 32) << 32) | hash;
     int bucket_idx = Index(hash64, payload.length / 8);
     int[] mask = {0xca11, 8, 6, 7, 5, 3, 0, 9};
@@ -274,6 +278,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
     for (int i = 0; i < 8; ++i) {
       payload[bucket_idx * 8 + i] = mask[i] | payload[bucket_idx * 8 + i];
     }
+    return true;
   }
 
   /**
@@ -284,6 +289,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 32-bit hash value of the element you are checking the presence of
    */
+  @Override
   public boolean FindHash32(int hash) {
     long hash64 = (((REHASH_32 * (long) hash) >>> 32) << 32) | hash;
     int bucket_idx = Index(hash64, payload.length / 8);
