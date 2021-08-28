@@ -334,7 +334,6 @@ mutable bool debug_lookup = false;
     }
   }
 
-
   friend void swap(MinimalTaffyCuckooFilter&, MinimalTaffyCuckooFilter&);
 
   // Double the size of one level of the filter
