@@ -73,7 +73,7 @@ omit_address = {New York, {NY, USA}},
 url = {https://doi.org/10.1145/1806689.1806771},
 doi = {10.1145/1806689.1806771},
 booktitle = {Proceedings of the Forty-Second {ACM} Symposium on Theory of Computing},
-pages = {593–602},
+pages = {593--602},
 numpages = {10},
 keywords = {prefix-free encoding, succinct data structures, streaming algorithms, domain extension of hash functions, arithmetic coding},
 location = {Cambridge, Massachusetts, {USA}},
@@ -485,7 +485,7 @@ url = {https://doi.org/10.1145/362686.362692},
 doi = {10.1145/362686.362692},
 journal = {Commun. ACM},
 month = jul,
-pages = {422–426},
+pages = {422--426},
 numpages = {5},
 keywords = {hash addressing, storage layout, scatter storage, storage efficiency, retrieval trade-offs, hash coding, searching, retrieval efficiency}
 }
@@ -497,16 +497,261 @@ year = {2016},
 url = {https://github.com/apache/impala/tree/2.7.0}
 }
 
+@INPROCEEDINGS{impala,
+    author = {Marcel Kornacker and Alexander Behm and Victor Bittorf and Taras Bobrovytsky and Alan Choi and Justin Erickson and Martin Grund and Daniel Hecht and Matthew Jacobs and Ishaan Joshi and Lenni Kuff and Dileep Kumar and Alex Leblang and Nong Li and Henry Robinson and David Rorke and Silvius Rus and John Russell and Dimitris Tsirogiannis and Skye {Wanderman-Milne} and Michael Yoder},
+    title = {Impala: A modern, open-source sql engine for hadoop},
+    booktitle = {In Proc. CIDR'15},
+    year = {2015}
+}
+
+@article{Load thresholds for cuckoo hashing with overlapping blocks_2018, place={Saarbrücken/Wadern, Germany}, series={Leibniz International Proceedings in Informatics: LIPIcs}, volume={107}, url={https://www.db-thueringen.de/receive/dbt_mods_00041045}, DOI={10.4230/LIPIcs.ICALP.2018.102}, journal={45th International Colloquium on Automata, Languages, and Programming: ICALP 2018, Prague, Czech Republic, July 9-13, 2018}, publisher={Schloss Dagstuhl - Leibniz-Zentrum für Informatik GmbH, Dagstuhl Publishing}, year={2018}, month={Jul}, pages={art. 102}, collection={Leibniz International Proceedings in Informatics: LIPIcs} }
+
+
 @article{load-thresholds,
- place={{Saarbr\"ucken/Wadern, Germany}}, 
-series={Leibniz International Proceedings in Informatics: {LIPIcs}}, 
-volume={107}, 
-url={https://www.db-thueringen.de/receive/dbt_mods_00041045}, 
-DOI={10.4230/LIPIcs.ICALP.2018.102}, 
-journal={45th International Colloquium on Automata, Languages, and Programming: {ICALP} 2018, {Prague}, {Czech Republic}, July 9-13, 2018}, 
-publisher={Schloss Dagstuhl - Leibniz-Zentrum f\"ur Informatik GmbH, Dagstuhl Publishing}, 
-year={2018}, 
-month={Jul}, 
-pages={art. 102}, 
+title={Load thresholds for cuckoo hashing with overlapping blocks},
+author={Walzer, Stefan},
+ place={{Saarbr\"ucken/Wadern, Germany}},
+series={Leibniz International Proceedings in Informatics: {LIPIcs}},
+volume={107},
+url={https://www.db-thueringen.de/receive/dbt_mods_00041045},
+DOI={10.4230/LIPIcs.ICALP.2018.102},
+journal={45th International Colloquium on Automata, Languages, and Programming: {ICALP} 2018, {Prague}, {Czech Republic}, July 9-13, 2018},
+publisher={Schloss Dagstuhl - Leibniz-Zentrum f\"ur Informatik GmbH, Dagstuhl Publishing},
+year={2018},
+month={Jul},
+pages={art. 102},
 collection={Leibniz International Proceedings in Informatics: {LIPIcs}}
+}
+
+@article{lsm,
+  title={LSM-based storage techniques: a survey},
+  author={Luo, Chen and Carey, Michael J},
+  journal={The {VLDB} Journal},
+  volume={29},
+  number={1},
+  pages={393--418},
+  year={2020},
+  publisher={Springer}
+}
+
+@inproceedings{monkey,
+author = {Dayan, Niv and Athanassoulis, Manos and Idreos, Stratos},
+title = {Monkey: Optimal Navigable Key-Value Store},
+year = {2017},
+isbn = {9781450341974},
+publisher = {Association for Computing Machinery},
+address = {{New} {York}, {NY}, {USA}},
+url = {https://doi.org/10.1145/3035918.3064054},
+doi = {10.1145/3035918.3064054},
+booktitle = {Proceedings of the 2017 {ACM} International Conference on Management of Data},
+pages = {79--94},
+numpages = {16},
+keywords = {auto-tuning, adaptivity, read/write/memory trade-off, point queries, bloom filters, key-value store, log-structured merge-tree, point lookups, lsm-tree, memory hierarchy},
+location = {{Chicago, Illinois, USA}},
+series = {{SIGMOD} '17}
+}
+
+@InProceedings{tpch-filter,
+author="Boncz, Peter
+and Neumann, Thomas
+and Erling, Orri",
+editor="Nambiar, Raghunath
+and Poess, Meikel",
+title="{TPC-H} Analyzed: Hidden Messages and Lessons Learned from an Influential Benchmark",
+booktitle="Performance Characterization and Benchmarking",
+year="2014",
+publisher="Springer International Publishing",
+address="Cham",
+pages="61--76",
+isbn="978-3-319-04936-6"
+}
+
+@ARTICLE{distributed-filter,
+author={Tarkoma, Sasu and Rothenberg, Christian Esteve and Lagerspetz, Eemil},
+journal={{IEEE} Communications Surveys   Tutorials},
+title={Theory and Practice of {Bloom} Filters for Distributed Systems},
+year={2012},
+volume={14},
+number={1},
+pages={131--155},
+doi={10.1109/SURV.2011.031611.00024}}
+
+@article{dna-filter,
+  title={Classification of DNA sequences using Bloom filters},
+  author={Stranneheim, Henrik and K{\"a}ller, Max and Allander, Tobias and Andersson, Bj{\"o}rn and Arvestad, Lars and Lundeberg, Joakim},
+  journal={Bioinformatics},
+  volume={26},
+  number={13},
+  pages={1595--1600},
+  year={2010},
+  publisher={Oxford University Press}
+}
+
+@InProceedings{distributed-join-filter,
+author="Ramesh, Sukriti
+and Papapetrou, Odysseas
+and Siberski, Wolf",
+editor="Parashar, Manish
+and Aggarwal, Sanjeev K.",
+title="Optimizing Distributed Joins with Bloom Filters",
+booktitle="Distributed Computing and Internet Technology",
+year="2009",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="145--156",
+isbn="978-3-540-89737-8"
+}
+
+@inproceedings{approxjoin,
+author = {Quoc, Do Le and Akkus, Istemi Ekin and Bhatotia, Pramod and Blanas, Spyros and Chen, Ruichuan and Fetzer, Christof and Strufe, Thorsten},
+title = {{ApproxJoin}: Approximate Distributed Joins},
+year = {2018},
+isbn = {9781450360111},
+publisher = {Association for Computing Machinery},
+address = {{New York, NY, USA}},
+url = {https://doi.org/10.1145/3267809.3267834},
+doi = {10.1145/3267809.3267834},
+booktitle = {Proceedings of the {ACM} Symposium on Cloud Computing},
+pages = {426--438},
+numpages = {13},
+keywords = {stratified sampling, Approximate join processing, approximate computing and distributed systems, multi-way joins},
+location = {{Carlsbad, CA, USA}},
+series = {{SoCC '18}}
+}
+
+@inproceedings{bitfunnel,
+author = {Goodwin, Bob and Hopcroft, Michael and Luu, Dan and Clemmer, Alex and Curmei, Mihaela and Elnikety, Sameh and He, Yuxiong},
+title = {{BitFunnel}: Revisiting Signatures for Search},
+year = {2017},
+isbn = {9781450350228},
+publisher = {Association for Computing Machinery},
+address = {{New York, NY, USA}},
+url = {https://doi.org/10.1145/3077136.3080789},
+doi = {10.1145/3077136.3080789},
+booktitle = {Proceedings of the 40th International {ACM SIGIR} Conference on Research and Development in Information Retrieval},
+pages = {605--614},
+numpages = {10},
+keywords = {query processing, bit-sliced signatures, bloom filters, inverted indexes, signature files, bitvector, search engines, intersection},
+location = {Shinjuku, Tokyo, Japan},
+series = {{SIGIR '17}}
+}
+
+@inproceedings{bitcoin-filter,
+author = {Gervais, Arthur and Capkun, Srdjan and Karame, Ghassan O. and Gruber, Damian},
+title = {On the Privacy Provisions of Bloom Filters in Lightweight Bitcoin Clients},
+year = {2014},
+isbn = {9781450330053},
+publisher = {Association for Computing Machinery},
+address = {{New York, NY, USA}},
+url = {https://doi.org/10.1145/2664243.2664267},
+doi = {10.1145/2664243.2664267},
+booktitle = {Proceedings of the 30th Annual Computer Security Applications Conference},
+pages = {326--335},
+numpages = {10},
+location = {{New Orleans, Louisiana, USA}},
+series = {{ACSAC '14}}
+}
+
+@article{flooding-filter,
+author = {Geneiatakis, Dimitris and Vrakas, Nikos and Lambrinoudakis, Costas},
+title = {Utilizing {Bloom} Filters for Detecting Flooding Attacks against {SIP} Based Services},
+year = {2009},
+issue_date = {October, 2009},
+publisher = {Elsevier Advanced Technology Publications},
+address = {GBR},
+volume = {28},
+number = {7},
+issn = {0167-4048},
+url = {https://doi.org/10.1016/j.cose.2009.04.007},
+doi = {10.1016/j.cose.2009.04.007},
+journal = {Comput. Secur.},
+month = oct,
+pages = {578--591},
+numpages = {14},
+keywords = {Voice over IP (VoIP), Flooding attacks, Denial of Service, Session Initiation Protocol (SIP), Security, Bloom filter}
+}
+
+@ARTICLE{summary-cache,
+author={Li Fan and Pei Cao and Almeida, J. and Broder, A.Z.},
+  journal={{IEEE/ACM} Transactions on Networking},
+   title={Summary cache: a scalable wide-area Web cache sharing protocol},
+   year={2000},
+  volume={8},
+  number={3},
+  pages={281-293},
+  doi={10.1109/90.851975}}
+
+@inproceedings{prefix-matching-filter,
+author = {Dharmapurikar, Sarang and Krishnamurthy, Praveen and Taylor, David E.},
+title = {Longest Prefix Matching Using Bloom Filters},
+year = {2003},
+isbn = {1581137354},
+publisher = {Association for Computing Machinery},
+address = {{New York, NY, USA}},
+url = {https://doi.org/10.1145/863955.863979},
+doi = {10.1145/863955.863979},
+booktitle = {Proceedings of the 2003 Conference on Applications, Technologies, Architectures, and Protocols for Computer Communications},
+pages = {201--212},
+numpages = {12},
+keywords = {forwarding, IP lookup, longest prefix matching},
+location = {Karlsruhe, Germany},
+series = {{SIGCOMM '03}}
+}
+
+@article{gene-search-filter,
+  title={Ultrafast search of all deposited bacterial and viral genomic data},
+  author={Bradley, Phelim and Den Bakker, Henk C and Rocha, Eduardo {PC} and McVean, Gil and Iqbal, Zamin},
+  journal={Nature biotechnology},
+  volume={37},
+  number={2},
+  pages={152--159},
+  year={2019},
+  publisher={Nature Publishing Group}
+}
+
+@article{sequencing-filter,
+  title={Space-efficient and exact de Bruijn graph representation based on a Bloom filter},
+  author={Chikhi, Rayan and Rizk, Guillaume},
+  journal={Algorithms for Molecular Biology},
+  volume={8},
+  number={1},
+  pages={1--9},
+  year={2013},
+  publisher={Springer}
+}
+
+@inproceedings{model-training-filter,
+  title={Weightless: Lossy weight encoding for deep neural network compression},
+  author={Reagan, Brandon and Gupta, Udit and Adolf, Bob and Mitzenmacher, Michael and Rush, Alexander and Wei, Gu-Yeon and Brooks, David},
+  booktitle={International Conference on Machine Learning},
+  pages={4324--4333},
+  year={2018},
+  organization={{PMLR}}
+}
+
+@inproceedings {deduplication-filter,
+author = {Benjamin Zhu and Kai Li and Hugo Patterson},
+title = {Avoiding the Disk Bottleneck in the Data Domain Deduplication File System},
+booktitle = {6th {USENIX} Conference on File and Storage Technologies ({FAST} 08)},
+year = {2008},
+address = {San Jose, CA},
+url = {https://www.usenix.org/conference/fast-08/avoiding-disk-bottleneck-data-domain-deduplication-file-system},
+publisher = {{USENIX} Association},
+month = feb,
+}
+
+@inproceedings{lower-bound,
+author = {Carter, Larry and Floyd, Robert and Gill, John and Markowsky, George and Wegman, Mark},
+title = {Exact and Approximate Membership Testers},
+year = {1978},
+isbn = {9781450374378},
+publisher = {Association for Computing Machinery},
+address = {{New York, NY, USA}},
+url = {https://doi.org/10.1145/800133.804332},
+doi = {10.1145/800133.804332},
+booktitle = {Proceedings of the Tenth Annual {ACM} Symposium on Theory of Computing},
+pages = {59--65},
+numpages = {7},
+location = {{San Diego, California, USA}},
+series = {{STOC} '78}
 }
