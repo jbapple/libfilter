@@ -77,9 +77,21 @@ public:
     // xState = 0x5389ca9d7e980a03;
     // yState = 0x87d5ae2ea5ff2a26;
 
+    // 1 462
+    // xState = 0xf7eed0b4b899dcda;
+    // yState = 0x8c9635cf8a30737e;
+
+    // 1 911
+    // xState = 0x8541a193bf58d3ae;
+    // yState = 0xe182f6b580d4dece;
+
+    //13 469
+    xState = 0x270c120999ddf1c9;
+    yState = 0xaf4f1d8c386ef733;
+
     initXState = xState;
     initYState = yState;
-    // cout << hex << xState << "\n" << yState << endl;
+    cout << hex << xState << "\n" << yState << endl;
   }
 
   std::uint64_t operator()() { return romuDuoJr_random(); }

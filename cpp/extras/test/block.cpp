@@ -40,8 +40,8 @@ TYPED_TEST_SUITE(UnionTest, UnionTypes);
 // TODO: test more methods, including copy
 
 TYPED_TEST(UnionTest, UnionDoes) {
-  for (unsigned xndv = 1; xndv < 200; ++xndv) {
-    for (unsigned yndv = 1; yndv < 200; ++yndv) {
+  for (unsigned xndv = 13; xndv < 14; ++xndv) {
+    for (unsigned yndv = 469; yndv < 470; yndv += xndv) {
       // cout << "ndv " << dec << xndv << " " << yndv << endl;
       Rand r;
       vector<uint64_t> xhashes, yhashes;
@@ -57,10 +57,12 @@ TYPED_TEST(UnionTest, UnionDoes) {
       }
       auto z = Union(x, y);
       for (unsigned j = 0; j < xhashes.size(); ++j) {
-        EXPECT_TRUE(z.FindHash(xhashes[j])) << j << " " << hex << "0x" << xhashes[j];
+        EXPECT_TRUE(z.FindHash(xhashes[j]))
+            << xndv << " " << yndv << " " << j << " " << hex << "0x" << xhashes[j];
       }
       for (unsigned j = 0; j < yhashes.size(); ++j) {
-        EXPECT_TRUE(z.FindHash(yhashes[j])) << j << " " << hex << "0x" << yhashes[j];
+        EXPECT_TRUE(z.FindHash(yhashes[j]))
+            << xndv << " " << yndv << " " << j << " " << hex << "0x" << yhashes[j];
       }
     }
   }

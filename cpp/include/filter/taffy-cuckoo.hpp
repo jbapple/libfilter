@@ -438,8 +438,10 @@ struct TaffyCuckooFilter {
       Insert(0, q);
       q.tail = 0;  // dummy line just to break on
     } else if (that.log_side_size + tail_size >= log_side_size) {
-      hashed |= (static_cast<uint64_t>(p.tail >> 1)
-                 << (64 - that.log_side_size - detail::kHeadSize - detail::kTailSize));
+      hashed |=
+          (static_cast<uint64_t>(p.tail >> 1)  // TODO: this should not be 1, but enough
+                                               // to take off the guardian bit. Same below
+           << (64 - that.log_side_size - detail::kHeadSize - detail::kTailSize));
       detail::Path q = ToPath(hashed, sides[0].f, log_side_size);
       q.tail = (p.tail << (log_side_size - that.log_side_size));
       Insert(0, q);
@@ -448,8 +450,9 @@ struct TaffyCuckooFilter {
                  << (64 - that.log_side_size - detail::kHeadSize - detail::kTailSize));
       for (uint64_t i = 0; i < (1u << (log_side_size - that.log_side_size - tail_size));
            ++i) {
-        hashed |= (i << (64 - log_side_size));
-        detail::Path q = ToPath(hashed, sides[0].f, log_side_size);
+        uint64_t tmphashed = (hashed | (i << (64 - log_side_size - detail::kHeadSize -
+                                              detail::kTailSize + tail_size)));
+        detail::Path q = ToPath(tmphashed, sides[0].f, log_side_size);
         q.tail = (1u << detail::kTailSize);
         Insert(0, q);
       }
