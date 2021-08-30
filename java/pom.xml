@@ -1,6 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
+  <packaging>pom</packaging>
 
   <name>LibFilter</name>
   <description>A Bloom filter alternative with faster operations</description>
@@ -10,7 +12,8 @@
     <name>Apache License, Version 2.0</name>
     <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     <distribution>repo</distribution>
-  </license></licenses>
+  </license>
+  </licenses>
   <scm>
     <url>scm:git:https://github.com/jbapple/libfilter</url>
   </scm>
@@ -114,4 +117,6 @@
       </plugin>
     </plugins>
   </build>
+<modules>  <module>first-benchmark</module>
+  </modules>
 </project>
