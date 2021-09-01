@@ -86,12 +86,16 @@ public:
     // yState = 0xe182f6b580d4dece;
 
     //13 469
-    xState = 0x270c120999ddf1c9;
-    yState = 0xaf4f1d8c386ef733;
+    // xState = 0x270c120999ddf1c9;
+    // yState = 0xaf4f1d8c386ef733;
+
+    // 1 911
+    // xState= 0x93212709e7f87013;
+    // yState = 0x95e522cb6706708d;
 
     initXState = xState;
     initYState = yState;
-    cout << hex << xState << "\n" << yState << endl;
+    //cout << hex << xState << "\n" << yState << endl;
   }
 
   std::uint64_t operator()() { return romuDuoJr_random(); }

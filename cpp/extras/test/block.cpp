@@ -40,8 +40,8 @@ TYPED_TEST_SUITE(UnionTest, UnionTypes);
 // TODO: test more methods, including copy
 
 TYPED_TEST(UnionTest, UnionDoes) {
-  for (unsigned xndv = 13; xndv < 14; ++xndv) {
-    for (unsigned yndv = 469; yndv < 470; yndv += xndv) {
+  for (unsigned xndv = 1; xndv < 200; ++xndv) {
+    for (unsigned yndv = 1; yndv < 1024; yndv += xndv) {
       // cout << "ndv " << dec << xndv << " " << yndv << endl;
       Rand r;
       vector<uint64_t> xhashes, yhashes;
@@ -55,42 +55,47 @@ TYPED_TEST(UnionTest, UnionDoes) {
         yhashes.push_back(r());
         y.InsertHash(yhashes.back());
       }
+      //cout << "xy " << dec << xndv << " " << yndv << endl;
       auto z = Union(x, y);
       for (unsigned j = 0; j < xhashes.size(); ++j) {
+        //cout << "x " << dec << xndv << " " << yndv << " " << j << " " << hex << "0x"
+        //   << xhashes[j] << endl;
         EXPECT_TRUE(z.FindHash(xhashes[j]))
             << xndv << " " << yndv << " " << j << " " << hex << "0x" << xhashes[j];
       }
       for (unsigned j = 0; j < yhashes.size(); ++j) {
+        //cout << "y " << dec << xndv << " " << yndv << " " << j << " " << hex << "0x"
+        //   << yhashes[j] << endl;
         EXPECT_TRUE(z.FindHash(yhashes[j]))
             << xndv << " " << yndv << " " << j << " " << hex << "0x" << yhashes[j];
       }
     }
   }
-  unsigned ndv = 80;
-  auto x = TypeParam::CreateWithBytes(0);
-  auto y = TypeParam::CreateWithBytes(0);
-  vector<uint64_t> xhashes, yhashes;
-  Rand r;
-  for (unsigned i = 0; i < ndv; ++i) {
-    xhashes.push_back(r());
-    x.InsertHash(xhashes.back());
-    yhashes.push_back(r());
-    y.InsertHash(yhashes.back());
-  }
+  // unsigned ndv = 80;
+  // auto x = TypeParam::CreateWithBytes(0);
+  // auto y = TypeParam::CreateWithBytes(0);
+  // vector<uint64_t> xhashes, yhashes;
+  // Rand r;
+  // for (unsigned i = 0; i < ndv; ++i) {
+  //   xhashes.push_back(r());
+  //   x.InsertHash(xhashes.back());
+  //   yhashes.push_back(r());
+  //   y.InsertHash(yhashes.back());
+  // }
 
-  auto z = Union(x, y);
-  auto p = x;
-  auto q = y;
-  for (unsigned j = 0; j < xhashes.size(); ++j) {
-    ASSERT_TRUE(p.FindHash(xhashes[j])) << j << " " << hex << "0x" << xhashes[j];
-    ASSERT_TRUE(q.FindHash(yhashes[j])) << j << " " << hex << "0x" << yhashes[j];
-  }
-  for (unsigned j = 0; j < xhashes.size(); ++j) {
-    EXPECT_TRUE(z.FindHash(xhashes[j])) << j << " " << hex << "0x" << xhashes[j];
-  }
-  for (unsigned j = 0; j < yhashes.size(); ++j) {
-    EXPECT_TRUE(z.FindHash(yhashes[j])) << j << " " << hex << "0x" << yhashes[j];
-  }
+  // auto z = Union(x, y);
+  // auto p = x;
+  // auto q = y;
+  // for (unsigned j = 0; j < xhashes.size(); ++j) {
+  //   ASSERT_TRUE(p.FindHash(xhashes[j])) << j << " " << hex << "0x" << xhashes[j];
+  //   ASSERT_TRUE(q.FindHash(yhashes[j])) << j << " " << hex << "0x" << yhashes[j];
+  // }
+  // for (unsigned j = 0; j < xhashes.size(); ++j) {
+  //   EXPECT_TRUE(z.FindHash(xhashes[j])) << j << " " << hex << "0x" << xhashes[j];
+  // }
+  // for (unsigned j = 0; j < yhashes.size(); ++j) {
+  //   EXPECT_TRUE(z.FindHash(yhashes[j])) << j << " " << hex << "0x" << yhashes[j];
+  // }
 }
 
 template <typename T>
