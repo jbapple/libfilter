@@ -722,7 +722,7 @@ Iterate(tcf: TCF(U, k)) {
 For union, taffy cuckoo filers iterate over the smaller filter and insert each element into the larger filter, unless they are already present.
 For intersection, TCFs iterate over the smaller filter and lookup each element in the larger filter.
 If the lookup fails, iteration proceeds to the next element.
-Otherwise, the shorter bit string of the two elements is inserted into the intersection.
+Otherwise, the longer bit string of the two elements is inserted into the intersection.
 Note that this may sometimes be the element from the smaller TCF, since the tails have variable length
 
 %% TODO: pseudocode and an analysis of the fpp.
