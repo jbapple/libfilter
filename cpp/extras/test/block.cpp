@@ -18,7 +18,7 @@ template <typename F>
 class BlockTest : public ::testing::Test {};
 
 template <typename F>
-class GeneralTest : public ::testing::Test {};
+class UnionTest : public ::testing::Test {};
 
 template <typename F>
 class BytesTest : public ::testing::Test {};
@@ -29,14 +29,100 @@ class NdvFppTest : public ::testing::Test {};
 using BlockTypes = ::testing::Types<BlockFilter, ScalarBlockFilter>;
 using CreateWithBytes = ::testing::Types<MinimalTaffyCuckooFilter, BlockFilter, ScalarBlockFilter, TaffyCuckooFilter>;
 using CreateWithNdvFpp = ::testing::Types<TaffyBlockFilter>;
+using UnionTypes = ::testing::Types<TaffyCuckooFilter>;
 
 TYPED_TEST_SUITE(BlockTest, BlockTypes);
 TYPED_TEST_SUITE(BytesTest, CreateWithBytes);
 TYPED_TEST_SUITE(NdvFppTest, CreateWithNdvFpp);
-
+TYPED_TEST_SUITE(UnionTest, UnionTypes);
 // TODO: test hidden methods in libfilter.so
 
 // TODO: test more methods, including copy
+
+TYPED_TEST(UnionTest, UnionDoes) {
+  for (unsigned xndv = 1; xndv < 200; ++xndv) {
+    for (unsigned yndv = 1; yndv < 1024; yndv += xndv) {
+      // cout << "ndv " << dec << xndv << " " << yndv << endl;
+      Rand r;
+      vector<uint64_t> xhashes, yhashes;
+      auto x = TypeParam::CreateWithBytes(0);
+      auto y = TypeParam::CreateWithBytes(0);
+      for (unsigned i = 0; i < xndv; ++i) {
+        xhashes.push_back(r());
+        x.InsertHash(xhashes.back());
+      }
+      for (unsigned i = 0; i < yndv; ++i) {
+        yhashes.push_back(r());
+        y.InsertHash(yhashes.back());
+      }
+      //cout << "xy " << dec << xndv << " " << yndv << endl;
+      auto z = Union(x, y);
+      for (unsigned j = 0; j < xhashes.size(); ++j) {
+        //cout << "x " << dec << xndv << " " << yndv << " " << j << " " << hex << "0x"
+        //   << xhashes[j] << endl;
+        EXPECT_TRUE(z.FindHash(xhashes[j]))
+            << xndv << " " << yndv << " " << j << " " << hex << "0x" << xhashes[j];
+      }
+      for (unsigned j = 0; j < yhashes.size(); ++j) {
+        //cout << "y " << dec << xndv << " " << yndv << " " << j << " " << hex << "0x"
+        //   << yhashes[j] << endl;
+        EXPECT_TRUE(z.FindHash(yhashes[j]))
+            << xndv << " " << yndv << " " << j << " " << hex << "0x" << yhashes[j];
+      }
+    }
+  }
+  // unsigned ndv = 80;
+  // auto x = TypeParam::CreateWithBytes(0);
+  // auto y = TypeParam::CreateWithBytes(0);
+  // vector<uint64_t> xhashes, yhashes;
+  // Rand r;
+  // for (unsigned i = 0; i < ndv; ++i) {
+  //   xhashes.push_back(r());
+  //   x.InsertHash(xhashes.back());
+  //   yhashes.push_back(r());
+  //   y.InsertHash(yhashes.back());
+  // }
+
+  // auto z = Union(x, y);
+  // auto p = x;
+  // auto q = y;
+  // for (unsigned j = 0; j < xhashes.size(); ++j) {
+  //   ASSERT_TRUE(p.FindHash(xhashes[j])) << j << " " << hex << "0x" << xhashes[j];
+  //   ASSERT_TRUE(q.FindHash(yhashes[j])) << j << " " << hex << "0x" << yhashes[j];
+  // }
+  // for (unsigned j = 0; j < xhashes.size(); ++j) {
+  //   EXPECT_TRUE(z.FindHash(xhashes[j])) << j << " " << hex << "0x" << xhashes[j];
+  // }
+  // for (unsigned j = 0; j < yhashes.size(); ++j) {
+  //   EXPECT_TRUE(z.FindHash(yhashes[j])) << j << " " << hex << "0x" << yhashes[j];
+  // }
+}
+
+TYPED_TEST(UnionTest, UnionFpp) {
+  Rand r;
+  vector<uint64_t> missing;
+  for (unsigned absent = 1; absent < (1 << 18); ++absent) {
+    missing.push_back(r());
+  }
+
+  for (unsigned xndv = 1; xndv < 1024; xndv *= 2) {
+    for (unsigned yndv = 1; yndv < 1024; yndv *= 2) {
+      auto x = TypeParam::CreateWithBytes(0);
+      auto y = TypeParam::CreateWithBytes(0);
+      for (unsigned i = 0; i < xndv; ++i) {
+        x.InsertHash(r());
+      }
+      for (unsigned i = 0; i < yndv; ++i) {
+        y.InsertHash(r());
+      }
+      //cout << "xy " << dec << xndv << " " << yndv << endl;
+      auto z = Union(x, y);
+      for (auto v : missing) {
+        EXPECT_EQ(z.FindHash(v), x.FindHash(v) || y.FindHash(v)) << xndv << " " << yndv << " " << v;
+      }
+    }
+  }
+}
 
 template <typename T>
 void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
@@ -66,7 +152,6 @@ TYPED_TEST(BytesTest, InsertPersistsWithBytes) {
   InsertPersistsHelp(x, hashes);
 }
 
-
 // Test that once something is inserted, it's always present
 TYPED_TEST(NdvFppTest, InsertPersistsWithNdvFpp) {
   auto ndv = 16000;
@@ -74,7 +159,6 @@ TYPED_TEST(NdvFppTest, InsertPersistsWithNdvFpp) {
   vector<uint64_t> hashes(ndv);
   InsertPersistsHelp(x, hashes);
 }
-
 
 template<typename T>
 void StartEmptyHelp(const T& x, uint64_t ndv) {
@@ -84,7 +168,6 @@ void StartEmptyHelp(const T& x, uint64_t ndv) {
     EXPECT_FALSE(x.FindHash(v)) << v;
   }
 }
-
 
 // Test that filters start with a 0.0 fpp.
 TYPED_TEST(BytesTest, StartEmpty) {
