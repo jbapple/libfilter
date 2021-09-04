@@ -14,7 +14,7 @@ import org.apache.commons.math3.special.Gamma;
  *      advantage of SIMD instructions.
  * </ol>
  */
-public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
+public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
   @Override
   public int compareTo(BlockFilter o) {
     // TODO: this is not lexicographic
@@ -36,7 +36,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    * @param bytes the size of the filter
    * @return the false positive probability
    */
-  public static double Fpp(int ndv, int bytes) {
+  public static double Fpp(double ndv, double bytes) {
     double word_bits = 32;
     double bucket_words = 8;
     double hash_bits = 32;
@@ -51,7 +51,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
     // case: bucket_words
     if (ndv == 0) return 0.0;
     if (bytes <= 0) return 1.0;
-    if (ndv / (bytes * 8) > 3) return 1.0;
+    if (1.0 * ndv / (1.0 * bytes * 8) > 3) return 1.0;
 
     double result = 0;
     double lam =
@@ -78,28 +78,33 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    * @param fpp  the desired false positive probability
    * @return the number of bytes needed
    */
-  public static int BytesNeeded(int ndv, double fpp) {
+  public static int BytesNeeded(double ndv, double fpp) {
     double word_bits = 32;
     double bucket_words = 8;
     double hash_bits = 32;
     int bucket_bytes = (int) ((word_bits * bucket_words) / 8);
-    int result = 1;
+    double result = 1;
     while (Fpp(ndv, result) > fpp) {
       result *= 2;
     }
     if (result <= bucket_bytes) return (int)bucket_bytes;
-    int lo = 0;
+    double lo = 0;
     while (lo + 1 < result) {
-      int mid = lo + (result - lo) / 2;
+      double mid = lo + (result - lo) / 2;
       double test = Fpp(ndv, mid);
-      if (test < fpp)
+      if (test < fpp) {
         result = mid;
-      else if (test == fpp)
-        return ((mid + bucket_bytes - 1) / bucket_bytes) * bucket_bytes;
-      else
+      } else if (test == fpp) {
+        result = ((mid + bucket_bytes - 1) / bucket_bytes) * bucket_bytes;
+        if (result > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        return (int) result;
+      } else {
         lo = mid;
+      }
     }
-    return ((result + bucket_bytes - 1) / bucket_bytes) * bucket_bytes;
+    result = ((result + bucket_bytes - 1) / bucket_bytes) * bucket_bytes;
+    if (result > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+    return (int)result;
   }
 
   /**
@@ -110,19 +115,19 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    * @param fpp   the desired false positive probability
    * @return the maximum number of distinct values that can be added
    */
-  public static int TotalHashCapacity(int bytes, double fpp) {
+  public static double TotalHashCapacity(double bytes, double fpp) {
     double word_bits = 32;
     double bucket_words = 8;
     double hash_bits = 32;
-    int result = 1;
+    double result = 1;
     // TODO: unify this exponential + binary search with the bytes needed function above
     while (Fpp(result, bytes) < fpp) {
       result *= 2;
     }
     if (result == 1) return 0;
-    int lo = 0;
+    double lo = 0;
     while (lo + 1 < result) {
-       int mid = lo + (result - lo) / 2;
+       double mid = lo + (result - lo) / 2;
        double test = Fpp(mid, bytes);
        if (test < fpp)
          lo = mid;
@@ -130,7 +135,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
          return mid;
        else
          result = mid;
-  }
+    }
     return lo;
   }
 
@@ -182,7 +187,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    * @param ndv the number of distinct values
    * @param fpp the false positive probability
    */
-  public static BlockFilter CreateWithNdvFpp(int ndv, double fpp) {
+  public static BlockFilter CreateWithNdvFpp(double ndv, double fpp) {
     int bytes = BytesNeeded(ndv, fpp);
     if (bytes > Integer.MAX_VALUE) {
       return null;
@@ -224,13 +229,15 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 64-bit hash value of the element you wish to insert
    */
-  public void AddHash64(long hash) {
+  @Override
+  public boolean AddHash64(long hash) {
     int bucket_idx = Index(hash, payload.length / 8);
     int[] mask = {0xca11, 8, 6, 7, 5, 3, 0, 9};
     MakeMask(hash, mask);
     for (int i = 0; i < 8; ++i) {
       payload[bucket_idx * 8 + i] = mask[i] | payload[bucket_idx * 8 + i];
     }
+    return true;
   }
 
   /**
@@ -245,6 +252,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 64-bit hash value of the element you are checking the presence of
    */
+  @Override
   public boolean FindHash64(long hash) {
     int bucket_idx = Index(hash, payload.length / 8);
     int[] mask = {0xca11, 8, 6, 7, 5, 3, 0, 9};
@@ -266,7 +274,8 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 32-bit hash value of the element you wish to insert
    */
-  public void AddHash32(int hash) {
+  @Override
+  public boolean AddHash32(int hash) {
     long hash64 = (((REHASH_32 * (long) hash) >>> 32) << 32) | hash;
     int bucket_idx = Index(hash64, payload.length / 8);
     int[] mask = {0xca11, 8, 6, 7, 5, 3, 0, 9};
@@ -274,6 +283,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
     for (int i = 0; i < 8; ++i) {
       payload[bucket_idx * 8 + i] = mask[i] | payload[bucket_idx * 8 + i];
     }
+    return true;
   }
 
   /**
@@ -284,6 +294,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable {
    *
    * @param hash the 32-bit hash value of the element you are checking the presence of
    */
+  @Override
   public boolean FindHash32(int hash) {
     long hash64 = (((REHASH_32 * (long) hash) >>> 32) << 32) | hash;
     int bucket_idx = Index(hash64, payload.length / 8);

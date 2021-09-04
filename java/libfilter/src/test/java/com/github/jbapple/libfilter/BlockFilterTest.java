@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 import com.github.jbapple.libfilter.BlockFilter;
+import com.github.jbapple.libfilter.TaffyBlockFilter;
 import java.util.ArrayList;
 
 public class BlockFilterTest {
@@ -29,7 +30,7 @@ public class BlockFilterTest {
   @Test
   public void StartEmpty() {
     int ndv = 16000000;
-    BlockFilter x = BlockFilter.CreateWithBytes(ndv);
+    TaffyBlockFilter x = TaffyBlockFilter.CreateWithNdvFpp(0, 0.001);
     ThreadLocalRandom r = ThreadLocalRandom.current();
     for (int j = 0; j < ndv; ++j) {
       long v = r.nextLong();
