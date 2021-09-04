@@ -237,8 +237,32 @@ A newer approach to manage growing filters is to use cuckoo or quotient filters 
 %% TODO: implement the sequence-of-Bloom-filters approach and benchmark it.
 
 Pagh \etal{} introduced structures that performs lookups in $O(\lg n)$ or $O(1)$ time while still allowing the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created) all while using no more than $O(\lg \lg n + \lg (1/\varepsilon))$ bits of space per element.~\cite{psw}
-That work ends with an open problem of implementing these structures in a practical way.
-This work answers that challenge with the first three practical extensible filters:
+
+Growable filters are potentially useful in situations where there is no known bound on the number of keys to be inserted.
+One example is in joins in query processing systems.
+It is often beneficial to performance to create and populate a filter for the build side of a join:
+the filter, being much smaller than the full output of the build-side hash table construction, can be pushed-down to the probe side to reduce the number of rows that need to be tested against the build output.~\cite{tpch-filter}
+If there are any predicates on the build side, or if the build side has incomplete or inaccurate distinct value count statistics, it is not possible to predict the eventual size of the filter.
+Systems like Impala estimate the cardinality when initializing the filter and then discard the filter if the estimate was too low.~\cite{impala}
+Using growable filters would allow these filters to continue to be populated and used in the probe side.
+
+Furthermore, Impala is a distributed query engine, and populates a filter for each node that participates in creating the build side of a join, then merges these filters before distributing the merged filter to the nodes participating in the probe side of the join; ApproxJoin does the same.~\cite{approxjoin, impala}
+%When using Cuckoo filters, this merge is impossible. When using Bloom filters,
+With Bloom filters, this merge procedure requires that every filter be as large as the eventual merged filter, which is much larger than the size of the filter each build node would need on its own, wasting memory on build nodes.
+
+Another example where growable filters are useful is in log-structured merge trees (``LSM trees'').~\cite{lsm}
+Log-structured merge trees store data in sorted ``runs'' of exponentially-increasing size.
+In order to cheaply discover if a key is present in a run, systems like RocksDB equip each run with a filter.~\cite{lsm, ribbon}
+In typical LSM trees, the data in each run is fixed for the lifetime of that level, so each filter can be created with knowledge of the number of keys it will contain, even when the structure as a whole can grow without bound.
+However, point lookups that go through the filters require accessing $\lg n$ filters, where $n$ is the number of keys in the LSM tree.
+A single growable filter structure can reduce this to a single filter query by storing one structure for all keys, rather than $\lg n$ structures.
+
+%% TODO: associate satellite data with each entry. Explain in LSM subsection of applications section?
+
+%% TODO: data deduplication?
+
+Pagh et al. ends with an open problem of implementing these structures in a practical way.~\cite{psw}
+This work answers that challenge with three practical extensible filters:
 
 \begin{enumerate}
 \item Section~\ref{pbf}  presents the {\em taffy block filter}           (``TBF''),   a Bloom-filter-backed  AMQ structure with $O(\lg n)$ lookup cost.
