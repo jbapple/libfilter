@@ -331,6 +331,7 @@ With high probability, eventually the evictions find an empty slot and the chain
 This bounds the occupancy of the table below $1/2$.~\cite{cuckoo-journal,load-thresholds}
 To improve the fill factor, cuckoo tables are usually implemented with finite-sized buckets instead of slots, where buckets can hold two or more elements.~\cite{buckets,load-thresholds}
 Cuckoo filters, taffy cuckoo filters, and minimum taffy cuckoo filters all use buckets of size four.~\cite{cuckoo}
+In cuckoo filters, this raises the occupancy limit from 50\% to over 90\%.
 
 \subsection{Succinct dictionaries with quotienting}
 \label{quotienting}
@@ -466,7 +467,8 @@ Using traditional Bloom filters, the lookup cost would be
 \]
 
 Instead, Pagh \etal{} use dictionary-based filters that support constant-time lookup -- such as cuckoo filters or Raman and Rao's dictionary -- rather than Bloom filters.~\cite{succinct,psw}
-This reduces the lookup time to $O(\lg n)$
+This reduces the lookup time to $O(\lg n)$.
+Taffy block filters use split block Bloom filters to keep the lookup time logarithmic and independent of $\varepsilon$.
 
 %% TBFs cannot perform the union operation without significant increases in false positive probability.
 %% For instance, in two split block Bloom filters of size $m$ where each level has $\delta m$ its bits set, the expected number of bits set in their union is $(2 \delta - \delta^2) m$.
@@ -1279,7 +1281,7 @@ For comparison, the graphs also include a cuckoo filter (labeled ``CF'') and a s
 
 \subsection{Space}
 
-A filter with a false positive probability of $\varepsilon$ must take up at least $\lg (1/\varepsilon)$ bits per element.
+A filter with a false positive probability of $\varepsilon$ must take up at least $\lg (1/\varepsilon)$ bits per element.~\cite{lower-bound}
 Practical filters use more space.
 For instance, Bloom filters use $\lg (1/\varepsilon)/\ln 2$ bits per element, which is about $1.44 \lg (1/\varepsilon)$.
 Cuckoo filters and quotient filters use $(\lg (1/\varepsilon) + d) / \alpha$ where $d$ is between 2 and 3, and $\alpha$ is the fill factor, between 80\% - 99\%.~\cite{cuckoo,quotient-filter,vector-quotient}
@@ -1439,6 +1441,8 @@ Otherwise, a practitioner must ask themselves:
   If many, a TCF may be called for.
 \item Is the set likely to exceed one thousand elements? One million elements?
   If yes, a TCF is an attractive choice.
+\item Are union, intersection, freeze, or thaw operations needed?
+  A TCF or MTCF is the only choice.
 \item Is the hardware known in advance?
   If x86, the TBF may be the best choice.
 \end{itemize}
