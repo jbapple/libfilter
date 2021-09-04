@@ -220,7 +220,7 @@ The source code, data, and/or other artifacts have been made available at \url{\
 %% TODO: Vacuumize or Mortonize TCF and MTCF
 
 The Bloom filter is a ubiquitous data structure that allows storing a set with a low amount of space.
-They support the operations insert, which adds an item to the set, and lookup, which returns true if an element is in the filter; if an element is not in the filter, true is returned with some configurable probability $\varepsilon \ll 1$.
+Bloom filters support the operations insert -- which adds an item to the set -- and lookup, which returns true if an element is in the filter; if an element is not in the filter, true is returned with some configurable probability $\varepsilon \ll 1$.
 This is called the ``false positive probability'', or ``fpp''
 
 There are a number of other structures also supporting insert and lookup with a false positive probability greater than 0.~\cite{vacuum,morton-journal,ribbon,xor-filter,quotient-filter,broom,vector-quotient}
@@ -263,7 +263,7 @@ Section~\ref{conclusion} concludes with open questions.
 
 A standard Bloom filter sets $\lg (1/\varepsilon)$ bits in an array of size $m$, storing $m \ln 2 / \lg(1/\varepsilon)$ distinct elements.~\cite{bloom-original}
 This causes $\lg (1/\varepsilon)$ cache misses and requires the same number of hash function applications.
-A block Bloom filters reduce the number of cache misses to 1.~\cite{block-bloom}
+Block Bloom filters reduce the number of cache misses to 1.~\cite{block-bloom}
 
 Each block Bloom filter is implemented as an array of non-overlapping blocks.
 Each block is itself a Bloom filter.
@@ -290,19 +290,19 @@ When a block Bloom filter is used with block size $B = 256$, $k = 8$ hash functi
 %in what Polychroniou and Ross call ``horizontal vectorization''.~\cite{horizontal}
 The resulting Bloom filter has constant-time branch-free insert and lookup and is consistently faster than a cuckoo filter of the same size (See Figures~\ref{lookup-both}~and~\ref{arm-lookup-both}).~\cite{cuckoo-filter-github,ultra-fast,overtakes,impala-bloom}
 
-Taffy block filters use split block Bloom filters as the building block to make an extensible filter with lower query time than a traditional Bloom filter would require.
+Taffy block filters use split block Bloom filters as the building block to make an extensible filter with lower query time than a traditional Bloom filter would require in the same application.
 
 \subsection{Cuckoo hashing}
 
-Cuckoo hashing is a method of collision resolution in open-addressing hash tables that assigns a priori each key a small set of slots it can occupy.~\cite{cuckoo-journal}
+Cuckoo hashing is a method of collision resolution in open-addressing hash tables that assigns each key a small set of slots it can occupy.~\cite{cuckoo-journal}
 In its simplest form, a cuckoo hash table consists of two arrays of size $(1 + \varepsilon)n$ to store a set of $n$ keys, for $0 < \varepsilon < 1$.
-Each key is assigned two possible slots via the application of two hash functions on the key.
+Each key is assigned one slot per array via the application of two hash functions on the key.
 Looking up a key is direct - both slots are checked.
 
 Inserting a key is more complex.
 If neither slot for representing a key is available, one of the two occupying keys is evicted and replaced by the key being inserted.
 Now the victim of the eviction is in turn inserted.
-With high probability, eventually the evictions find an empty slot and the chain ends.
+With high probability, eventually the evictions find an empty slot and the chain of evictions ends.
 
 This bounds the occupancy of the table below $1/2$.~\cite{cuckoo-journal,load-thresholds}
 To improve the fill factor, cuckoo tables are usually implemented with finite-sized buckets instead of slots, where buckets can hold two or more elements.~\cite{buckets,load-thresholds}
@@ -372,7 +372,7 @@ That is, they create a sequence of Bloom filters with the following pairs for th
 
 This leads to a storage footprint of more than $(\lg n + \lg (1/\epsilon)) / \ln 2$ bits per element and a query time of $O(\lg^2 n + \lg (n/\varepsilon))$.
 Pagh \etal{} reduce the lookup cost to $O(\lg n)$ by using a dictionary like Raman and Rao's that has $O(1)$ query time per filter.~\cite{psw,succinct}
-They also reduce the space usage to $O(n \lg \lg n)$ by using the sequence $\langle \varepsilon / i^2,  2^i \rangle$, rather than  $\langle \varepsilon / 2^i,  2^i \rangle$.
+They also reduce the space usage to $O(n \lg \lg n)$ by using the sequence $\langle O(\varepsilon / i^2),  2^i \rangle$, rather than  $\langle \varepsilon / 2^i,  2^i \rangle$.
 See Figure~\ref{pagh-1-diagram}.
 
 \begin{figure}
@@ -390,7 +390,7 @@ Quotienting (see Section~\ref{quotienting}) or other space factors are not visib
 
 Pagh \etal{} also present a filter with the same space usage but $O(1)$ query time.~\cite{psw}
 This filter maintains a map where the keys are bit strings of length $\lceil \lg n \rceil + \lg (1/\varepsilon) + 2$ and the values are bit strings of length up to $\lg \lg N$, where $N$ will be the largest size of the data structure.
-(This definition of $N$ is not a problem in practice, as using $U$, the size of the universe of keys should be sufficient for integer keys. For non-integer keys, they must be hashed down to an integer in order to use these structures, and using the universe of the set of integers each key is hashed to also works well.)
+(This definition of $N$ is not a problem in practice, as using $U$, the size of the universe of keys, should be sufficient for integer keys. For non-integer keys, they must be hashed down to an integer in order to use these structures, and using the universe of the set of integers each key is hashed to also works well.)
 After every $2^i$ insertions, a new map is created where the keys are one bit longer.
 The extra bit in the key is acquired by stealing a single bit from the value.
 See Figure~\ref{pagh-diagram}.
@@ -496,8 +496,8 @@ See Listing~\ref{tcf-types}.
 
 \begin{lstlisting}[escapeinside={`}{`},label=tcf-types,
     caption={The types of a TCF.
-      $S_i$ is the symmetric group on $\ints_i$ -- the set of all permutations on $\ints_i$.
       \texttt{T}$_\bot$ means the type \texttt{T} extended with the element $\bot$, indicating ``null'' or ``empty''.
+      $S_i$ is the symmetric group on $\ints_i$ -- the set of all permutations on $\ints_i$.
       %As above, pseudocode will not make a distinction between $\ints_2^i$ and $\ints_{2^i}$.
       \texttt{T[n]} denotes an array of $n$ values of type $T$.
       $A \dotcup B$ represents a tagged disjoint union of $A$ and $B$; even if $A \subseteq B$, $A \dotcup B \ne B$.
@@ -633,7 +633,7 @@ This works as long as the tail has positive length.
 If the tail has length zero, there is nothing to steal from.
 Instead, two candidate keys are created from the reverse-permuted $k+10$ bits by appending a zero and a one.
 It's indeterminate which one of these was in the original key, so both are inserted. (Line 20)
-Pagh \etal{} show that the fpp is less than $2^{-F+2}$, which for TCFs is $2^{-8}$.~\cite{psw}
+Pagh \etal{} show that the fpp is less than $2^{-F+2}$.~\cite{psw}
 
 \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-upsize,
     caption={Pseudocode for the upsize operation on TCFs.
@@ -1100,8 +1100,8 @@ at each point, the structure has a size which is a power of two, sometimes alloc
 To address this, this section describes a similar structure using DySECT to reduce the space usage to only what is needed.~\cite{dysect}
 
 DySECT is a variant of cuckoo hashing.
-Just as in cuckoo hashing, upon an insertion, an element may be evicted.
 A DySECT table consists of some number of subtables, and as the table gets more and more full, it grows by doubling the size of one of its subtables.
+Just as in cuckoo hashing, upon an insertion, an element may be evicted.
 As new elements are inserted into the table, they evict older elements, and this movement causes the newly-doubled subtable to fill up.
 
 This section proposes minimal taffy cuckoo filters (``MTCFs''), an application of the DySECT idea to quotienting and taffy filters.
@@ -1114,7 +1114,9 @@ Some complications arise:
   \item Because there are multiple permutations per side, a key may be in multiple distinct buckets each side, which decreases the performance and increases the false positive probability.
 \end{enumerate}
 
-In an MTCF, each element has a fingerprint of size 8 or 9 and a tail of size up to 5.
+In an MTCF, each element has a fingerprint of size 8 or 9 and a tail of size up to 5.\footnote{As in TCFs, these constants are picked for performance and ease of implementation.
+Any other constants are possible.
+}
 A bucket consists of four (possibly empty) slots, each of which can hold one element.
 A level consists of two arrays of the same size, each with $2^k$ buckets for some $k$.
 The table consists of four permutations, one hash function, $32$ levels, and one cursor pointing to some index in the set of levels.
@@ -1129,13 +1131,13 @@ The permutations are on values with length $k + 13$ and $k + 14$, where $2^k$ is
 \begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-types,
     caption={
       The types of an MTCF.
-      ``$\times$'' means Cartesian product.
+      A Permutation(k) is a tagged union of permutations; wlog it can be applied to bit strings of known length.
   }]
 MElement := {fingerprint: `$\ints_2^8 \dotcup \ints_2^9$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
 MSlot := MElement`$_\bot$`
 MBucket := MSlot[4]
 Level(k) := MBucket[2][2`$^k$`] `$\dotcup$` MBucket[2][2`$^{k+1}$`]
-Permutation(k) := `$S_{2^{k+13}} \times S_{2^{k+14}}$`
+Permutation(k) := `$S_{2^{k+13}} \dotcup S_{2^{k+14}}$`
 MTCF(U, k) := {cursor: `$\ints_{32}$`,
                Level(k)[32],
                Permutation(k)[2],
@@ -1149,13 +1151,13 @@ MTCF(U, k) := {cursor: `$\ints_{32}$`,
 A diagram of an MTCF.
 In this example, $k = 2$, so the larger levels have $2^{k+1} = 8$ buckets on each side, while the smaller levels have four.
 In the first bucket of side 0 of the 32nd level, the last three slots are empty.
-If the entry were from one of the larger levels above the cursor, then the fingerprint would have to be from $\ints_2^8$.
+If the entry were from one of the larger levels above the cursor, then the fingerprint would have to be from $\ints_2^8$, rather than from $\ints_2^8 \dotcup \ints_2^9$
 }
 
 \end{figure}
 
 If there are larger and smaller levels, then every element in the larger levels has a fingerprint of size 8, not 9.
-This is because the implicitly-stored part of the key is one-bit longer in the larger levels.
+This is because the implicitly-stored part of the key is one-bit longer in the larger levels, so the explitly stored part can be shorter.
 
 In an MTCF, upsize only increases the size of one of the levels, not the whole structure.
 As a result, the capacity of the filter tracks more closely the number of entries in the table.
