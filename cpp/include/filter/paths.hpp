@@ -91,8 +91,6 @@ struct Path : public Slot {
 
 } __attribute__((packed));
 
-
-
 /*
 
 A raw key can be made into up to four different paths, one or two per side. In each side
@@ -103,7 +101,6 @@ index is long. Mutatis mutandis.
 
 The one for short input yields a path iff the level is greater than or equal to the
 cursor.
-
 
 */
 
@@ -162,7 +159,6 @@ INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t level_size,
 }
 
 /*
-
 
 For context, let the cursor be c, the log_small_size be m, kHeadSize be k, and kLogLevels
 be L.
