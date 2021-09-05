@@ -23,6 +23,7 @@
 #include "filter/taffy-block.hpp"
 #include "filter/taffy-cuckoo.hpp"
 #include "util.hpp"  // for Rand
+#include "cuckoo32.hpp"
 
 using namespace filter;
 
@@ -94,6 +95,23 @@ struct CuckooShim {
     return result;
   }
   static CuckooShim CreateWithNdvFpp(uint64_t ndv, double) { return CuckooShim(ndv); }
+};
+
+struct Cuckoo32Shim {
+  Cuckoo32 payload;
+  static string Name() {
+    thread_local static const string result = "Cuckoo32";
+    return result;
+  }
+  bool InsertHash(uint64_t h) {
+    payload.Insert((h * 0xc7ea1a71f80b4b0b) >> 32);
+    return true;
+  }
+  uint64_t SizeInBytes() const { return payload.Capacity() * 4; }
+  bool FindHash(uint64_t h) const { return payload.Find((h * 0xc7ea1a71f80b4b0b) >> 32); }
+  explicit Cuckoo32Shim(uint64_t ) : payload() {}
+  static Cuckoo32Shim CreateWithBytes(uint64_t) { return Cuckoo32Shim(0); }
+  static Cuckoo32Shim CreateWithNdvFpp(uint64_t, double) { return Cuckoo32Shim(0); }
 };
 
 // Does the actual benchmarking work. Repeasts `reps` times, samples grow by
@@ -299,6 +317,7 @@ int main(int argc, char** argv) {
 
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
+    BenchWithBytes<Cuckoo32Shim>(reps, bytes, 1.05, to_insert, to_find);
     BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, fpp);
     BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
     BenchWithBytes<TaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
