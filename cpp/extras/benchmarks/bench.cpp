@@ -141,6 +141,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor, vector<uint64_t>& 
       uint64_t found = 0;
       // Just something to force computation so the optimizer doesn't fully elide a loop
       uint64_t dummy = 0;
+      uint64_t found_monotonic = 0;
       for (unsigned j = 0; j < reps; ++j) {
         const auto start = s.now();
         for (unsigned i = 0; i < 1000 * 1000; ++i) {
@@ -166,10 +167,13 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor, vector<uint64_t>& 
                        1000 / 1000;
         result.push_back(base);
         cout << base.CSV() << endl;
+        for (unsigned i = 0; i < 1000 * 1000; ++i) {
+          found_monotonic += filter.FindHash(to_find[i]);
+        }
       }
 
       base.sample_type = "fpp";
-      base.payload = 1.0 * found / 1000 / 1000 / reps;
+      base.payload = 1.0 * found_monotonic / 1000 / 1000 / reps;
       result.push_back(base);
       cout << base.CSV() << endl;
       for (unsigned j = 0; j < reps; ++j) {
@@ -199,7 +203,7 @@ vector<Sample> BenchHelp(uint64_t reps, double growth_factor, vector<uint64_t>& 
         cout << base.CSV() << endl;
       }
       // Force the FindHash value to be calculated:
-      if (found & dummy) {
+      if (found & dummy & found_monotonic) {
         // do something nearly nilpotent that the compiler can't figure out is a no-op
         result.push_back(base);
         result.pop_back();
