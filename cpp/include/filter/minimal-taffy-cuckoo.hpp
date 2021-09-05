@@ -138,7 +138,8 @@ struct Side {
   INLINE bool Find(Path p) const {
     for (auto stash : stashes) {
       if (stash.tail != 0 && stash.long_fp == p.long_fp &&
-          stash.fingerprint == p.fingerprint && IsPrefixOf(stash.tail, p.tail)) {
+          stash.fingerprint == p.fingerprint && IsPrefixOf(stash.tail, p.tail) &&
+          stash.level == p.level && stash.bucket == p.bucket) {
         return true;
       }
     }

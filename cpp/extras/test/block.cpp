@@ -119,12 +119,43 @@ void InsertPersistsHelp(T& x, vector<uint64_t>& hashes) {
   }
 }
 
+template <typename T>
+void InsertFalsePositivePersistsHelp(T& x, uint64_t n) {
+  Rand r;
+  vector<uint64_t> seen;
+
+  for (uint64_t i = 0; i < n; ++i) {
+    x.InsertHash(r());
+    auto y = r();
+    if (x.FindHash(y)) {
+      seen.push_back(y);
+      // std::cout << std::hex << y << " of " << std::dec << seen.size() << " of " << i
+      //           << std::endl;
+    }
+    for (uint64_t j = 0; j < seen.size(); ++j) {
+      EXPECT_TRUE(x.FindHash(seen[j])) << dec << j << " of " << seen.size() << " of " << i
+                                       << " with hash 0x" << hex << seen[j];
+      if (not x.FindHash(seen[j])) {
+        throw 2;
+      }
+    }
+  }
+}
+
+
 // Test that once something is inserted, it's always present
 TYPED_TEST(BytesTest, InsertPersistsWithBytes) {
   auto ndv = 16000;
   auto x = TypeParam::CreateWithBytes(ndv);
   vector<uint64_t> hashes(ndv);
   InsertPersistsHelp(x, hashes);
+}
+
+// Test that once something is inserted, it's always present
+TYPED_TEST(BytesTest, InsertFalsePositivePersistsWithBytes) {
+  auto ndv = 16000;
+  auto x = TypeParam::CreateWithBytes(1);
+  InsertFalsePositivePersistsHelp(x, ndv);
 }
 
 // Test that once something is inserted, it's always present
