@@ -27,26 +27,26 @@
 % CIDR - August 27, 2021: Submission deadline for all contributions, October 15, 2021: author notification for all contributions, Chaminade, on-site, 6 pages maximum
 
 % \documentclass[letterpaper]{article}
-\documentclass[sigconf, nonacm]{acmart}
+\documentclass[sigconf]{acmart}
 %\documentclass[manuscript,screen,review]{acmart}
 
-%% \setcopyright{acmcopyright}
-%% \copyrightyear{2021}
-%% \acmYear{2021}
-%% \acmDOI{10.1145/1122445.1122456}
+\setcopyright{acmcopyright}
+\copyrightyear{2018}
+\acmYear{2018}
+\acmDOI{10.1145/1122445.1122456}
 
-%% \acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
-%%   Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
-%% \acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
-%%   June 03--05, 2018, Woodstock, NY}
-%% \acmPrice{15.00}
-%% \acmISBN{978-1-4503-XXXX-X/18/06}
+\acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
+  Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
+\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+  June 03--05, 2018, Woodstock, NY}
+\acmPrice{15.00}
+\acmISBN{978-1-4503-XXXX-X/18/06}
 
 \pdfoutput=1
 
 \usepackage{amsfonts}
 \usepackage{amsmath}
-\usepackage{amssymb}
+%\usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{color}
 \usepackage{graphicx}
@@ -109,21 +109,21 @@
 %% \makeatother
 
 
-%% The following content must be adapted for the final version
-% paper-specific
-\newcommand\vldbdoi{XX.XX/XXX.XX}
-\newcommand\vldbpages{XXX-XXX}
-% issue-specific
-\newcommand\vldbvolume{15}
-\newcommand\vldbissue{1}
-\newcommand\vldbyear{2022}
-% should be fine as it is
-\newcommand\vldbauthors{\authors}
-\newcommand\vldbtitle{\shorttitle} 
-% leave empty if no availability url should be set
-\newcommand\vldbavailabilityurl{https://github.com/jbapple/libfilter}
-% whether page numbers should be shown or not, use 'plain' for review versions, 'empty' for camera ready
-\newcommand\vldbpagestyle{plain} 
+%% %% The following content must be adapted for the final version
+%% % paper-specific
+%% \newcommand\vldbdoi{XX.XX/XXX.XX}
+%% \newcommand\vldbpages{XXX-XXX}
+%% % issue-specific
+%% \newcommand\vldbvolume{15}
+%% \newcommand\vldbissue{1}
+%% \newcommand\vldbyear{2022}
+%% % should be fine as it is
+%% \newcommand\vldbauthors{\authors}
+%% \newcommand\vldbtitle{\shorttitle} 
+%% % leave empty if no availability url should be set
+%% \newcommand\vldbavailabilityurl{https://github.com/jbapple/libfilter}
+%% % whether page numbers should be shown or not, use 'plain' for review versions, 'empty' for camera ready
+%% \newcommand\vldbpagestyle{plain} 
 
 
 \begin{document}
@@ -138,9 +138,6 @@
 %  \country{United States of America}
 }
 \email{jbapple@jbapple.com}
-
-\begin{abstract}
-\end{abstract}
 
 \begin{CCSXML}
 <ccs2012>
@@ -180,31 +177,31 @@ The resulting code is open source and available for general use.
 
 \maketitle
 
-%%% do not modify the following VLDB block %%
-%%% VLDB block start %%%
-\pagestyle{\vldbpagestyle}
-\begingroup\small\noindent\raggedright\textbf{PVLDB Reference Format:}\\
-\vldbauthors. \vldbtitle. PVLDB, \vldbvolume(\vldbissue): \vldbpages, \vldbyear.\\
-\href{https://doi.org/\vldbdoi}{doi:\vldbdoi}
-\endgroup
-\begingroup
-\renewcommand\thefootnote{}\footnote{\noindent
-This work is licensed under the Creative Commons BY-NC-ND 4.0 International License. Visit \url{https://creativecommons.org/licenses/by-nc-nd/4.0/} to view a copy of this license. For any use beyond those covered by this license, obtain permission by emailing \href{mailto:info@vldb.org}{info@vldb.org}. Copyright is held by the owner/author(s). Publication rights licensed to the VLDB Endowment. \\
-\raggedright Proceedings of the VLDB Endowment, Vol. \vldbvolume, No. \vldbissue\ %
-ISSN 2150-8097. \\
-\href{https://doi.org/\vldbdoi}{doi:\vldbdoi} \\
-}\addtocounter{footnote}{-1}\endgroup
-%%% VLDB block end %%%
+%% %%% do not modify the following VLDB block %%
+%% %%% VLDB block start %%%
+%% \pagestyle{\vldbpagestyle}
+%% \begingroup\small\noindent\raggedright\textbf{PVLDB Reference Format:}\\
+%% \vldbauthors. \vldbtitle. PVLDB, \vldbvolume(\vldbissue): \vldbpages, \vldbyear.\\
+%% \href{https://doi.org/\vldbdoi}{doi:\vldbdoi}
+%% \endgroup
+%% \begingroup
+%% \renewcommand\thefootnote{}\footnote{\noindent
+%% This work is licensed under the Creative Commons BY-NC-ND 4.0 International License. Visit \url{https://creativecommons.org/licenses/by-nc-nd/4.0/} to view a copy of this license. For any use beyond those covered by this license, obtain permission by emailing \href{mailto:info@vldb.org}{info@vldb.org}. Copyright is held by the owner/author(s). Publication rights licensed to the VLDB Endowment. \\
+%% \raggedright Proceedings of the VLDB Endowment, Vol. \vldbvolume, No. \vldbissue\ %
+%% ISSN 2150-8097. \\
+%% \href{https://doi.org/\vldbdoi}{doi:\vldbdoi} \\
+%% }\addtocounter{footnote}{-1}\endgroup
+%% %%% VLDB block end %%%
 
-%%% do not modify the following VLDB block %%
-%%% VLDB block start %%%
-\ifdefempty{\vldbavailabilityurl}{}{
-\vspace{.3cm}
-\begingroup\small\noindent\raggedright\textbf{PVLDB Artifact Availability:}\\
-The source code, data, and/or other artifacts have been made available at \url{\vldbavailabilityurl}.
-\endgroup
-}
-%%% VLDB block end %%%
+%% %%% do not modify the following VLDB block %%
+%% %%% VLDB block start %%%
+%% \ifdefempty{\vldbavailabilityurl}{}{
+%% \vspace{.3cm}
+%% \begingroup\small\noindent\raggedright\textbf{PVLDB Artifact Availability:}\\
+%% The source code, data, and/or other artifacts have been made available at \url{\vldbavailabilityurl}.
+%% \endgroup
+%% }
+%% %%% VLDB block end %%%
 
 
 \section{Introduction}
@@ -1190,17 +1187,17 @@ As a result, the capacity of the filter tracks more closely the number of entrie
 
 A lookup operation in an MTCF first applies each of the four permutations to the hashed key.
 \begin{itemize}
-\item For the permutations on $k + 14$ bits (Listing~\ref{mtcf-insert}, line 11), the first five bits indicate the level, the next $k$ or $k+1$ indicate the bucket, and the remaining 8 or 9 bits are the fingerprint.
+\item For the permutations on $k + 14$ bits (Listing~\ref{mtcf-lookup}, line 11), the first five bits indicate the level, the next $k$ or $k+1$ indicate the bucket, and the remaining 8 or 9 bits are the fingerprint.
 Lookup proceeds as it does in the TCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up. (Line~14.)
 \item For the permutations on $k + 13$ bits, the first five bits again indicate the level. (Line~3.)
 \begin{itemize}
 \item If the level has tables with $2^{k+1}$ buckets, the permuted key is not used for lookup; to do otherwise would leave only $k+13 - 5 - (k+1) = 7$ bits for the fingerprint, which is not possible.
 That key is simply skipped and the lookup continues with the next key. (Line~4)
-\item Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+14$ case.
+\item Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+14$ case. (Lines 5--10)
 \end{itemize}
 \end{itemize}
 
-\begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-insert,
+\begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-lookup,
     caption={
       The lookup operation in an MTCF. Notice that up to four buckets may be searched: between one and two per side.
   }]
@@ -1235,10 +1232,14 @@ MLookup(mtcf: TCF(U, k), key: U) {
 %% After 31 upsizes, the next one makes all of the levels the same size.
 %% At that point, two new permutations must be initialized to handle new longer key prefixes.
 
-During an evict operation, an element may move between levels with differently-sized arrays of buckets.
-This poses no problem when the fingerprint has size 9, but when the fingerprint has size 8 and the level moved {\em from} has a bucket array of size $2^k$ and the level moved {\em to} has a bucket array of size $2^{k+1}$, there are not enough bits in the fingerprint.
-As in TCPs, we steal bits from the tail, and if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key.
-See Figure~\ref{mtcf-state-transition}
+\paragraph{Insert}
+In insert operations, as in lookup, the first five bits of the permuted item indicate the level. (Listing~\ref{mtcf-insert}, lines 17, 19, 26, and 47--48)
+Just as in TCFs, the insert operation on a bucket produces an eviction. (Listing~\ref{mtcf-insert}, lines 5--8)
+During an evict operation in an insert, an element may move between levels with differently-sized arrays of buckets.
+When the fingerprint has size 8 and the level moved {\em from} has a bucket array of size $2^k$ and the level moved {\em to} has a bucket array of size $2^{k+1}$, the number of explicitly stored bits (the fingerprint bits) is now $(k + 8) - (k+1) = 7$.
+Since every fingerprint must be of length 8 or 9, a bit must be stolen from the tail. (line 29--36)
+As in TCFs, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key. (Line 34)
+See Figure~\ref{mtcf-state-transition}.
 
 \begin{figure}
   \includegraphics[width=\columnwidth]{mtcf-state-transition}
@@ -1253,9 +1254,67 @@ For elements in a short level with a short fingerprint and no tail, when they ar
 }
 \end{figure}
 
+\begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the insert operation on MTCFs},float,label=mtcf-insert]
+MInsertSide(mtcf: MTCF(U, k), side: `$\ints_{2}$`, level_number: `$\ints_{32}$`,
+            bucket_number: `$\ints_{2^k} \dotcup \ints_{2^{k+1}}$`, fingerprint `$\ints_2^8 \dotcup \ints_2^9$`,
+            tail: `$\sum_{i \le 5}\ints_2^i$`,) {
+  bucket := mtcf.Level[level_number][side][bucket_number]
+  new_slot := InsertBucket(fingerprint, tail, bucket)
+  if (new_slot == `$\bot$`) return
+  fingerprint = new_slot.fingerprint
+  tail = new_slot.tail
+  permuted := Concat(level_number, bucket_number, fingerprint)
+  hashed := mtcf.Permutation[side]`$^\texttt{-1}$`(permuted)
+  permuted = mtcf.Permutation[1 - side](hashed)
+  MInsertPermuted(mtcf, side, permuted, tail)
+}
+
+MInsertPermuted(mtcf: MTCF(U, k), side: `$\ints_2$`,
+                permuted: `$\ints_2^{k+13} \dotcup \ints_2^{k+14}$`, tail: `$\sum_{i \le 5}\ints_2^i$`) {
+  level_number := permuted[0, 5)
+  if (|permuted| == k + 14) {
+    middle := if (level_number `$\ge$` mtcf.cursor)
+              then k+5 else k+6
+    MInsertSide(mtcf, 1 - side, level_number,
+                permuted[5, middle),
+                permuted[middle, k+14), tail)
+    return
+  }
+  if (level_number `$\ge$` mtcf.cursor) {
+    permuteds := {permuted}
+    middle := k + 5
+  } else (|tail| > 0) {
+    (permuted, tail) := Steal(permuted, tail)
+    permuteds := {permuted}
+    middle := k + 6
+  } else {
+    permuteds := Steal(permuted, tail)
+    middle := k + 6
+  }
+  for (p : permuteds) {
+    MInsertSide(mtcf, 1 - side, level_number, p[5, middle),
+                p[middle, middle + 8), tail)
+  }
+}
+
+InsertMTCF(mtcf: MTCF(U, k), key: U) {
+  if (MLookup(mtcf, key)) return
+  hashed := mtcf.HashFunction(key)
+  permuted := mtcf.Permutation[0](hashed[0, k+14))
+  level_number := permuted[0, 5)
+  middle := if (level_number `$\ge$` mtcf.cursor)
+            then k+5 else k+6
+  bucket_number := permuted[5, middle)
+  fingerprint := permuted[middle, k+14)
+  tail := hashed[k+14, k+19)
+  MInsertSide(mtcf, 0, level_number,  bucket_number,
+              fingerprint, tail)
+}
+\end{lstlisting}
+
 The analysis of iterate, union, intersection, and freeze/thaw is identical to that of TCFs.
 
-Pseudocode for insert and upsize are available in Appendix~\ref{mtcf-appendix}.
+% Pseudocode for insert and upsize are available in Appendix~\ref{mtcf-appendix}.
 
 %% \section{Applications}
 %% \label{applications}
@@ -1311,15 +1370,13 @@ MTCFs moderate this pattern, but do not eliminate it.
 
 \begin{figure}
 
-  \includegraphics[width=\columnwidth]
-{bits-per-item}
+  \includegraphics[width=\columnwidth]{bits-per-item}
   \caption{  \label{bits-per-item}
 Number of bits (per element) each filter type needs.}
 \end{figure}
 
 \begin{figure}
-  \includegraphics[width=\columnwidth]
-{space}
+  \includegraphics[width=\columnwidth]{space}
   \caption{
     \label{space-steps}
     The amount of space used by each filter at the given number of keys inserted.
@@ -1327,8 +1384,7 @@ Number of bits (per element) each filter type needs.}
 \end{figure}
 
 \begin{figure}
-  \includegraphics[width=\columnwidth]
-{ideal-bits-per-item}
+  \includegraphics[width=\columnwidth]{ideal-bits-per-item}
   \caption{  \label{ideal-bits-per-item}
     This figure shows $\varepsilon$, the false positive probability.
     %% TODO: explain the sudden jump in taffy filters around 500-5000.
@@ -1370,9 +1426,7 @@ Of the resizable filters, the taffy cuckoo filter is the fastest once the size o
 One reason for this is that the ARM split block Bloom filters that the TBF is based on only have 128-bit vector units, not 256-bit units like the x86 machine does.
 
 \begin{figure}
-  \includegraphics
-[width=\columnwidth]
-{insert-cumulative}
+  \includegraphics[width=\columnwidth]{insert-cumulative}
   \caption{
     \label{insert-time}
     Insert times for filters, i7-7800X.
@@ -1381,9 +1435,7 @@ One reason for this is that the ARM split block Bloom filters that the TBF is ba
 \end{figure}
 
 \begin{figure}
-  \includegraphics
-[width=\columnwidth]
-{arm-insert-cumulative}
+  \includegraphics[width=\columnwidth]{arm-insert-cumulative}
   \caption{
     \label{arm-insert-time}
     Insert times for filters on an AWS EC2 m6g.medium with an ARM-based Graviton2.
@@ -1392,9 +1444,7 @@ One reason for this is that the ARM split block Bloom filters that the TBF is ba
 \end{figure}
 
 \begin{figure}
-  \includegraphics
-[width=\columnwidth]
-{lookup-both}
+  \includegraphics[width=\columnwidth]{lookup-both}
   \caption{
     \label{lookup-both}
     Lookup times for filters, i7-7800X.
@@ -1402,9 +1452,7 @@ One reason for this is that the ARM split block Bloom filters that the TBF is ba
 \end{figure}
 
 \begin{figure}
-  \includegraphics
-[width=\columnwidth]
-{arm-lookup-both}
+  \includegraphics[width=\columnwidth]{arm-lookup-both}
   \caption{
     \label{arm-lookup-both}
     Lookup times for filters on an AWS EC2 m6g.medium with an ARM-based Graviton2.
@@ -1485,102 +1533,47 @@ Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{taffy}
-\pagebreak
-\appendix
-\section{MTCF pseudocode}
-\label{mtcf-appendix}
+
+%% \pagebreak
+%% \appendix
+%% \section{MTCF pseudocode}
+%% \label{mtcf-appendix}
  
-%% 1
-%\begin{figure}%[!htbp]
-%\caption{The lookup operation in an MTCF.}
+%% %% 1
+%% %\begin{figure}%[!htbp]
+%% %\caption{The lookup operation in an MTCF.}
 
-%\end{figure}
-%% 2
-%% \begin{figure}
+%% %\end{figure}
+%% %% 2
+%% %% \begin{figure}
 
-\begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the insert operation on MTCFs}]
-MInsertSide(mtcf: MTCF(U, k), side: `$\ints_{2}$`, level_number: `$\ints_{32}$`,
-            bucket_number: `$\ints_{2^k} \dotcup \ints_{2^{k+1}}$`, fingerprint `$\ints_2^8 \dotcup \ints_2^9$`,
-            tail: `$\sum_{i \le 5}\ints_2^i$`,) {
-  bucket := mtcf.Level[level_number][side][bucket_number]
-  new_slot := InsertBucket(fingerprint, tail, bucket)
-  if (new_slot == `$\bot$`) return
-  fingerprint = new_slot.fingerprint
-  tail = new_slot.tail
-  permuted := Concat(level_number, bucket_number, fingerprint)
-  hashed := mtcf.Permutation[side]`$^\texttt{-1}$`(permuted)
-  permuted = mtcf.Permutation[1 - side](hashed)
-  MInsertPermuted(mtcf, side, permuted, tail)
-}
+%% %% \caption{Pseudocode 2 for the insert operation on MTCFs}
+%% %% \end{figure}
 
-MInsertPermuted(mtcf: MTCF(U, k), side: `$\ints_2$`,
-                permuted: `$\ints_2^{k+13} \dotcup \ints_2^{k+14}$`, tail: `$\sum_{i \le 5}\ints_2^i$`) {
-  level_number := permuted[0, 5)
-  if (|permuted| == k + 14) {
-    middle := if (level_number `$\ge$` mtcf.cursor)
-              then k+5 else k+6
-    MInsertSide(mtcf, 1 - side, level_number,
-                permuted[5, middle),
-                permuted[middle, k+14), tail)
-    return
-  }
-  if (level_number `$\ge$` mtcf.cursor) {
-    permuteds := {permuted}
-    middle := k + 5
-  } else (|tail| > 0) {
-    (permuted, tail) := Steal(permuted, tail)
-    permuteds := {permuted}
-    middle := k + 6
-  } else {
-    permuteds := Steal(permuted, tail)
-    middle := k + 6
-  }
-  for (p : permuteds) {
-    MInsertSide(mtcf, 1 - side, level_number, p[5, middle),
-                p[middle, middle + 8), tail)
-  }
-}
+%% %% 5
 
-InsertMTCF(mtcf: MTCF(U, k), key: U) {
-  if (MLookup(mtcf, key)) return
-  hashed := mtcf.HashFunction(key)
-  permuted := mtcf.Permutation[0](hashed[0, k+14))
-  level_number := permuted[0, 5)
-  middle := if (level_number `$\ge$` mtcf.cursor)
-            then k+5 else k+6
-  bucket_number := permuted[5, middle)
-  fingerprint := permuted[middle, k+14)
-  tail := hashed[k+14, k+19)
-  MInsertSide(mtcf, 0, level_number,  bucket_number,
-              fingerprint, tail)
-}
-\end{lstlisting}
-%% \caption{Pseudocode 2 for the insert operation on MTCFs}
-%% \end{figure}
+%% %% \begin{figure}
+%% \begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the upsize operation on MTCFs}]
+%% UpsizeMTCF(mtcf: MTCF(U, k)) {
+%%   old := mtcf.Level[mtcf.cursor]
+%%   mtcf.Level[mtcf.cursor] = new Level(2`$^{{k+1}}$`)
+%%   mtcf.cursor = mtcf.cursor + 1
+%%   for (side : {0, 1}) {
+%%     for (bucket_index : `$\ints_{2^k}$`) {
+%%       for (element : old.MBucket[side][bucket_index]) {
+%%         cursor = cursor - 1
+%%         permuted := Concat(cursor, bucket_index,
+%%                            slot.fingerprint)
+%%         hashed := mtcf.Permutation[side]`$^{\texttt{-1}}$`(permuted)
+%%         cursor = cursor + 1
+%%         permuted = mtcf.Permutation[side](hashed)
+%%         MInsertPermuted(permuted, element.tail, side, mtcf)
+%%       }
+%%     }
+%%   }
+%% }
+%% \end{lstlisting}
 
-%% 5
-
-%% \begin{figure}
-\begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the upsize operation on MTCFs}]
-UpsizeMTCF(mtcf: MTCF(U, k)) {
-  old := mtcf.Level[mtcf.cursor]
-  mtcf.Level[mtcf.cursor] = new Level(2`$^{{k+1}}$`)
-  mtcf.cursor = mtcf.cursor + 1
-  for (side : {0, 1}) {
-    for (bucket_index : `$\ints_{2^k}$`) {
-      for (element : old.MBucket[side][bucket_index]) {
-        cursor = cursor - 1
-        permuted := Concat(cursor, bucket_index,
-                           slot.fingerprint)
-        hashed := mtcf.Permutation[side]`$^{\texttt{-1}}$`(permuted)
-        cursor = cursor + 1
-        permuted = mtcf.Permutation[side](hashed)
-        MInsertPermuted(permuted, element.tail, side, mtcf)
-      }
-    }
-  }
-}
-\end{lstlisting}
 %% \caption{Pseudocode for the upsize operation on MTCFs}
 %% \end{figure}
 
