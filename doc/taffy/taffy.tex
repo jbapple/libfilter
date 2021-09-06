@@ -255,7 +255,7 @@ A single growable filter structure can reduce this to a single filter query by s
 
 %% TODO: data deduplication?
 
-Pagh et al. ends with an open problem of implementing these structures in a practical way.~\cite{psw}
+Pagh \etal{} ends with an open problem of implementing these structures in a practical way.~\cite{psw}
 This work answers that challenge with three practical extensible filters:
 
 \begin{enumerate}
@@ -419,7 +419,7 @@ See Figure~\ref{pagh-diagram} and Section~\ref{tcf}.
 \caption{\label{pagh-diagram}
 Pagh \etal{}'s second construction.
 In this construction of a growable filter, when a filter contains $n$ items, it is stored as a dictionary in which the keys are bit stings of length $\lceil \lg n \rceil + \lg (1/\varepsilon) + 2$ and the values are bit strings of length up to $\lg \lg N$, where $N$ is the largest the filter will grow to.
-When $\lceil \lg n \rceil$ increases, the high-order bit of the value is prepended to the key as a new low-order bit, thus extending the key length.
+When $\lceil \lg n \rceil$ increases, the high-order bit of the value is appended to the key as a new low-order bit, thus extending the key length.
 Pagh \etal{} show that the fpp of such a dictionary is no more $\varepsilon$ as long as $n < N$.
 }
 \end{figure}
@@ -463,7 +463,7 @@ Using traditional Bloom filters, the lookup cost would be
 Instead, Pagh \etal{} use dictionary-based filters that support constant-time lookup -- such as cuckoo filters or Raman and Rao's dictionary -- rather than Bloom filters.~\cite{succinct,psw}
 This reduces the lookup time to $O(\lg n)$.
 Taffy block filters use split block Bloom filters to keep the lookup time logarithmic and independent of $\varepsilon$.
-See Section~\ref{eval} for performance of TBFs compared to pre-size split block BLoom filters.
+See Section~\ref{eval} for performance of TBFs compared to pre-sized split block Bloom filters.
 
 %% TBFs cannot perform the union operation without significant increases in false positive probability.
 %% For instance, in two split block Bloom filters of size $m$ where each level has $\delta m$ its bits set, the expected number of bits set in their union is $(2 \delta - \delta^2) m$.
@@ -1183,7 +1183,7 @@ If the entry were from one of the larger levels above the cursor, then the finge
 \end{figure}
 
 If there are larger and smaller levels, then every element in the larger levels has a fingerprint of size 8, not 9.
-This is because the implicitly-stored part of the key is one-bit longer in the larger levels, so the explitly stored part can be shorter.
+This is because the implicitly-stored part of the key is one-bit longer in the larger levels, so the explicitly stored part can be shorter.
 
 In an MTCF, upsize only increases the size of one of the levels, not the whole structure.
 As a result, the capacity of the filter tracks more closely the number of entries in the table. (See Figure~\ref{bits-per-item}.)
@@ -1334,7 +1334,7 @@ TBFs, TCFs, and MTCFs have been implemented and tested for correctness; this sec
 %In each chart, TBFs are configured for a maximum fpp of 0.1\%.
 In each chart, all taffy filters are configured with an initial capacity of 1. %, however the MTCF has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
 All experiments were performed on both an Intel i7-7800X with 96GB of memory and SMT turned on and an AWS EC2 instance of class mg6.medium with 4GB of memory and a single Graviton2 ARM-based core.
-The experiments use Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, repectively.
+The experiments use Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, respectively.
 
 For performance testing, we equip both TCFs and MTCFs with stashes.~\cite{stash}
 We set both filters to upsize when they are 90\% full or their stashes have size greater than 4.
@@ -1498,7 +1498,7 @@ Otherwise, a practitioner must ask themselves:
   If x86, the TBF may be the best choice.
 \end{itemize}
 
-The code for taffy filters is available on GitHub.\footnote{\url{https://github.com/jbapple/libfilter}}
+The code for taffy filters is available on GitHub under a permissive open-source license.\footnote{\url{https://github.com/jbapple/libfilter}}
 
 % TODO: show different level counts and how that decreases the spikiness?
 
