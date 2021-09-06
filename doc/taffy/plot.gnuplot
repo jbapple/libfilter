@@ -26,7 +26,7 @@ set key bottom left
 plot '< grep fpp all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(8*$4/$3) with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints title "TCF", \
      "< grep fpp all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(8*$4/$3) with lines title "TBF", \
-     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints  lw 1  title "CF", \
+     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints  lw 1  title "CF", \
      "< grep fpp all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:(8*$4/$3) with lines lw 5  title "SBBF"
 
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -46,7 +46,7 @@ set key top left;
 plot '< grep fpp all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(100*$6) with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(100*$6) with linespoints title "TCF", \
      "< grep fpp all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(100*$6) with lines title "TBF", \
-     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:(100*$6) with linespoints  lw 1  title "CF", \
+     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(100*$6) with linespoints  lw 1  title "CF", \
      "< grep fpp all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:(100*$6) with lines  lw 5  title "SBBF"
 
 # # efficiency: number of bytes per item compared to the minimum needed
@@ -98,7 +98,7 @@ set yrange[*:*];
 plot "< grep insert all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 1 title "MTCF", \
      "< grep insert all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
      "< grep insert all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep insert all-bench-100000000-016.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
+     "< grep insert all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
      "< grep insert all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1 title "SBBF"
 
 # lookup time; lower is better
@@ -117,7 +117,7 @@ unset format y;
 plot "< grep find_missing all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 9 title "MTCF", \
      "< grep find_missing all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with linespoints title "TCF", \
      "< grep find_missing all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines title "TBF", \
-     "< grep find_missing all-bench-100000000-016.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:6 with linespoints  lw 1  title "CF", \
+     "< grep find_missing all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with linespoints  lw 1  title "CF", \
      "< grep find_missing all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines  lw 5  title "SBBF"
 
 # lookup time; lower is better
@@ -135,7 +135,7 @@ unset format y;
 plot "< grep find_present all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 1 title "MTCF", \
      "< grep find_present all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
      "< grep find_present all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep find_present all-bench-100000000-016.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:6 with lines lw 1  title "CF", \
+     "< grep find_present all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1  title "CF", \
      "< grep find_present all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1  title "SBBF"
      
 
@@ -156,7 +156,7 @@ unset format y;
 plot "< grep fpp all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:4 with linespoints title "TCF", \
      "< grep fpp all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:4 with lines title "TBF", \
-     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:4 with linespoints  lw 1 title "CF", \
+     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:4 with linespoints  lw 1 title "CF", \
      "< grep fpp all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:4 with lines lw 5 title "SBBF"
 
 # x axis is find time, y axis is fpp efficiency. lower left is better
@@ -211,7 +211,7 @@ unset format y;
 plot "< grep find all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "MTCF", \
      "< grep find all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TCF", \
      "< grep find all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep find all-bench-100000000-016.txt | grep \\\"Cuckoo  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
+     "< grep find all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
      "< grep find all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "SBBF"
 
 
@@ -230,7 +230,7 @@ unset format y;
 plot "< grep find m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "MTCF", \
      "< grep find m6g.medium.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TCF", \
      "< grep find m6g.medium.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep find m6g.medium.txt | grep \\\"Cuckoo  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
+     "< grep find m6g.medium.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
      "< grep find m6g.medium.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "SBBF"
 
 # insert time; lower is better
@@ -248,7 +248,7 @@ unset format y;
 plot "< grep insert m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 1 title "MTCF", \
      "< grep insert m6g.medium.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
      "< grep insert m6g.medium.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep insert m6g.medium.txt | grep \\\"Cuckoo  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
+     "< grep insert m6g.medium.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
      "< grep insert m6g.medium.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1 title "SBBF"
 
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -265,7 +265,7 @@ unset format y;
 plot "< python3 running-sum.py all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
      "< python3 running-sum.py all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "TCF", \
      "< python3 running-sum.py all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "TBF", \
-     "< python3 running-sum.py all-bench-100000000-016.txt | grep '^Cuckoo'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
+     "< python3 running-sum.py all-bench-100000000-016.txt | grep '^Cuckoo,'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
      "< python3 running-sum.py all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 2:($3/$2) with lines lw 5 title "SBBF"
 
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -282,7 +282,7 @@ unset format y;
 plot "< python3 running-sum.py m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
      "< python3 running-sum.py m6g.medium.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "TCF", \
      "< python3 running-sum.py m6g.medium.txt | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "TBF", \
-     "< python3 running-sum.py m6g.medium.txt | grep '^Cuckoo'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
+     "< python3 running-sum.py m6g.medium.txt | grep '^Cuckoo,'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
      "< python3 running-sum.py m6g.medium.txt | grep Simd        | sort -n -t , -k 3" using 2:($3/$2) with lines lw 5 title "SBBF"
 
  # plot "< grep fpp all-bench-100000000.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
