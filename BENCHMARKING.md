@@ -1,6 +1,6 @@
 To benchmark:
 
-1. Install git, make, a C compiler, a C++ comiler, gnuplot, and python 3
+1. Install git, GNU make, a C compiler, a C++ comiler, gnuplot, and python 3
 2. `make`
 3. `make -k cpp-world`
 4. Ignore errors
