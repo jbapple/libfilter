@@ -1331,7 +1331,7 @@ The analysis of iterate, union, intersection, and freeze/thaw is identical to th
 
 TBFs, TCFs, and MTCFs have been implemented and tested for correctness; this section describes their space usage, false positive probabilities, and performance under the insert and lookup operations.
 
-%In each chart, TBFs are configured for a maximum fpp of 0.1\%.
+In each chart, TBFs are configured for a maximum fpp of 0.4\%.
 In each chart, all taffy filters are configured with an initial capacity of 1. %, however the MTCF has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
 All experiments were performed on both an Intel i7-7800X with 96GB of memory and SMT turned on and an AWS EC2 instance of class mg6.medium with 4GB of memory and a single Graviton2 ARM-based core.
 The experiments use Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, respectively.
@@ -1339,7 +1339,7 @@ The experiments use Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, resp
 For performance testing, we equip both TCFs and MTCFs with stashes.~\cite{stash}
 We set both filters to upsize when they are 90\% full or their stashes have size greater than 4.
 
-For comparison, the graphs also include a cuckoo filter (labeled ``CF'') with fingerprints of size 12 and a split block Bloom filter (labeled ``SBBF'') sized to hold 100 million elements with an fpp of 0.1\%.
+For comparison, the graphs also include a cuckoo filter (labeled ``CF'') with fingerprints of size 12 and a split block Bloom filter (labeled ``SBBF'') sized to hold 100 million elements with an fpp of 0.4\%.
 
 \subsection{Space}
 
@@ -1425,8 +1425,8 @@ TBFs inserts are faster than the other cuckoo filters because they are simple, b
 This holds true across both x86 and ARM machines
 
 For lookups, the situation is more complex.
-Of the resizable filters, the taffy cuckoo filter is the fastest once the size of the filter is over 4000 elements, in the ARM case, or one million elements, in the x86 case.
-One reason for this is that the ARM split block Bloom filters that the TBF is based on only have 128-bit vector units, not 256-bit units like the x86 machine does.
+Of the resizable filters, the taffy cuckoo filter is the fastest once the size of the filter has over 100,000 -- 1,000,000 elements.
+%One reason for this is that the ARM split block Bloom filters that the TBF is based on only have 128-bit vector units, not 256-bit units like the x86 machine does.
 
 \begin{figure}
   \includegraphics[width=\columnwidth]{insert-cumulative}
@@ -1483,19 +1483,19 @@ This cyclic behavior was noted by Maier \etal~\cite{dysect}
 During lookup operations on MTCFs, when the cursor is close to 32, the performance improves as the four potential locations to look for a key are more frequently reduced to two, since the shorter permuted keys are no longer long enough for most of the levels in the structure.
 
 Split-block Bloom filters and cuckoo filters are still attractive choices when the size of the set to be approximated is known in advance.
-When a growable filter is needed, the application and hardware matter quite a bit.
+When a growable filter is needed, the application matters quite a bit.
 If saving every byte matters, MTCFs are called for.
 Otherwise, a practitioner must ask themselves:
 
 \begin{itemize}
 \item How many lookups will there be, compared to inserts?
   If many, a TCF may be called for.
-\item Is the set likely to exceed one thousand elements? One million elements?
+\item Is the set likely to exceed one million elements?
   If yes, a TCF is an attractive choice.
 \item Are union, intersection, freeze, or thaw operations needed?
   A TCF or MTCF is the only choice.
-\item Is the hardware known in advance?
-  If x86, the TBF may be the best choice.
+%% \item Is the hardware known in advance?
+%%   If x86, the TBF may be the best choice.
 \end{itemize}
 
 The code for taffy filters is available on GitHub under a permissive open-source license.\footnote{\url{https://github.com/jbapple/libfilter}}
