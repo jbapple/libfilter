@@ -267,7 +267,7 @@ void Samples(uint64_t ndv, vector<uint64_t>& to_insert, vector<uint64_t>& to_fin
   for (unsigned i = 0; i < ndv; ++i) {
     to_insert.push_back(r());
   }
-  for (unsigned i = 0; i < ndv; ++i) {
+  for (unsigned i = 0; i < std::max(ndv, static_cast<uint64_t>(1000 * 1000)); ++i) {
     to_find.push_back(r());
   }
 }
