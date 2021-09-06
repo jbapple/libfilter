@@ -32,4 +32,7 @@ cpp-world: lib
 java-world:
 	mvn -f ./java/ package -Dmaven.test.skip=true
 
+anonymous.zip: $(shell git ls-files)
+	git archive -o anonymous.zip --prefix=libfilter/ HEAD
+	zip -d -r anonymous.zip libfilter/README.md libfilter/doc/doc.tex libfilter/doc/taffy/taffy.tex libfilter/java/*
 #TODO: java install
