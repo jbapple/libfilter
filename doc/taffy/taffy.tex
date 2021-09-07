@@ -26,6 +26,9 @@
 % PVLDB - same conference as VLDB, submit here first http://vldb.org/pvldb/vol15-submission/
 % CIDR - August 27, 2021: Submission deadline for all contributions, October 15, 2021: author notification for all contributions, Chaminade, on-site, 6 pages maximum
 
+\newif\ifanon
+\anontrue
+
 % \documentclass[letterpaper]{article}
 \documentclass[sigconf]{acmart}
 %\documentclass[manuscript,screen,review]{acmart}
@@ -124,12 +127,11 @@
 %% \newcommand\vldbavailabilityurl{https://github.com/jbapple/libfilter}
 %% % whether page numbers should be shown or not, use 'plain' for review versions, 'empty' for camera ready
 %% \newcommand\vldbpagestyle{plain} 
-
-
 \begin{document}
 
-
 \title{Stretching Your Data With Taffy Filters}
+\ifanon
+\else
 \author{Jim Apple}
 \orcid{0000-0002-8685-9451}
 \affiliation{%
@@ -138,6 +140,7 @@
 %  \country{United States of America}
 }
 \email{jbapple@jbapple.com}
+\fi
 
 \begin{CCSXML}
 <ccs2012>
@@ -166,7 +169,7 @@ Compensatory for these false positives, filters can be much smaller than hash ta
 However, unlike hash tables, cuckoo filters and Bloom filters must be initialized with the intended number of inserts to be performed, and cannot grow larger --
 inserts beyond this number may fail or increase the false positive probability.
 This paper presents designs and implementations of filters than can grow without inserts failing and without significantly increasing the false positive probability, even if the filters are created with a small initial size.
-The resulting code is open source and available for general use.
+The resulting code is available on GitHub under a permissive open source license.
 %\epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}
 \end{abstract}
 
@@ -1286,7 +1289,7 @@ MInsertPermuted(mtcf: MTCF(U, k), side: `$\ints_2$`,
   if (level_number `$\ge$` mtcf.cursor) {
     permuteds := {permuted}
     middle := k + 5
-  } else (|tail| > 0) {
+  } else if (|tail| > 0) {
     (permuted, tail) := Steal(permuted, tail)
     permuteds := {permuted}
     middle := k + 6
@@ -1498,7 +1501,11 @@ Otherwise, a practitioner must ask themselves:
 %%   If x86, the TBF may be the best choice.
 \end{itemize}
 
-The code for taffy filters is available on GitHub under a permissive open-source license.\footnote{\url{https://github.com/jbapple/libfilter}}
+The code for taffy filters is available on GitHub under a permissive open-source license.
+\ifanon
+\else
+\footnote{\url{https://github.com/jbapple/libfilter}}
+\fi
 
 % TODO: show different level counts and how that decreases the spikiness?
 
@@ -1534,9 +1541,12 @@ However, a practical version of this may be possible to build.
 \item Testing taffy filters in various applications requiring the use of extensible approximate membership query structures would be of interest.
 \end{itemize}
 
+\ifanon
+\else
 \begin{acks}
 Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 \end{acks}
+\fi
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{taffy}

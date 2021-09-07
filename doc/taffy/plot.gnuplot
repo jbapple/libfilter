@@ -23,11 +23,11 @@ unset format
 set yrange [0:60]
 set key bottom left
 #set title "Bits per key"
-plot '< grep fpp all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(8*$4/$3) with lines lw 9 title "MTCF", \
-     "< grep fpp all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints title "TCF", \
-     "< grep fpp all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(8*$4/$3) with lines title "TBF", \
-     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints  lw 1  title "CF", \
-     "< grep fpp all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:(8*$4/$3) with lines lw 5  title "SBBF"
+plot '< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(8*$4/$3) with lines lw 9 title "MTCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints title "TCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(8*$4/$3) with lines title "TBF", \
+     "< grep fpp all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints  lw 1  title "CF", \
+     "< grep fpp all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:(8*$4/$3) with lines lw 5  title "SBBF"
 
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'ideal-bits-per-item.eps';
@@ -43,11 +43,11 @@ set format y '%g%%';
 set yrange [0.01:3];
 set key top left;
 #set title "Empirical false positive probabilty after adding N keys"
-plot '< grep fpp all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(100*$6) with lines lw 9 title "MTCF", \
-     "< grep fpp all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(100*$6) with linespoints title "TCF", \
-     "< grep fpp all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(100*$6) with lines title "TBF", \
-     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(100*$6) with linespoints  lw 1  title "CF", \
-     "< grep fpp all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:(100*$6) with lines  lw 5  title "SBBF"
+plot '< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(100*$6) with lines lw 9 title "MTCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(100*$6) with linespoints title "TCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:(100*$6) with lines title "TBF", \
+     "< grep fpp all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(100*$6) with linespoints  lw 1  title "CF", \
+     "< grep fpp all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:(100*$6) with lines  lw 5  title "SBBF"
 
 # # efficiency: number of bytes per item compared to the minimum needed
 # # lower is better
@@ -95,11 +95,11 @@ set ylabel "nanoseconds";
 #set title "Insert performance"
 unset format;
 set yrange[*:*];
-plot "< grep insert all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 1 title "MTCF", \
-     "< grep insert all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
-     "< grep insert all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep insert all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
-     "< grep insert all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1 title "SBBF"
+plot "< grep insert all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 1 title "MTCF", \
+     "< grep insert all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
+     "< grep insert all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
+     "< grep insert all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
+     "< grep insert all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1 title "SBBF"
 
 # lookup time; lower is better
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -114,11 +114,11 @@ set xlabel "keys inserted";
 set ylabel "nanoseconds";
 #set title "Lookup performance (absent)"
 unset format;
-plot "< grep find_missing all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 9 title "MTCF", \
-     "< grep find_missing all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with linespoints title "TCF", \
-     "< grep find_missing all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines title "TBF", \
-     "< grep find_missing all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with linespoints  lw 1  title "CF", \
-     "< grep find_missing all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines  lw 5  title "SBBF"
+plot "< grep find_missing all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 9 title "MTCF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with linespoints title "TCF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines title "TBF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with linespoints  lw 1  title "CF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines  lw 5  title "SBBF"
 
 # lookup time; lower is better
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -132,11 +132,11 @@ set xlabel "keys inserted";
 set ylabel "nanoseconds";
 #set title "Lookup performance (present)"
 unset format;
-plot "< grep find_present all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 1 title "MTCF", \
-     "< grep find_present all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
-     "< grep find_present all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep find_present all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1  title "CF", \
-     "< grep find_present all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1  title "SBBF"
+plot "< grep find_present all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:6 with lines lw 1 title "MTCF", \
+     "< grep find_present all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TCF", \
+     "< grep find_present all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "TBF", \
+     "< grep find_present all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1  title "CF", \
+     "< grep find_present all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1  title "SBBF"
      
 
 
@@ -153,11 +153,11 @@ set xlabel "keys inserted";
 set ylabel "bytes occupied";
 unset format;
 #set title "Space used"
-plot "< grep fpp all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
-     "< grep fpp all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:4 with linespoints title "TCF", \
-     "< grep fpp all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:4 with lines title "TBF", \
-     "< grep fpp all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:4 with linespoints  lw 1 title "CF", \
-     "< grep fpp all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 3:4 with lines lw 5 title "SBBF"
+plot "< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:4 with linespoints title "TCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:4 with lines title "TBF", \
+     "< grep fpp all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:4 with linespoints  lw 1 title "CF", \
+     "< grep fpp all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:4 with lines lw 5 title "SBBF"
 
 # x axis is find time, y axis is fpp efficiency. lower left is better
 # set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -208,11 +208,11 @@ set ylabel "nanoseconds";
 set yrange [5:*]
 #set title "Lookup performance (present)"
 unset format;
-plot "< grep find all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "MTCF", \
-     "< grep find all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TCF", \
-     "< grep find all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep find all-bench-100000000-016.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
-     "< grep find all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "SBBF"
+plot "< grep find all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "MTCF", \
+     "< grep find all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TCF", \
+     "< grep find all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TBF", \
+     "< grep find all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
+     "< grep find all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "SBBF"
 
 
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -262,11 +262,11 @@ set xlabel "keys inserted";
 set ylabel "average nanoseconds per key";
 #set title "Insert performance"
 unset format;
-plot "< python3 running-sum.py all-bench-100000000-016.txt | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
-     "< python3 running-sum.py all-bench-100000000-016.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "TCF", \
-     "< python3 running-sum.py all-bench-100000000-016.txt | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "TBF", \
-     "< python3 running-sum.py all-bench-100000000-016.txt | grep '^Cuckoo,'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
-     "< python3 running-sum.py all-bench-100000000-016.txt | grep Simd        | sort -n -t , -k 3" using 2:($3/$2) with lines lw 5 title "SBBF"
+plot "< python3 running-sum.py all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
+     "< python3 running-sum.py all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "TCF", \
+     "< python3 running-sum.py all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "TBF", \
+     "< python3 running-sum.py all-bench-100000000-017.txt | grep '^Cuckoo,'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
+     "< python3 running-sum.py all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 2:($3/$2) with lines lw 5 title "SBBF"
 
 set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'arm-insert-cumulative.eps'
