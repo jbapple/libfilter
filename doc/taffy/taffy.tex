@@ -1488,15 +1488,16 @@ During lookup operations on MTCFs, when the cursor is close to 32, the performan
 Split-block Bloom filters and cuckoo filters are still attractive choices when the size of the set to be approximated is known in advance.
 When a growable filter is needed, the application matters quite a bit.
 If saving every byte matters, MTCFs are called for.
+If union, intersection, or freeze operations are needed, a TCF is called for.
 Otherwise, a practitioner must ask themselves:
 
 \begin{itemize}
-\item How many lookups will there be, compared to inserts?
-  If many, a TCF may be called for.
-\item Is the set likely to exceed one million elements?
+\item Is the workload write-heavy or read-heavy?
+  Write-heavy workloads favor TBFs over TCFs.
+\item Is the set likely to exceed one million elements (x86) or 5000 elements (ARM)?
   If yes, a TCF is an attractive choice.
-\item Are union, intersection, freeze, or thaw operations needed?
-  A TCF or MTCF is the only choice.
+%% \item Are union, intersection, or freeze operations needed?
+%%   A TCF or MTCF is the only choice.
 %% \item Is the hardware known in advance?
 %%   If x86, the TBF may be the best choice.
 \end{itemize}
