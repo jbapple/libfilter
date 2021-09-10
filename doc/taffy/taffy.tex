@@ -27,7 +27,7 @@
 % CIDR - August 27, 2021: Submission deadline for all contributions, October 15, 2021: author notification for all contributions, Chaminade, on-site, 6 pages maximum
 
 \newif\ifanon
-\anontrue
+\anonfalse
 
 % \documentclass[letterpaper]{article}
 \documentclass[sigconf]{acmart}
@@ -224,7 +224,7 @@ The significant interest in filters is reflective of their utility in applicatio
 
 %Genetics, search engines, blockchain, machine learning, storage~\cite{dna-filter, bitfunnel, bitcoin-filter, gene-search-filter, sequencing-filter, model-training-filter, deduplication-filter}
 
-Each of the filter structures above supports approximate membership queries on sets with a given maximum size, but the question of extensible (or {\itshape extendable} or {\itshape incremental} or {\itshape growable}) filters that can increase in capacity as more elements are inserted is little studied
+Each of the filter structures cited above supports approximate membership queries on sets with a given maximum size, but the question of extensible (or {\itshape extendable} or {\itshape incremental} or {\itshape growable}) filters that can increase in capacity as more elements are inserted is little studied
 The classic answer is to create a sequence of Bloom filters, possibly of increasing sizes and/or lower false positive probabilities.~\cite{dynamic-bloom,scalable-bloom}
 Inserts occur on the last filter to be created and lookups must search each filter.
 Even when this keeps the false positive rate low, lookup times balloon from constant to poly-logarithmic or even linear in $n$, the number of elements inserted.~\cite{psw,logarithm,consistent-cuckoo} %The Dynamic Cuckoo Filter
@@ -317,11 +317,11 @@ Taffy block filters use split block Bloom filters as the building block to make 
 
 Cuckoo hashing is a method of collision resolution in open-address\-ing hash tables that assigns each key a small set of slots it can occupy.~\cite{cuckoo-journal}
 In its simplest form, a cuckoo hash table consists of two arrays of size $(1 + \varepsilon)n$ to store a set of $n$ keys, for $0 < \varepsilon < 1$.
-Each key is assigned one slot per array via the application of two hash functions on the key.
+Each key is assigned one possible slot per array via the application of two hash functions on the key.
 To look up a key, both slots are checked.
 
 Inserting a key is more complex.
-If neither slot for storing a key is available, one of the two occupying keys is evicted and replaced by the key being inserted.
+If neither slot for storing a key is empty, one of the two occupying keys is evicted and replaced by the key being inserted.
 Now the victim of the eviction is in turn inserted.
 With high probability, eventually the evictions find an empty slot and the chain of evictions ends.
 
@@ -333,7 +333,7 @@ In cuckoo filters, this raises the occupancy limit from 50\% to over 90\%.~\cite
 \subsection{Succinct dictionaries with quotienting}
 \label{quotienting}
 
-Maps of size $n$ with keys from a universe of size $U$ can be naively stored in $n \lg U$ bits by storing every element in an array (with any order) of size $n$.
+Maps of size $n$ with keys from a universe of size $U$ can be na\"ively stored in $n \lg U$ bits by storing every element in an array (with any order) of size $n$.
 Space can be saved using a technique called ``quotienting''.~\cite{knuth,quotient-filter}
 The basic construction can be illustrated as follows:
 first, an array of size $n$ is created in which each array slot can hold an arbitrary number of keys.~\cite{raman-practical}
@@ -357,7 +357,7 @@ The column on the right stores the two low-order bits implicitly and the high or
 
 This technique is used with linear probing as the collision resolution mechanism in quotient filters.~\cite{quotient-filter}
 Quotienting can also be used with cuckooing as the collision resolution mechanism.
-Cuckoo hash tables maintain $L \ge 1$ locations for each key, which could be stored in any of them.~\cite{cuckoo-journal}
+Cuckoo hash tables maintain $L \ge 1$ potential locations for each key, each of which could be stored in any of its potential locations.~\cite{cuckoo-journal}
 %When a new element is inserted, if its locations are full, it evicts an existing element out of one of the locations; that evicted element must then be placed in one of its $L$ locations, and so on.
 Because more than one hash function is used and because eviction occurs, it must be possible to translate from a location-element pair to an alternate location-element pair for the same key
 %% Let $k$ be the number of locations and let $h_i$ for $0 \le i < k$ be the hash functions that map
@@ -423,7 +423,7 @@ See Figure~\ref{pagh-diagram} and Section~\ref{tcf}.
 Pagh \etal{}'s second construction.
 In this construction of a growable filter, when a filter contains $n$ items, it is stored as a dictionary in which the keys are bit stings of length $\lceil \lg n \rceil + \lg (1/\varepsilon) + 2$ and the values are bit strings of length up to $\lg \lg N$, where $N$ is the largest the filter will grow to.
 When $\lceil \lg n \rceil$ increases, the high-order bit of the value is appended to the key as a new low-order bit, thus extending the key length.
-Pagh \etal{} show that the fpp of such a dictionary is no more $\varepsilon$ as long as $n < N$.
+Pagh \etal{} show that the fpp of such a dictionary is no more than $\varepsilon$ as long as $n < N$.
 }
 \end{figure}
 
@@ -435,8 +435,8 @@ This work also implements the Pagh \etal{} structures for the first time and rec
 Hash tables that are used to accommodate sets without a size known in advance typically do so by doubling in capacity.
 This means that at least 50\% of the space goes unused at points, with an average unused percentage of at least 25\%.
 Constructions like that of Raman and Rao are able to mitigate this, but they are largely theoretical.~\cite{succinct}
-Instead, Maier \etal{} uses the cuckoo hashing evict operation to incrementally resize a hash table.~\cite{dysect}
-First, the ``DySECT'' table is broken up into equal sized sub-arrays that can be resized independently.
+Instead, Maier \etal{} use the cuckoo hashing evict operation to incrementally resize a hash table.~\cite{dysect}
+First, the ``DySECT'' table, as they call it, is broken up into equal sized sub-arrays that can be resized independently.
 When the table gets close to full, exactly one of the sub-arrays is doubled in size.
 This frees up room that's available in future eviction sequences, and the new space will slowly be filled.
 Eventually all arrays will have been doubled in size, thereby causing the whole table to have doubled in size without going through a phase with as low as 50\% space usage.
@@ -465,7 +465,8 @@ Using traditional Bloom filters, the lookup cost would be
 
 Instead, Pagh \etal{} use dictionary-based filters that support constant-time lookup -- such as cuckoo filters or Raman and Rao's dictionary -- rather than Bloom filters.~\cite{succinct,psw}
 This reduces the lookup time to $O(\lg n)$.
-Taffy block filters use split block Bloom filters to keep the lookup time logarithmic and independent of $\varepsilon$.
+
+{\bf Taffy block filters} (``TBFs'') use split block Bloom filters to keep the lookup time logarithmic and independent of $\varepsilon$.
 See Section~\ref{eval} for performance of TBFs compared to pre-sized split block Bloom filters.
 
 %% TBFs cannot perform the union operation without significant increases in false positive probability.
@@ -494,7 +495,7 @@ See Section~\ref{eval} for performance of TBFs compared to pre-sized split block
 Taffy block filters require $\lg n$ lookup operations on their sub-filters.
 Pagh \etal{}'s second construction requires only $O(1)$ time per lookup, and taffy cuckoo filters are a concrete implementation of that.
 
-Taffy cuckoo filters use quotienting cuckoo tables (as in backyard cuckoo hashing~\cite{backyard}) to store their data.
+Taffy cuckoo filters (``TCFs'') use quotienting cuckoo tables (as in backyard cuckoo hashing~\cite{backyard}) to store their data.
 The keys are bit-strings of length $\lfloor \lg n \rfloor + F$ and the values are bit-strings of length $V$, for some fixed $F$ (for ``fingerprint'') and $V$ (for ``value'').
 By quotienting in an array of size $\Omega(n)$, each key-value pair can be stored in $\lfloor \lg n \rfloor + F + V - \lg n + O(1)$ bits, for a total space usage of $(F+V)n + O(n)$.
 For performance and simplicity purposes, we pick $F + V = 16$, but this is not a requirement of the structure.
@@ -506,7 +507,7 @@ For performance and simplicity purposes, we pick $F + V = 16$, but this is not a
 %% In this way, data can be moved from one sub-table to the other via key reconstruction, even without storing the key explicitly.
 
 TCFs are based on cuckoo tables and have two sides of slots.
-TCFs also use bucketing for cuckoo hashing, with buckets of size 4.~\cite{buckets}
+TCFs also use bucketing for cuckoo hashing.~\cite{buckets}
 Each side of a TCF comes equipped with a permutation on bit-strings of length $\lg n + F - O(1)$.
 A key-value pair $(x, y)$ is stored in one of two buckets: the one in side 0 pointed to by the high-order $\lg n - O(1)$ bits of $P_0(x)$ or the one in side 1 pointed to by the high-order $\lg n - O(1)$ bits of $P_1(x)$, where $P_i$ is the permutation associated with side $i$.
 
@@ -558,7 +559,7 @@ Otherwise, returns \verb|False|.
     label=tcf-lookup,
     caption={
       Pseudocode for the lookup operation on TCFs.
-      \texttt{S[a,~b)} denotes the bits in $S$ starting at location $a$ and continuing through $b-1$.
+      \texttt{S[a,~b)} denotes the bits in $S$ starting at location $a$ and continuing through (and including) $b-1$.
     }]
 LookupBucket(fingerprint, tail, bucket) {
   for (element : bucket) {
@@ -730,7 +731,7 @@ Note that this may sometimes be the element from the smaller TCF, since the tail
 %% For intersection, the situation is tricky.
 %% We can depend on the inserted strings to be at least as long as the shortest strings in the larger dictionary.
 
-This support for union and intersection is in contrast to TBFs, which do not support for iteration or intersection.
+This support for union and intersection is in contrast to TBFs, which do not support iteration or intersection.
 TBFs do support union, but at a cost: while union operations on TCFs produce a filter with the sum of the false positive probabilities of the input filters, unions on TBFs perform like unions on Bloom filters.
 If one Bloom filter has a fraction $\alpha$ of its bits set and another $\beta$, the union has $\alpha + \beta - \alpha \beta$ of its bits set in expectation.
 %This increases the probability of a false positive from $\alpha^k + \beta^k$, where $k$ is the number of hash functions, to $(\alpha + \beta - \alpha \beta)^k$.
@@ -1191,9 +1192,10 @@ This is because the implicitly-stored part of the key is one-bit longer in the l
 In an MTCF, upsize only increases the size of one of the levels, not the whole structure.
 As a result, the capacity of the filter tracks more closely the number of entries in the table. (See Figure~\ref{bits-per-item}.)
 
+\paragraph{Lookup}
 A lookup operation in an MTCF first applies each of the four permutations to the hashed key.
 \begin{itemize}
-\item For the permutations on $k + 14$ bits (Listing~\ref{mtcf-lookup}, line 11), the first five bits indicate the level, the next $k$ or $k+1$ indicate the bucket, and the remaining 8 or 9 bits are the fingerprint.
+\item For the permutations on $k + 14$ bits (Listing~\ref{mtcf-lookup}, line 11), the first five bits indicate the level (line 12), the next $k$ or $k+1$ indicate the bucket (line 14), and the remaining 8 or 9 bits are the fingerprint.
 Lookup proceeds as it does in the TCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up. (Lines~15--16.)
 \item For the permutations on $k + 13$ bits, the first five bits again indicate the level. (Line~3.)
 \begin{itemize}
@@ -1335,8 +1337,8 @@ The analysis of iterate, union, intersection, and freeze/thaw is identical to th
 TBFs, TCFs, and MTCFs have been implemented and tested for correctness; this section describes their space usage, false positive probabilities, and performance under the insert and lookup operations.
 
 In each chart, TBFs are configured for a maximum fpp of 0.4\%.
-In each chart, all taffy filters are configured with an initial capacity of 1. %, however the MTCF has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
-All experiments were performed on both an Intel i7-7800X with 96GB of memory and SMT turned on and an AWS EC2 instance of class mg6.medium with 4GB of memory and a single Graviton2 ARM-based core.
+All taffy filters are configured with an initial capacity of 1. %, however the MTCF has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
+All experiments were performed on both an Intel i7-7800X with 96GB of memory and SMT turned on and an AWS EC2 instance of class m6g.medium with 4GB of memory and a single Graviton2 ARM-based core.
 The experiments use Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, respectively.
 
 For performance testing, we equip both TCFs and MTCFs with stashes.~\cite{stash}
@@ -1353,10 +1355,10 @@ Cuckoo filters and quotient filters use $(\lg (1/\varepsilon) + d) / \alpha$ whe
 Static filters that do not support insert -- such as the ribbon filter -- can use nearly optimal space.~\cite{ribbon}
 
 However, Pagh \etal{} showed that filters that can grow, like taffy filters can, must use at least $\lg (1/\varepsilon) + \Omega(\lg \lg n)$ bits per element.~\cite{psw}
-Figures~\ref{bits-per-item}~and~\ref{ideal-bits-per-item} show the actual bits per element and $\lg (1/\varepsilon)$, respectively.
+Figures~\ref{bits-per-item}~and~\ref{ideal-bits-per-item} show the actual bits per element and $\varepsilon$.
 
 Cuckoo filters cannot grow (without changing the number of bits per slot and doubling the false positive rate).
-As such, cuckoo filters are only visible over 10 million elements on the space graph, since their bits per key starts out at over 1.2 billion.
+As such, cuckoo filters are only visible over 10 million elements in Figure~\ref{bits-per-item}, since their bits per key starts out at over 1.2 billion.
 The same is true of split block Bloom filters.
 
 Figures~\ref{bits-per-item}~and~\ref{space-steps} show the periodic nature of the space used in taffy filters.
@@ -1425,10 +1427,11 @@ Number of bits (per element) each filter type needs.}
 Figures~\ref{insert-time},~\ref{arm-insert-time},~\ref{lookup-both},~and~\ref{arm-lookup-both} show the performance of taffy filter operations.
 For inserts, TBFs are the fastest of the three taffy filter variants; they are even faster than the fastest non-taffy variant, split block Bloom filters.
 TBFs inserts are faster than the other cuckoo filters because they are simple, branch-free, and induce a single cache miss; they are faster than the pre-sized split block Bloom filter because, while being built, the entirety of the TBF fits in cache until about 10 million elements have been inserted.
-This holds true across both x86 and ARM machines
+This holds true across both machines, x86 and ARM.
 
 For lookups, the situation is more complex.
-Of the resizable filters, the taffy cuckoo filter is the fastest once the size of the filter has over 100,000 -- 1,000,000 elements.
+Of the resizable filters, the taffy cuckoo filter is the fastest once the size of the filter is large enough, while a TBF is otherwise faster.
+The MTCF lags behind both.
 %One reason for this is that the ARM split block Bloom filters that the TBF is based on only have 128-bit vector units, not 256-bit units like the x86 machine does.
 
 \begin{figure}
@@ -1484,17 +1487,18 @@ This cyclic behavior was noted by Maier \etal~\cite{dysect}
 % Performance for lookup is also cyclic as the fill factor and size of the stashes grow and shrink.
 
 During lookup operations on MTCFs, when the cursor is close to 32, the performance improves as the four potential locations to look for a key are more frequently reduced to two, since the shorter permuted keys are no longer long enough for most of the levels in the structure.
+See Figures~\ref{lookup-both}~and~\ref{arm-lookup-both}.
 
-Split-block Bloom filters and cuckoo filters are still attractive choices when the size of the set to be approximated is known in advance.
+Split block Bloom filters and cuckoo filters are still attractive choices when the size of the set to be approximated is known in advance.
 When a growable filter is needed, the application matters quite a bit.
 If saving every byte matters, MTCFs are called for.
-If union, intersection, or freeze operations are needed, a TCF is called for.
+If union, intersection, or freeze operations are needed, a TCF or MTCF is called for.
 Otherwise, a practitioner must ask themselves:
 
 \begin{itemize}
 \item Is the workload write-heavy or read-heavy?
   Write-heavy workloads favor TBFs over TCFs.
-\item Is the set likely to exceed one million elements (x86) or 5000 elements (ARM)?
+\item Is the set likely to exceed one million elements (x86) or 10,000 elements (ARM)?
   If yes, a TCF is an attractive choice.
 %% \item Are union, intersection, or freeze operations needed?
 %%   A TCF or MTCF is the only choice.
@@ -1502,11 +1506,7 @@ Otherwise, a practitioner must ask themselves:
 %%   If x86, the TBF may be the best choice.
 \end{itemize}
 
-The code for taffy filters is available on GitHub under a permissive open-source license.
-\ifanon
-\else
-\footnote{\url{https://github.com/jbapple/libfilter}}
-\fi
+The code for taffy filters is available on GitHub under a permissive open-source license.\ifanon\else\footnote{\url{https://github.com/jbapple/libfilter}}\fi
 
 % TODO: show different level counts and how that decreases the spikiness?
 
@@ -1533,7 +1533,7 @@ Future work includes:
 \item The stash limitations for the TCF and MTCF are very low - tuned for a linear search.
 It is not necessary that the stashes be unstructured - giving structure to the stash, as in backyard cuckoo hashing, could allow the stash to grow and the fill factor to go higher without needing to upsize.~\cite{backyard}
 
-\item There is an additional structure supporting sets of unknown sizes described in~\cite{unknown-prefix}.
+\item There is an additional structure supporting sets of unknown sizes described in Liu \etal.~\cite{unknown-prefix}.
 This structure is mostly theoretical and depends on a certain type of prefix search structure with large embedded constants.
 However, a practical version of this may be possible to build.
 
