@@ -29,6 +29,9 @@
 \newif\ifanon
 \anonfalse
 
+\newif\ifepigraph
+\epigraphfalse
+
 % \documentclass[letterpaper]{article}
 \documentclass[sigconf]{acmart}
 %\documentclass[manuscript,screen,review]{acmart}
@@ -170,7 +173,9 @@ However, unlike hash tables, cuckoo filters and Bloom filters must be initialize
 inserts beyond this number may fail or increase the false positive probability.
 This paper presents designs and implementations of filters than can grow without inserts failing and without significantly increasing the false positive probability, even if the filters are created with a small initial size.
 The resulting code is available on GitHub under a permissive open source license.
-%\epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}
+\ifepigraph
+\epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}
+\fi
 \end{abstract}
 
 \maketitle

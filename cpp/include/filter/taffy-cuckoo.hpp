@@ -372,13 +372,12 @@ struct TaffyCuckooFilter {
   // Take an item from slot sl with bucket index i, a filter u that sl is in, a side that
   // sl is in, and a filter to move sl to, does so, potentially inserting TWO items in t,
   // as described in the paper.
-  INLINE void UpsizeHelper(detail::Slot sl, uint64_t i, TaffyCuckooFilter* u, int s,
-                           TaffyCuckooFilter& t) {
+  INLINE void UpsizeHelper(detail::Slot sl, uint64_t i, int s, TaffyCuckooFilter& t) {
     if (sl.tail == 0) return;
     detail::Path p;
     static_cast<detail::Slot&>(p) = sl;
     p.bucket = i;
-    uint64_t q = detail::FromPathNoTail(p, u->sides[s].f, u->log_side_size);
+    uint64_t q = detail::FromPathNoTail(p, sides[s].f, log_side_size);
     if (sl.tail == 1ul << detail::kTailSize) {
       // There are no tail bits left! Insert two values.
       // First, hash to the left side of the larger table.
@@ -387,14 +386,14 @@ struct TaffyCuckooFilter {
       p.tail = sl.tail;
       t.Insert(0, p);
       // change the raw value by just one bit: its last
-      q |= (1ul << (64 - u->log_side_size - detail::kHeadSize - 1));
+      q |= (1ul << (64 - log_side_size - detail::kHeadSize - 1));
       p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
       p.tail = sl.tail;
       t.Insert(0, p);
     } else {
       // steal a bit from the tail
       q |= static_cast<uint64_t>(sl.tail >> detail::kTailSize)
-           << (64 - u->log_side_size - detail::kHeadSize - 1);
+           << (64 - log_side_size - detail::kHeadSize - 1);
       detail::Path r = detail::ToPath(q, t.sides[0].f, t.log_side_size);
       r.tail = (sl.tail << 1);
       t.Insert(0, r);
@@ -416,12 +415,12 @@ struct TaffyCuckooFilter {
     sides[1].stash.clear();
     for (int s : {0, 1}) {
       for (auto stash : stashes[s]) {
-        UpsizeHelper(stash, stash.bucket, this, s, t);
+        UpsizeHelper(stash, stash.bucket, s, t);
       }
       for (unsigned i = 0; i < (1u << log_side_size); ++i) {
         for (int j = 0; j < detail::kBuckets; ++j) {
           detail::Slot sl = sides[s][i][j];
-          UpsizeHelper(sl, i, this, s, t);
+          UpsizeHelper(sl, i, s, t);
         }
       }
     }
