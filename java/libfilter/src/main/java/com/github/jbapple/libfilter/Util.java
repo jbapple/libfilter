@@ -120,7 +120,7 @@ class PcgRandom {
 };
 
 class Util {
-  boolean IsPrefixOf(short x, short y) {
+  static boolean IsPrefixOf(short x, short y) {
     // assert(x != 0);
     // assert(y != 0);
     int a = x ^ y;
