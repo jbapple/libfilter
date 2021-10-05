@@ -9,7 +9,7 @@ class Feistel {
   static long Mask(int w, long x) { return x & ((((long) 1) << w) - 1); }
 
   static long Lo(int s, int t, int w, long x) { return Mask(w, x); }
-  static long Hi(int s, int t, int w, long x) { return Mask(w, x >> (s + t - w)); }
+  static long Hi(int s, int t, int w, long x) { return Mask(w, x >>> (s + t - w)); }
 
   Feistel(long[] entropy) { keys = entropy; }
 
@@ -42,6 +42,9 @@ class Feistel {
 
     // The validity of this is really only seen when understanding the reverse permutation
     long result = (r2 << s) | l2;
+    // System.out.println("Forward " + Summary() + " " + String.format("0x%016X", x) + " "        + String.format("0x%016X", result));
+    //System.out.println("Forward " + w + " " + String.format("0x%016x", x) + " "
+    //  + String.format("0x%016x", result));
     return result;
   }
 
@@ -59,14 +62,14 @@ class Feistel {
     long l0 = r1 ^ ApplyOnce(s, t, t, r0, 0);  // s
 
     long result = (r0 << s) | l0;
+   //System.out.println("Backward " + Summary() + " " + String.format("0x%016X", x) + " " + String.format("0x%016X", result));
     return result;
   }
   /*
   friend void swap(Feistel&, Feistel&);
-
-  std::size_t Summary() const {
-    return keys[0][0] ^ keys[0][1] ^ keys[1][0] ^ keys[1][1];
-  }
+  */
+  long Summary() { return keys[0] ^ keys[1] ^ keys[2] ^ keys[3]; }
+  /*
   //Feistel(const Feistel&) = delete;
   //Feistel& operator=(const Feistel&) = delete;
 };
@@ -124,9 +127,11 @@ class Util {
     // assert(x != 0);
     // assert(y != 0);
     int a = x ^ y;
+    //System.out.println("xor " + String.format("0x%08x", a));
     int c = Integer.numberOfTrailingZeros(Short.toUnsignedInt(x));
     int h = Integer.numberOfTrailingZeros(Short.toUnsignedInt(y));
-    int i = Integer.numberOfTrailingZeros(a);
+    int i = Integer.numberOfLeadingZeros(a);
+    //System.out.println("" + c + " " + h + " " + i);
     return (c >= h) && (i >= 31 - c);
   }
 }
