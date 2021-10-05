@@ -10,6 +10,7 @@
 #include "filter/minimal-taffy-cuckoo.hpp"
 #include "filter/taffy-block.hpp"
 #include "filter/taffy-cuckoo.hpp"
+#include "filter/taffy-vector-quotient.hpp"
 
 using namespace filter;
 using namespace std;

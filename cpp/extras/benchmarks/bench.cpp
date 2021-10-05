@@ -17,13 +17,14 @@
 #include <utility>
 #include <vector>    // for vector, allocator
 
+#include "cuckoo32.hpp"
 #include "cuckoofilter.h"
 #include "filter/block.hpp"  // for BlockFilter, ScalarBlockFilter (ptr o...
 #include "filter/minimal-taffy-cuckoo.hpp"
 #include "filter/taffy-block.hpp"
 #include "filter/taffy-cuckoo.hpp"
+#include "filter/taffy-vector-quotient.hpp"
 #include "util.hpp"  // for Rand
-#include "cuckoo32.hpp"
 
 using namespace filter;
 

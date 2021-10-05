@@ -8,7 +8,7 @@
 // See "How to Approximate A Set Without Knowing Its Size In Advance", by
 // Rasmus Pagh, Gil Segev, and Udi Wieder
 //
-// TODO: Union, Intersection, iteration, Freeze/Thaw, serialize/deserialize
+// TODO: Intersection, iteration, Freeze/Thaw, serialize/deserialize
 
 #pragma once
 
