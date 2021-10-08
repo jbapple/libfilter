@@ -1,7 +1,11 @@
-#include "filter/block.hpp"
-
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
+
+#include "filter/block.hpp"
+#include "filter/minimal-taffy-cuckoo.hpp"
+#include "filter/taffy-block.hpp"
+#include "filter/taffy-cuckoo.hpp"
+#include "filter/taffy-vector-quotient.hpp"
 
 using namespace std;
 
