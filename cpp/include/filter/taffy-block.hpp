@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 #include <cstdint>
 
 #include "block.hpp"
@@ -24,7 +25,7 @@ struct TaffyBlockFilter {
 
  protected:
   TaffyBlockFilter(uint64_t ndv, double fpp) : last_ndv(ndv), ttl(ndv), fpp(fpp) {
-    const double sum =  6.0 / pow(3.1415, 2);
+    const double sum =  6.0 / std::pow(3.1415, 2);
     fpp = fpp / 0.4;
     ndv = std::max(ndv, BlockFilter::MaxCapacity(1, fpp * sum));
     last_ndv = ndv;
@@ -32,7 +33,8 @@ struct TaffyBlockFilter {
     levels[0] = new BlockFilter(BlockFilter::CreateWithNdvFpp(ndv, fpp * sum));
     ++cursor;
     for (uint64_t x = 0; x < 32; ++x) {
-      sizes[x] = BlockFilter::MinSpaceNeeded(ndv << x, fpp / pow(x + 1, 2) * sum);
+      sizes[x] =
+          BlockFilter::MinSpaceNeeded(ndv << x, fpp / std::pow(x + 1, 2) * sum);
     }
   }
 
