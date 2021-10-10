@@ -2,8 +2,10 @@ package com.github.jbapple.libfilter;
 
 import java.lang.Math;
 import java.lang.NullPointerException;
+import java.util.Arrays;
 
-public class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable, Filter {
+public class TaffyBlockFilter
+    implements Comparable<TaffyBlockFilter>, Cloneable, Filter, Growable {
   private BlockFilter[] levels;
   private int[] sizes;
   private int cursor;
@@ -54,7 +56,7 @@ public class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable
     for (int i = 0; i < cursor; ++i) {
       hashes[i] = levels[i].hashCode();
     }
-    return hashes.hashCode();
+    return Arrays.hashCode(hashes);
   }
 
   @Override
@@ -71,7 +73,7 @@ public class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable
     for (int i = 0; i < cursor; ++i) {
       result.append(sizes);
       result.append("|");
-      result.append(levels[i].clone());
+      result.append(levels[i].toString());
       result.append("|");
     }
     return result.toString();
@@ -80,6 +82,7 @@ public class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable
   private TaffyBlockFilter() {}
 
   private TaffyBlockFilter(double ndv, double fpp) {
+    ndv = Math.max(ndv, 1);
     levels = new BlockFilter[32];
     sizes = new int[32];
     cursor = 0;
@@ -107,6 +110,7 @@ public class TaffyBlockFilter implements Comparable<TaffyBlockFilter>, Cloneable
     return result;
   }
 
+  @Override
   public void Upsize() {
     lastNdv *= 2;
     levels[cursor] = BlockFilter.CreateWithBytes(sizes[cursor]);

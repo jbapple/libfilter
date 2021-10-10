@@ -1,5 +1,8 @@
 package com.github.jbapple.libfilter;
 
-public class BlockFilterFactory implements FilterFromBytesFactory<BlockFilter> {
-  public BlockFilter CreateFromBytes(int n) { return new BlockFilter(n); }
+public class BlockFilterFactory implements FilterWithBytesFactory<BlockFilter> {
+  @Override
+  public BlockFilter CreateWithBytes(int n) {
+    return new BlockFilter(n);
+  }
 }

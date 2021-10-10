@@ -1,10 +1,17 @@
 package com.github.jbapple.libfilter;
 
 // Feistel is a permutation that is also a hash function, based on a Feistel permutation.
-class Feistel {
+class Feistel implements Cloneable {
   // The salt for the hash functions. The component hash function is strong
   // multiply-shift.
   long[] keys;
+
+  @Override
+  public Feistel clone() {
+    Feistel result = new Feistel(keys);
+    result.keys = keys.clone();
+    return result;
+  }
 
   static long Mask(int w, long x) { return x & ((((long) 1) << w) - 1); }
 
@@ -76,7 +83,7 @@ class Feistel {
   */
 }
 
-class PcgRandom {
+class PcgRandom implements Cloneable {
   // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
   // Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
 
@@ -89,6 +96,16 @@ class PcgRandom {
 
   int current;
   int remainingBits;
+
+  @Override
+  public PcgRandom clone() {
+    PcgRandom result = new PcgRandom(bitWidth);
+    result.state = state;
+    result.inc = inc;
+    result.current = current;
+    result.remainingBits = remainingBits;
+    return result;
+  }
 
   PcgRandom(int bw) {
     bitWidth = bw;

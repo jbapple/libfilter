@@ -1,8 +1,10 @@
 package com.github.jbapple.libfilter;
 
+import org.apache.commons.math3.special.Gamma;
+
 import java.lang.Math;
 import java.lang.NullPointerException;
-import org.apache.commons.math3.special.Gamma;
+import java.util.Arrays;
 
 /**
  * BlockFilter is a block Bloom filter (from Putze et al.'s "Cache-, Hash- and
@@ -10,8 +12,8 @@ import org.apache.commons.math3.special.Gamma;
  * <ol>
  * <li> Each block is a split Bloom filter - see Section 2.1 of Broder and Mitzenmacher's
  *      "Network Applications of Bloom Filters: A Survey".
- * <li> The number of bits set during each key addition is constant in order to take
- *      advantage of SIMD instructions.
+ * <li> The number of bits set during each key addition is constant in order to try and
+ *      take advantage of SIMD instructions.
  * </ol>
  */
 public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
@@ -151,25 +153,24 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
     if (there == null) return false;
     if (!(there instanceof BlockFilter)) return false;
     BlockFilter that = (BlockFilter) there;
-    if (that.payload.length != payload.length) return false;
-    return payload == that.payload;
+    return Arrays.equals(payload, that.payload);
   }
 
   @Override
   public int hashCode() {
-    return payload.hashCode();
+    return Arrays.hashCode(payload);
   }
 
   @Override
   public String toString() {
-    return payload.toString();
+    return Arrays.toString(payload);
   }
 
   private int[] payload;
 
   public long sizeInBytes() { return payload.length * 4; }
 
-  BlockFilter(int bytes) { payload = new int[(bytes / 4) / 8 * 8]; }
+  BlockFilter(int bytes) { payload = new int[Math.max(8, (bytes / 4) / 8 * 8)]; }
 
   /**
    * Create a new filter of a given size.

@@ -1,36 +1,52 @@
 package com.github.jbapple.libfilter;
 
-import java.util.ArrayList;
 import java.lang.Math;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-public class TaffyCuckooFilter implements Filter {
-  static final short kHeadSize = 10;
-  static final short kTailSize = 5;
-  static final int kLogBuckets = 2;
-  static final int kBuckets = 1 << kLogBuckets;
+// TODO: Comparable, Serialeable
+/**
+ * TaffyCuckooFilter is a filter based on the paper "Stretching your data with taffy
+ * filters". It can grow when it becomes full without affecting the false positive
+ * substantially, unlike most other types of filter.
+ */
+public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
+  private static final short kHeadSize = 10;
+  private static final short kTailSize = 5;
+  private static final int kLogBuckets = 2;
+  private static final int kBuckets = 1 << kLogBuckets;
 
-  static short withFingerprint(short x, short f) {
+  private static short withFingerprint(short x, short f) {
     x &= (1 << kTailSize) - 1;
     x |= f << (kTailSize + 1);
     return x;
   }
 
-  static short fingerprint(short x) {
+  private static short fingerprint(short x) {
     return (short) Feistel.Mask(kHeadSize, x >>> (kTailSize + 1));
   }
 
-  static short withEncodedTail(short x, short t) {
+  private static short withEncodedTail(short x, short t) {
     x >>>= (kTailSize + 1);
     x <<= (kTailSize + 1);
     x |= t;
     return x;
   }
 
-  static short encodedTail(short x) { return x &= ((1 << (kTailSize + 1)) - 1); }
+  private static short encodedTail(short x) { return x &= ((1 << (kTailSize + 1)) - 1); }
 
-  static class Path {
-    int bucket;
-    short slot;
+  private static class Path implements Cloneable {
+    private int bucket;
+    private short slot;
+
+    @Override
+    public Path clone() {
+      Path result = new Path();
+      result.bucket = bucket;
+      result.slot = slot;
+      return result;
+    }
+
     @Override
     public boolean equals(Object o) {
       if (null == o) return false;
@@ -38,80 +54,74 @@ public class TaffyCuckooFilter implements Filter {
       Path p = (Path)o;
       return bucket == p.bucket && slot == p.slot;
     }
+
+    @Override
+    public int hashCode() {
+      return bucket ^ slot;
+    }
   }
 
-  static Path toPath(long raw, Feistel f, int log_side_size) {
-   //System.out.println("ToPathBegin " + String.format("0x%016x", raw) + " "
-    //+ String.format("0x%016x", f.Summary()) + " " + log_side_size);
+  private static Path toPath(long raw, Feistel f, int log_side_size) {
     Path p = new Path();
     long pre_hash_index_and_fp = raw >>> (64 - log_side_size - kHeadSize);
-   //System.out.println("toPath 01 " + String.format("0x%016X", pre_hash_index_and_fp));
     long hashed_index_and_fp =
         f.Permute(log_side_size + kHeadSize, pre_hash_index_and_fp);
-   //System.out.println("toPath 02 " + String.format("0x%016X", hashed_index_and_fp));
     long index = hashed_index_and_fp >>> kHeadSize;
-   //System.out.println("toPath 03 " + String.format("0x%016X", index));
     p.bucket = (int)index;
-   //System.out.println("toPath 04 " + String.format("0x%016X", p.bucket));
-    //System.out.println("toPath " + p.bucket + " " + (1 << log_side_size));
     p.slot = withFingerprint((short)0, (short)hashed_index_and_fp);
-   //System.out.println("toPath 05 " + String.format("0x%016X", p.slot));
     long pre_hash_index_fp_and_tail =
         raw >>> (64 - log_side_size - kHeadSize - kTailSize);
-   //System.out.println("toPath 06 " + String.format("0x%016X", pre_hash_index_fp_and_tail));
     short tail = (short)Feistel.Mask(kTailSize, pre_hash_index_fp_and_tail);
-   //System.out.println("toPath 07 " + String.format("0x%016X", tail));
     tail *= 2;
     tail += 1;
     p.slot = withEncodedTail(p.slot, tail);
-   //System.out.println("ToPathEnd "
-    //+ String.format("0x%03x", (p.slot >>> 6) & ((1 << 10) - 1)) + " "
-    //  + String.format("0x%02x", p.slot & ((1 << 6) - 1)) + " ");
     return p;
   }
 
-  static long FromPathNoTail(Path p,  Feistel f, int log_side_size) {
+  private static long FromPathNoTail(Path p,  Feistel f, int log_side_size) {
     long hashed_index_and_fp = ((long)p.bucket << kHeadSize) | fingerprint(p.slot);
-   //System.out.println("reverse input " + String.format("0x%016X", p.bucket));
-   //System.out.println("reverse input " + String.format("0x%016X", (long)p.bucket << kHeadSize));
-   //System.out.println("reverse input " + String.format("0x%016X", p.slot));
-   //System.out.println("reverse input " + String.format("0x%016X", p.slot >> (kTailSize + 1)));
-   //System.out.println("reverse input " + String.format("0x%016X", p.slot >>> (kTailSize + 1)));
-   //System.out.println("reverse input " + String.format("0x%016X", fingerprint(p.slot)));
-   //System.out.println("reverse input " + String.format("0x%016X", (long)fingerprint(p.slot)));
-   //System.out.println("reverse input " + String.format("0x%016X", hashed_index_and_fp));
     long pre_hashed_index_and_fp =
         f.ReversePermute(log_side_size + kHeadSize, hashed_index_and_fp);
     long shifted_up = pre_hashed_index_and_fp << (64 - log_side_size - kHeadSize);
     return shifted_up;
   }
 
-  static class Side {
-    Feistel f;
-    ArrayList<Path> stash;
-    short[] data;
+  private static class Side implements Cloneable {
+    private Feistel f;
+    private ArrayList<Path> stash;
+    private short[] data;
 
-    void Print(int log_side_size) {
-      for (int i = 0; i < (4 << log_side_size); i +=4) {
-        for (int j = 0; j < 4; ++j) {
-         //System.out.print(
-          //String.format("0x%03x", (data[i + j] >>> 6) & ((1 << 10) - 1)) + " "
-          //+ String.format("0x%02x", data[i + j] & ((1 << 6) - 1)) + ", ");
-        }
-       //System.out.println("");
+    @Override
+    public Side clone() {
+      Side result = new Side();
+      result.f = f.clone();
+      result.stash = stash;
+      for (int i = 0; i < stash.size(); ++i) {
+        result.stash.set(i, stash.get(i).clone());
       }
+      result.data = data.clone();
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (null == o) return false;
+      if (!(o instanceof Side)) return false;
+      Side s = (Side) o;
+      return f.equals(s.f) && stash.equals(s.stash) && Arrays.equals(data, s.data);
+    }
+
+    @Override
+    public int hashCode() {
+      return f.hashCode() ^ stash.hashCode() ^ Arrays.hashCode(data);
     }
 
     Path Insert(Path p, PcgRandom rng) {
-      // assert (p.tail != 0);
-      // Bucket& b = data[p.bucket];
       for (int i = kBuckets * p.bucket; i < kBuckets * p.bucket + kBuckets; ++i) {
-        //System.out.println(kBuckets * p.bucket);
-        //System.out.println(data.length);
         if (encodedTail(data[i]) == 0) {
           // empty slot
           data[i] = p.slot;
-          p.slot = withEncodedTail(p.slot, (short)0);
+          p.slot = withEncodedTail(p.slot, (short) 0);
           return p;
         }
         if (fingerprint(data[i]) == fingerprint(p.slot)) {
@@ -139,18 +149,12 @@ public class TaffyCuckooFilter implements Filter {
     }
 
     boolean Find(Path p) {
-      // assert(p.tail != 0);
-     //System.out.println("Finding "
-      //+ String.format("0x%03x", (p.slot >>> 6) & ((1 << 10) - 1)) + " "
-      //+ String.format("0x%02x", p.slot & ((1 << 6) - 1)) + " ");
-
       for (Path path : stash) {
         if (encodedTail(path.slot) != 0 && p.bucket == path.bucket
             && fingerprint(p.slot) == fingerprint(path.slot)
             && Util.IsPrefixOf(encodedTail(path.slot), encodedTail(p.slot))) {
           return true;
         }
-        //System.out.println("Not stash " + path.bucket + " " + String.format("0x%04x", path.slot));
       }
       for (int i = 4 * p.bucket; i < 4 * p.bucket + kBuckets; ++i) {
         if (encodedTail(data[i]) == 0) continue;
@@ -158,24 +162,20 @@ public class TaffyCuckooFilter implements Filter {
             && Util.IsPrefixOf(encodedTail(data[i]), encodedTail(p.slot))) {
           return true;
         }
-        //System.out.println("Not " + i + " " + String.format("0x%04x", data[i]));
       }
       return false;
     }
   }
 
-  Side[] sides;
-  int log_side_size;
-  PcgRandom rng; // = {detail::kLogBuckets};
-  long occupied = 0;
+  private Side[] sides;
+  private int log_side_size;
+  private PcgRandom rng;
+  private long occupied = 0;
 
-  void Print() {
-   //System.out.println("log_side_size: " + log_side_size);
-    sides[0].Print(log_side_size);
-    sides[1].Print(log_side_size);
-  }
-
-  void swap(TaffyCuckooFilter that) {
+  /**
+   * Swaps the contents of <code>that</code> with <code>this</code>.
+   */
+  public void Swap(TaffyCuckooFilter that) {
     for (int i = 0; i < 2; ++i) {
       Side tmp = sides[i];
       sides[i] = that.sides[i];
@@ -198,6 +198,31 @@ public class TaffyCuckooFilter implements Filter {
     }
   }
 
+  @Override
+  public TaffyCuckooFilter clone() {
+    TaffyCuckooFilter result = new TaffyCuckooFilter(0);
+    result.sides = sides.clone();
+    for(int i = 0; i < result.sides.length; ++i) {
+      result.sides[i] = sides[i].clone();
+    }
+    result.log_side_size = log_side_size;
+    result.rng = rng.clone();
+    result.occupied = occupied;
+    return result;
+  }
+
+  // TODO: equals and hashCode that respect the semantic contents of a filter, not just
+  // the representation.
+
+  /**
+   * Creates a filter with a capacity of <code>7 << log_side</code> using
+   * <code>entropy</code> for hashing.
+   *
+   * @param log_side a representation of the size of the filter as a power of 2
+   * @param entropy an array containing eight longs, used for hashing. Note that
+   *     TaffyCuckooFilters take as input hash values - this entropy is only used
+   *     internally to re-hash (when needed) the hash values supplied by the user
+   */
   TaffyCuckooFilter(int log_side, long[] entropy) {
     rng = new PcgRandom(kLogBuckets);
     log_side_size = log_side;
@@ -232,60 +257,49 @@ public class TaffyCuckooFilter implements Filter {
              0x07a1cb8140744ee6L, 0xf2296cf6a6524e9fL});
   }
 
+  /**
+   * Creates a TaffyCuckooFilter using approximately the heap space indicated by
+   * <code>n</code>.
+   *
+   * @param n the number of bytes to occupy.
+   */
+  public static TaffyCuckooFilter CreateWithBytes(int n) {
+    return new TaffyCuckooFilter(n);
+  }
+
   public boolean FindHash64(long k) {
-   //System.out.println("FindRaw " + String.format("0x%16x", k));
     for (int s = 0; s < 2; ++s) {
       if (sides[s].Find(toPath(k, sides[s].f, log_side_size))) return true;
     }
     return false;
   }
 
-  // public boolean FindPaths(Path p[2]) {
-  //   for (int s = 0; s < 2; ++s) {
-  //     if (sides[s].Find(p[s])) return true;
-  //   }
-  //   return false;
-  // }
-
-  boolean InsertPathTTL(int s, Path p, int ttl) {
-    //if (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) return InsertResult::Failed;
+  private boolean InsertPathTTL(int s, Path p, int ttl) {
     Side[] both = new Side[] {sides[s], sides[1 - s]};
     while (true) {
       for (int i = 0; i < 2; ++i) {
-        Path q = new Path();//.clone();
+        Path q = new Path();
         q.bucket = p.bucket;
         q.slot = p.slot;
-       //System.out.println("Pre found empty " + q.bucket + " " + q.slot);
         p = both[i].Insert(p, rng);
-
         if (encodedTail(p.slot) == 0) {
           // Found an empty slot
-         //System.out.println("Found empty " + p.bucket + " " + p.slot + " " + q.bucket + " " + q.slot);
-          assert both[i].Find(q);
           ++occupied;
           return true;
         }
         if (p.equals(q)) {
-         //System.out.println("Found equal");
-          assert both[i].Find(q);
           return true;
         }
-       //System.out.println("Evicted " + p.bucket + " " + p.slot);
         short tail = encodedTail(p.slot);
         if (ttl <= 0) {
-          // we've run out of room. If there's room in this stash, stash it here. If there
-          // is no room in this stash, there must be room in the other, based on the
-          // pre-condition for this method.
+          // we've run out of room.
           both[i].stash.add(p);
           ++occupied;
-          assert both[i].Find(q);
           return false;
         }
-        assert both[i].Find(q);
         --ttl;
         // translate p to being a path about the right half of the table
         long preimage = FromPathNoTail(p, both[i].f, log_side_size);
-       //System.out.println("Preimage: " + String.format("0x%016X", preimage));
         p = toPath(preimage, both[1 - i].f, log_side_size);
         // P's tail is now artificially 0, but it should stay the same as we move from side
         // to side
@@ -294,18 +308,13 @@ public class TaffyCuckooFilter implements Filter {
     }
   }
 
-  // This method just increases ttl until insert succeeds.
-  // TODO: upsize when insert fails with high enough ttl?
-  boolean InsertPath(int s, Path q) {
+  private boolean InsertPath(int s, Path q) {
     int ttl = 32;
-   //System.out.println("Inserting "
-    //+ String.format("0x%03x", (q.slot >>> 6) & ((1 << 10) - 1)) + " "
-    //+ String.format("0x%02x", q.slot & ((1 << 6) - 1)) + " ");
     return InsertPathTTL(s, q, ttl);
   }
 
   // i is the bucket. s is the side
-  void UpsizeHelper(short sl, int i, int s, TaffyCuckooFilter t) {
+  private void UpsizeHelper(short sl, int i, int s, TaffyCuckooFilter t) {
     if (encodedTail(sl) == 0) return;
     Path p = new Path();
     p.slot = sl;
@@ -334,9 +343,8 @@ public class TaffyCuckooFilter implements Filter {
     }
   }
 
-  void Upsize() {
-   //System.out.println("Stash size " + sides[0].stash.size() + sides[1].stash.size());
-
+  @Override
+  public void Upsize() {
     TaffyCuckooFilter t = new TaffyCuckooFilter(1 + log_side_size,
         new long[] {sides[0].f.keys[0], sides[0].f.keys[1], sides[0].f.keys[2],
             sides[0].f.keys[3], sides[1].f.keys[0], sides[1].f.keys[1], sides[1].f.keys[2],
@@ -345,10 +353,8 @@ public class TaffyCuckooFilter implements Filter {
     ArrayList<ArrayList<Path>> stashes = new ArrayList<ArrayList<Path>>();
     stashes.add((ArrayList<Path>)sides[0].stash.clone());
     stashes.add((ArrayList<Path>)sides[1].stash.clone());
-   //System.out.println("Stash size " + stashes.get(0).size() + stashes.get(1).size());
     sides[0].stash.clear();
     sides[1].stash.clear();
-   //System.out.println("Stash size " + stashes.get(0).size() + stashes.get(1).size());
     for (int s = 0; s < 2; ++s) {
       for (int i = 0; i < stashes.get(s).size(); ++i) {
         Path p = stashes.get(s).get(i);
@@ -357,25 +363,16 @@ public class TaffyCuckooFilter implements Filter {
       for (int i = 0; i < (1 << log_side_size); ++i) {
         for (int j = 0; j < kBuckets; ++j) {
           short sl = sides[s].data[kBuckets * i + j];
-         //System.out.println("Upsizing " + String.format("0x%03x", (sl >>> 6) & ((1 << 10) - 1)) + " "
-          //+ String.format("0x%02x", sl & ((1 << 6) - 1)) + " ");
           UpsizeHelper(sl, i, s, t);
-          t.Print();
         }
       }
     }
-    // System.out.println(log_side_size);
-    // System.out.println(t.log_side_size);
-    swap(t);
-    // System.out.println(log_side_size);
-    // System.out.println(t.log_side_size);
+    Swap(t);
   }
 
-  public int Capacity() { return 8 << log_side_size; }
+  private int Capacity() { return 8 << log_side_size; }
 
   public boolean AddHash64(long k) {
-   //System.out.println("InsertRaw " + String.format("0x%16x", k));
-    // System.out.println("Inserting hash " + String.format("0x%016X", k));
     // 95% is achievable, generally,but give it some room
     while (occupied > 0.90 * Capacity() || occupied + 4 >= Capacity() ||
            sides[0].stash.size() + sides[1].stash.size() > 8) {
@@ -383,16 +380,13 @@ public class TaffyCuckooFilter implements Filter {
     }
     Path p = toPath(k, sides[0].f, log_side_size);
     long preimage = FromPathNoTail(p, sides[0].f, log_side_size);
-   //System.out.println("round-trip 0 " + String.format("0x%016X", preimage));
-   //System.out.println("Inserting " + p.bucket + " " + p.slot);
     InsertPath(0, p);
     Path q = toPath(k, sides[1].f, log_side_size);
     preimage = FromPathNoTail(q, sides[0].f, log_side_size);
-   //System.out.println("round-trip 1 " + String.format("0x%016X", preimage));
-   //System.out.println("Didn't insert " + q.bucket + " " + q.slot);
-    //assert sides[0].Find(toPath(k, sides[0].f, log_side_size))
-    //    || sides[1].Find(toPath(k, sides[1].f, log_side_size));
-    // assert FindHash64(k);
     return true;
   }
+
+  // TODO
+  // @Override
+  // public String toString() {}
 }
