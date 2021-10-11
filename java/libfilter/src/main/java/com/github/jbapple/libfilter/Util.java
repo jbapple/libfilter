@@ -36,7 +36,7 @@ class Feistel implements Cloneable {
     long l0 = Lo(s, t, s, x);
     long r0 = Hi(s, t, t, x);
 
-    // First feistel application: switch the halves. l1 has t bits, while r1 has s bits,
+    // First Feistel application: switch the halves. l1 has t bits, while r1 has s bits,
     // xored with the t-bit hash of r0.
     long l1 = r0; // t
     long r1 = l0 ^ ApplyOnce(s, t, t, r0, 0); // s
@@ -49,9 +49,6 @@ class Feistel implements Cloneable {
 
     // The validity of this is really only seen when understanding the reverse permutation
     long result = (r2 << s) | l2;
-    // System.out.println("Forward " + Summary() + " " + String.format("0x%016X", x) + " "        + String.format("0x%016X", result));
-    //System.out.println("Forward " + w + " " + String.format("0x%016x", x) + " "
-    //  + String.format("0x%016x", result));
     return result;
   }
 
@@ -69,18 +66,10 @@ class Feistel implements Cloneable {
     long l0 = r1 ^ ApplyOnce(s, t, t, r0, 0);  // s
 
     long result = (r0 << s) | l0;
-   //System.out.println("Backward " + Summary() + " " + String.format("0x%016X", x) + " " + String.format("0x%016X", result));
     return result;
   }
-  /*
-  friend void swap(Feistel&, Feistel&);
-  */
+
   long Summary() { return keys[0] ^ keys[1] ^ keys[2] ^ keys[3]; }
-  /*
-  //Feistel(const Feistel&) = delete;
-  //Feistel& operator=(const Feistel&) = delete;
-};
-  */
 }
 
 class PcgRandom implements Cloneable {
@@ -137,18 +126,16 @@ class PcgRandom implements Cloneable {
     current = current >> bitWidth;
     return (int)result;
   }
-};
+}
 
 class Util {
   static boolean IsPrefixOf(short x, short y) {
     // assert(x != 0);
     // assert(y != 0);
     int a = x ^ y;
-    //System.out.println("xor " + String.format("0x%08x", a));
     int c = Integer.numberOfTrailingZeros(Short.toUnsignedInt(x));
     int h = Integer.numberOfTrailingZeros(Short.toUnsignedInt(y));
     int i = Integer.numberOfLeadingZeros(a);
-    //System.out.println("" + c + " " + h + " " + i);
     return (c >= h) && (i >= 31 - c);
   }
 }
