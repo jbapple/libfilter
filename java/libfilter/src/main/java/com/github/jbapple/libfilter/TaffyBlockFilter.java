@@ -92,7 +92,7 @@ public class TaffyBlockFilter
     ++cursor;
     for (int x = 0; x < 32; ++x) {
       sizes[x] = BlockFilter.BytesNeeded(
-          ndv, fpp / Math.pow(cursor + 1, 2) * 6 / Math.pow(3.1415, 2));
+          ndv, fpp / Math.pow(cursor + 1, 2) * 6 / Math.pow(Math.PI, 2));
       ndv *= 2;
     }
   }

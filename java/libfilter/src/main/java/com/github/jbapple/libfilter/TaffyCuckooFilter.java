@@ -33,7 +33,7 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
     return x;
   }
 
-  private static short encodedTail(short x) { return x &= ((1 << (kTailSize + 1)) - 1); }
+  private static short encodedTail(short x) { return (short)(x & ((1 << (kTailSize + 1)) - 1)); }
 
   private static class Path implements Cloneable {
     private int bucket;
