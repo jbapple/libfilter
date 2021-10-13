@@ -6,7 +6,7 @@ project(
   libfilter
   VERSION 0.1.0
   DESCRIPTION "High-speed Bloom filters and taffy filters for C and C++"
-  HOMEPAGE_URL "https://github.com/tenzir/libfilter"
+  HOMEPAGE_URL "https://github.com/jbapple/libfilter"
   LANGUAGES C CXX)
 
 # -- sanity checks -------------------------------------------------------------
@@ -54,31 +54,7 @@ add_library(libfilter::internal ALIAS libfilter_internal)
 install(TARGETS libfilter_internal EXPORT libfilterTargets)
 
 # Require standard C++20.
-target_compile_features(libfilter_internal INTERFACE cxx_std_20)
-
-# Increase maximum number of template instantiations.
-target_compile_options(libfilter_internal INTERFACE
-  $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang,GCC>:-ftemplate-backtrace-limit=0>)
-
-# -- FreeBSD support -----------------------------------------------------------
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  # Works around issues with libstdc++ and C++11. For details, see: -
-  # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=194929 -
-  # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=182657
-  target_compile_definitions(
-    libfilter_internal INTERFACE _GLIBCXX_USE_C99 _GLIBCXX_USE_C99_MATH
-                                 _GLIBCXX_USE_C99_MATH_TR1)
-endif ()
-
-# -- compile options -----------------------------------------------------------
-
-target_compile_options(
-  libfilter_internal
-  INTERFACE $<$<CONFIG:Release>:-fno-omit-frame-pointer>
-            $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>
-            $<$<CONFIG:Debug>:-O0>
-            -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -mavx2 -mfma)
+target_compile_features(libfilter_internal INTERFACE cxx_std_14)
 
 # -- developer mode ------------------------------------------------------------
 
