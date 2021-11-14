@@ -229,7 +229,7 @@ The significant interest in filters is reflective of their utility in applicatio
 
 %Genetics, search engines, blockchain, machine learning, storage~\cite{dna-filter, bitfunnel, bitcoin-filter, gene-search-filter, sequencing-filter, model-training-filter, deduplication-filter}
 
-Each of the filter structures cited above supports approximate membership queries on sets with a given maximum size, but the question of extensible (or {\itshape extendable} or {\itshape incremental} or {\itshape growable}) filters that can increase in capacity as more elements are inserted is little studied
+Each of the filter structures cited above supports approximate membership queries on sets with a given maximum size, but the question of extensible (or {\itshape extendable} or {\itshape incremental} or {\itshape growable}) filters that can increase in capacity as more elements are inserted is little studied.
 The classic answer is to create a sequence of Bloom filters, possibly of increasing sizes and/or lower false positive probabilities.~\cite{dynamic-bloom,scalable-bloom}
 Inserts occur on the last filter to be created and lookups must search each filter.
 Even when this keeps the false positive rate low, lookup times balloon from constant to poly-logarithmic or even linear in $n$, the number of elements inserted.~\cite{psw,logarithm,consistent-cuckoo} %The Dynamic Cuckoo Filter
@@ -407,7 +407,7 @@ See Figure~\ref{pagh-1-diagram}.
 \caption{\label{pagh-1-diagram}
 Pagh \etal{}'s first construction.
 In this construction, $\lceil\lg (n-1) \rceil$ dictionaries are maintained with exponentially increasing capacities and logarithmically increasing bit widths.
-The false positive probability of the $n$th dictionary, counting from $1$, is $6 \varepsilon / i^2 \pi^2$, and the sum of the false positive probabilities is $\le \varepsilon$.
+The false positive probability of the $i$th dictionary, counting from $1$, is $6 \varepsilon / i^2 \pi^2$, and the sum of the false positive probabilities is $\le \varepsilon$.
 The lookup operation requires a dictionary lookup in $\lceil\lg(n-1)\rceil$ dictionaries.\\
 In this diagram, columns of blocks represent dictionaries.
 The caption under a column is the type of the elements in the dictionary. For instance, the block with four rows in its column stores bit strings of length $\lg (3^2 \pi^2 / 6 \varepsilon)$.
@@ -1146,7 +1146,7 @@ Some complications arise:
   \item Because subtables have different sizes, the bits that are implicitly stored using quotienting varies depends on which part of the table an element is in.
     To address this, fingerprints in MTCFs have variable size.
   \item Because fingerprints have variable size, there must be multiple permutations per side, one for each size of fingerprint.
-  \item Because there are multiple permutations per side, a key may be in multiple distinct buckets each side, which decreases the performance and increases the false positive probability.
+  \item Because there are multiple permutations per side, a key may be in multiple distinct buckets per side, which decreases the performance and increases the false positive probability.
 \end{enumerate}
 
 In an MTCF, each element has a fingerprint of size 8 or 9 and a tail of size up to 5.\footnote{As in TCFs, these constants are picked for performance and ease of implementation.
