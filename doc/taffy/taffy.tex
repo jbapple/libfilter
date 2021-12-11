@@ -1358,6 +1358,8 @@ The experiments use Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, resp
 For performance testing, we equip both TCFs and MTCFs with stashes~\cite{stash}.
 We set both filters to upsize when they are 90\% full or their stashes have size greater than 4.
 
+For permutations we use Feistel networks with 2-independent multiply-shift as the round function ~\cite{two-independent-multiply-shift}.
+
 For comparison, the graphs also include a cuckoo filter (labeled ``CF'') with fingerprints of size 12 and a split block Bloom filter (labeled ``SBBF'') sized to hold 100 million elements with an fpp of 0.4\%.
 
 \subsection{Space}
