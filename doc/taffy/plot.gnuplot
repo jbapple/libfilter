@@ -8,7 +8,7 @@
 # 12cm,6.4cm
 
 
-set terminal postscript eps enhanced color size 9cm,6cm
+set terminal postscript eps enhanced color size 3.333in,3.333in fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
 #font "libertine"
 #fontfile "/usr/share/fonts/opentype/linux-libertine/LinBiolinum_K.otf"
 #fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -29,7 +29,7 @@ plot '< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -
      "< grep fpp all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints  lw 1  title "CF", \
      "< grep fpp all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:(8*$4/$3) with lines lw 5  title "SBBF"
 
-set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,2.5in fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
 set output 'ideal-bits-per-item.eps';
 set grid noxtics ytics;
 unset grid
@@ -141,7 +141,7 @@ plot "< grep find_present all-bench-100000000-017.txt | grep MinTaffy    | sort 
 
 
 # space usage; lower is better
-set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,6cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'space.eps'
 unset grid;
 unset logscale y;
@@ -196,7 +196,7 @@ plot "< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -
 #      "< csvsql -H all-bench-100000000-010.txt all-bench-100000000-010.txt --tables x,y --query \"select x.a, x.c, x.f, y.f from x, y where x.b = y.b and x.e = y.e and y.a = 'Cuckoo' and x.a = 'Cuckoo' and x.e = y.e and x.e like 'find%' order by x.b asc, x.e\"" using 2:($3/$4) with lines lw 1 title "CF", \
 #      "< csvsql -H all-bench-100000000-010.txt all-bench-100000000-010.txt --tables x,y --query \"select x.a, x.c, x.f, y.f from x, y where x.b = y.b and x.e = y.e and y.a = 'Cuckoo' and x.a = 'SimdBlockFilter' and x.e = y.e and x.e like 'find%' order by x.b asc, x.e\"" using 2:($3/$4) with lines lw 5 title "SBBF"
 
-set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'lookup-both.eps'
 unset grid;
 set logscale y;
@@ -215,7 +215,7 @@ plot "< grep find all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , 
      "< grep find all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "SBBF"
 
 
-set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'arm-lookup-both.eps'
 unset grid;
 set logscale y;
@@ -251,7 +251,7 @@ plot "< grep insert m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 3" using
      "< grep insert m6g.medium.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
      "< grep insert m6g.medium.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1 title "SBBF"
 
-set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'insert-cumulative.eps'
 unset grid;
 set logscale y 10;
@@ -268,7 +268,7 @@ plot "< python3 running-sum.py all-bench-100000000-017.txt | grep MinTaffy    | 
      "< python3 running-sum.py all-bench-100000000-017.txt | grep '^Cuckoo,'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
      "< python3 running-sum.py all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 2:($3/$2) with lines lw 5 title "SBBF"
 
-set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
 set output 'arm-insert-cumulative.eps'
 unset grid;
 set logscale y 10;
