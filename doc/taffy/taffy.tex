@@ -87,7 +87,7 @@
 %    commentstyle=\color{green}, % comment color
 %    keywordstyle=\color{blue}, % keyword color
 %    stringstyle=\color{red}, % string color
-  basicstyle=\small\ttfamily,
+  basicstyle=\ttfamily,
   basewidth = {.48em},
   captionpos=b
 }
@@ -527,38 +527,38 @@ A bucket consists of four (possibly empty) slots, each of which can hold one ele
 A side consists of $2^k$ buckets for some $k$ as well as a permutation on $\ints_2^{k+10}$. %\footnote{$\ints_2^m$ and $\ints_{2^m}$.}
 A TCF consists of two sides and one hash function that produces a 64-bit key.
 The two sides have the same number of buckets but different permutations.
-See Listing~\ref{tcf-types}.
+%See Listing~\ref{tcf-types}.
 
-\begin{figure*}
-\begin{lstlisting}[escapeinside={`}{`},label=tcf-types,
-    caption={The types of a TCF.
-      \texttt{T}$_\bot$ means the type \texttt{T} extended with the element $\bot$, indicating ``null'' or ``empty''.
-      $S_i$ is the symmetric group on $\ints_i$ -- the set of all permutations on $\ints_i$.
-      %As above, pseudocode will not make a distinction between $\ints_2^i$ and $\ints_{2^i}$.
-      \texttt{T[n]} denotes an array of $n$ values of type $T$.
-      $A \dotcup B$ represents a tagged disjoint union of $A$ and $B$; even if $A \subseteq B$, $A \dotcup B \ne B$.
-      Structs are denoted by curly brackets \{\}, and members of structs can be referenced by their name or by their type.
-      For instance, if \texttt{s} is a \texttt{Side(k)}, then \texttt{s.Bucket} and \texttt{s.Permutation} are both meaningful expressions.
-    }
-    ]
-Element := {fingerprint: `$\ints_2^{10}$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
-Slot := Element`$_\bot$`
-Bucket := Slot[4]
-Side(k) := {Bucket[2`$^k$`], Permutation: `$S_{2^{k+10}}$`}
-TCF(U, k) := {Side(k)[2], HashFunction: `$U \to \ints_2^{64}$`}
-\end{lstlisting}
-\end{figure*}
+%% \begin{figure*}
+%% \begin{lstlisting}[escapeinside={`}{`},label=tcf-types,
+%%     caption={The types of a TCF.
+%%       \texttt{T}$_\bot$ means the type \texttt{T} extended with the element $\bot$, indicating ``null'' or ``empty''.
+%%       $S_i$ is the symmetric group on $\ints_i$ -- the set of all permutations on $\ints_i$.
+%%       %As above, pseudocode will not make a distinction between $\ints_2^i$ and $\ints_{2^i}$.
+%%       \texttt{T[n]} denotes an array of $n$ values of type $T$.
+%%       $A \dotcup B$ represents a tagged disjoint union of $A$ and $B$; even if $A \subseteq B$, $A \dotcup B \ne B$.
+%%       Structs are denoted by curly brackets \{\}, and members of structs can be referenced by their name or by their type.
+%%       For instance, if \texttt{s} is a \texttt{Side(k)}, then \texttt{s.Bucket} and \texttt{s.Permutation} are both meaningful expressions.
+%%     }
+%%     ]
+%% Element := {fingerprint: `$\ints_2^{10}$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
+%% Slot := Element`$_\bot$`
+%% Bucket := Slot[4]
+%% Side(k) := {Bucket[2`$^k$`], Permutation: `$S_{2^{k+10}}$`}
+%% TCF(U, k) := {Side(k)[2], HashFunction: `$U \to \ints_2^{64}$`}
+%% \end{lstlisting}
+%% \end{figure*}
 
 \paragraph{Lookup}
-A lookup begins by hashing a key with the TCF's hash function. (Listing~\ref{tcf-lookup}, line 12)
+A lookup begins by hashing a key with the TCF's hash function. %(Listing~\ref{tcf-lookup}, line 12)
 Then the lookup operation does the following:
 
 \begin{enumerate}
-\item Applies a permutation to the most-significant $k+10$ bits in the key. (Listing~\ref{tcf-lookup}, line 14)
+\item Applies a permutation to the most-significant $k+10$ bits in the key. %(Listing~\ref{tcf-lookup}, line 14)
 \item Reserves the next 5 bits of the key; this will be the key's tail.
-\item Using the most-significant $k$ bits in the permuted bits, selects a bucket. (Line 15)
+\item Using the most-significant $k$ bits in the permuted bits, selects a bucket. %(Line 15)
 (The remaining 10 bits in the permuted value are the fingerprint.)
-\item Checks to see if any slot contains an element with an identical fingerprint. (Line 3)
+\item Checks to see if any slot contains an element with an identical fingerprint. %(Line 3)
 If so, checks if the element's tail is a prefix of the key's tail.
 If yes, returns \verb|True|.
 Otherwise, returns \verb|False|.
@@ -566,171 +566,165 @@ Otherwise, returns \verb|False|.
 
 %TODO: endianness problems pervade the pseudocode?
 
-\begin{figure*}
-\begin{lstlisting}[escapeinside={`}{`},
-    label=tcf-lookup,
-    caption={
-      Pseudocode for the lookup operation on TCFs.
-      \texttt{S[a,~b)} denotes the bits in $S$ starting at location $a$ and continuing through (and including) $b-1$.
-    }]
-LookupBucket(fingerprint, tail, bucket) {
-  for (element : bucket) {
-    if (element.fingerprint == fingerprint && element.tail IsPrefixOf tail) {
-      return True
-    }
-  }
-  return False
-}
-
-Lookup(input: U, tcf: TCF(U, k)) {
-  hashed := tcf.HashFunction(input)
-  for (side : tcf.Side[0], tcf.Side[1]) {
-    permuted := side.Permutation(hashed[0, k+10))
-    bucket := side.Bucket[permuted[0, k)]
-    if LookupBucket(permuted[k, k+10), hashed[k+10, k+15), bucket) {
-      return True
-    }
-  }
-  return False
-}
-\end{lstlisting}
-\end{figure*}
-%% \caption{\label{tcf-lookup}
-%% Pseudocode for the lookup operation on TCFs.
-%% \texttt{S[a,~b)} denotes the bits in $S$ starting at location $a$ and continuing through $b-1$.
+%% \begin{figure*}
+%% \begin{lstlisting}[escapeinside={`}{`},
+%%     label=tcf-lookup,
+%%     caption={
+%%       Pseudocode for the lookup operation on TCFs.
+%%       \texttt{S[a,~b)} denotes the bits in $S$ starting at location $a$ and continuing through (and including) $b-1$.
+%%     }]
+%% LookupBucket(fingerprint, tail, bucket) {
+%%   for (element : bucket) {
+%%     if (element.fingerprint == fingerprint && element.tail IsPrefixOf tail) {
+%%       return True
+%%     }
+%%   }
+%%   return False
 %% }
 
-%% \end{figure}
+%% Lookup(input: U, tcf: TCF(U, k)) {
+%%   hashed := tcf.HashFunction(input)
+%%   for (side : tcf.Side[0], tcf.Side[1]) {
+%%     permuted := side.Permutation(hashed[0, k+10))
+%%     bucket := side.Bucket[permuted[0, k)]
+%%     if LookupBucket(permuted[k, k+10), hashed[k+10, k+15), bucket) {
+%%       return True
+%%     }
+%%   }
+%%   return False
+%% }
+%% \end{lstlisting}
+%% \end{figure*}
 
 In total, lookup searches through eight slots.
 
 \paragraph{Insert}
 Insert places the key's fingerprint and tail in one of the eight empty slots corresponding to that key, if one is found.
-If none is found, insert selects an occupied slot from the bucket to {\em evict}: the element in this slot will be moved to the other side. (Listing~\ref{tcf-insert}, Line 19)
+If none is found, insert selects an occupied slot from the bucket to {\em evict}: the element in this slot will be moved to the other side. %(Listing~\ref{tcf-insert}, Line 19)
 
-The evict operation first reconstructs the high order $k + 10$ bits of the key by concatenating the $k$ bits of the bucket index and the $10$ bits of the fingerprint, then applying that side's permutation in reverse to the value. (Line 23--24)
+The evict operation first reconstructs the high order $k + 10$ bits of the key by concatenating the $k$ bits of the bucket index and the $10$ bits of the fingerprint, then applying that side's permutation in reverse to the value. %(Line 23--24)
 Using the same tail (this does not get permuted), the evict operation then inserts the evicted data into the opposite side;
-this continues until an empty slot is encountered (Line 18).
+this continues until an empty slot is encountered %(Line 18).
 
-\begin{lstlisting}[escapeinside={`}{`},
-    label=tcf-insert,
-    float,
-    caption={
-      Pseudocode for the insert operation on TCFs
-  }]
-InsertBucket(fingerprint, tail, bucket) {
-  new_element := {fingerprint, tail}
-  for(slot : bucket) {
-    if (slot == `$\bot$`) {
-      slot := new_element
-      return `$\bot$`
-    }
-  }
-  swap(new_element, RandomSlotIn(bucket))
-  return new_element
-}
+%% \begin{lstlisting}[escapeinside={`}{`},
+%%     label=tcf-insert,
+%%     float,
+%%     caption={
+%%       Pseudocode for the insert operation on TCFs
+%%   }]
+%% InsertBucket(fingerprint, tail, bucket) {
+%%   new_element := {fingerprint, tail}
+%%   for(slot : bucket) {
+%%     if (slot == `$\bot$`) {
+%%       slot := new_element
+%%       return `$\bot$`
+%%     }
+%%   }
+%%   swap(new_element, RandomSlotIn(bucket))
+%%   return new_element
+%% }
 
-InsertSide(tcf: TCF(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{k+10}$`,
-           tail: `$\dotcup_{i \le 5} \ints_2^i$`) {
-  permuted := side.Permutation(hashed)
-  bucket := side.Bucket[permuted[0, k)]
-  slot = InsertBucket(permuted[k, k+10), tail, bucket)
-  if (slot == `$\bot$`) return
-  Evict(tcf, side, permuted[0, k), slot)
-}
+%% InsertSide(tcf: TCF(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{k+10}$`,
+%%            tail: `$\dotcup_{i \le 5} \ints_2^i$`) {
+%%   permuted := side.Permutation(hashed)
+%%   bucket := side.Bucket[permuted[0, k)]
+%%   slot = InsertBucket(permuted[k, k+10), tail, bucket)
+%%   if (slot == `$\bot$`) return
+%%   Evict(tcf, side, permuted[0, k), slot)
+%% }
 
-Evict(tcf: TCF(U,k), side: `$\ints_2$`, bucket_index: `$\ints_{2^k}$`,
-      element) {
-  permuted := Concat(bucket_index, element.fingerprint)
-  hashed := tcf[side].Permutation`$^\texttt{-1}$`(permuted)
-  InsertSide(tcf, 1 - side, hashed, element.tail)
-}
+%% Evict(tcf: TCF(U,k), side: `$\ints_2$`, bucket_index: `$\ints_{2^k}$`,
+%%       element) {
+%%   permuted := Concat(bucket_index, element.fingerprint)
+%%   hashed := tcf[side].Permutation`$^\texttt{-1}$`(permuted)
+%%   InsertSide(tcf, 1 - side, hashed, element.tail)
+%% }
 
-InsertTCF(input: U, tcf: TCF(U, k)) {
-  if (Lookup(input, tcf)) return
-  hashed := tcf.HashFunction(input)
-  InsertSide(tcf, 0, hashed[0, k+10), hashed[k+10, k+15))
-}
-\end{lstlisting}
+%% InsertTCF(input: U, tcf: TCF(U, k)) {
+%%   if (Lookup(input, tcf)) return
+%%   hashed := tcf.HashFunction(input)
+%%   InsertSide(tcf, 0, hashed[0, k+10), hashed[k+10, k+15))
+%% }
+%% \end{lstlisting}
 
 \paragraph{Upsize}
 When a TCF is nearly full, inserts may fail.
 This is identical to the situation with cuckoo filters.
-When this happens, the \texttt{Upsize} method must be called to double the size of the structure. (Listing~\ref{tcf-upsize})
+When this happens, the \texttt{Upsize} method must be called to double the size of the structure. %(Listing~\ref{tcf-upsize})
 
-The upsize operation begins by creating a new TCF. (Line 9)
+The upsize operation begins by creating a new TCF. %(Line 9)
 To transfer the data from the older to the newer TCF, upsize uses a modified version of the evict algorithm.
-Upsize first reconstructs the $k+10$ bits of the key that were used to construct the bucket index and fingerprint. (Line 14)
+Upsize first reconstructs the $k+10$ bits of the key that were used to construct the bucket index and fingerprint. %(Line 14)
 
-Then a bit is ``stolen'' from the tail and appended onto the end of the key. (Line 3)
+Then a bit is ``stolen'' from the tail and appended onto the end of the key. %(Line 3)
 The high order bit of the tail is removed from the tail and added to the low-order end of the key.
 Since the tail was taken unaltered from the key, this gives $k+11$ bits of the original key.
 The new tail is now decreased in size by one.
-The key and the new tail of it can now be inserted into one of the sides of the new TCF as described above. (Line 17)
+The key and the new tail of it can now be inserted into one of the sides of the new TCF as described above. %(Line 17)
 
 This works as long as the tail has positive length.
 If the tail has length zero, there is nothing to steal from.
-Instead, two candidate keys are created from the reverse-permuted $k+10$ bits by appending a zero and a one. (Listing~\ref{tcf-upsize}, line 5)
-It's indeterminate which one of these was in the original key, so both are inserted. (Line 20)
+Instead, two candidate keys are created from the reverse-permuted $k+10$ bits by appending a zero and a one. %(Listing~\ref{tcf-upsize}, line 5)
+It's indeterminate which one of these was in the original key, so both are inserted. %(Line 20)
 Pagh \etal{} show that the fpp remains less than $2^{-F+2}$.~\cite{psw}
 
-\begin{lstlisting}[escapeinside={`}{`},float,label=tcf-upsize,
-    caption={Pseudocode for the upsize operation on TCFs.
-  }]
-Steal(head, tail) {
-  if (|tail| > 0) {
-    return Concat(head, tail[0]), tail[1, |tail|)
-  }
-  return Concat(head, 0), Concat(head, 1)
-}
+%% \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-upsize,
+%%     caption={Pseudocode for the upsize operation on TCFs.
+%%   }]
+%% Steal(head, tail) {
+%%   if (|tail| > 0) {
+%%     return Concat(head, tail[0]), tail[1, |tail|)
+%%   }
+%%   return Concat(head, 0), Concat(head, 1)
+%% }
 
-Upsize(tcf: TCF(U, k)) {
-  result := new TCF(U, k + 1)
-  for (side : tcf) {
-    for (bucket_index : `$\ints_{2^k}$`) {
-      for (element : side.Bucket[bucket_index]) {
-        permuted := Concat(bucket_index, element.fingerprint)
-        hashed := side.Permutation`$^\texttt{-1}$`(permuted)
-        if (|tail| > 0) {
-          (head, tail) := Steal(hashed, element.tail)
-          InsertSide(result, 0, head, tail)
-        } else {
-          for (longhead : Steal(hashed, element.tail)) {
-            InsertSide(result, 0, longhead, element.tail)
-          }
-        }
-      }
-    }
-  }
-  tcf = result
-}
-\end{lstlisting}
+%% Upsize(tcf: TCF(U, k)) {
+%%   result := new TCF(U, k + 1)
+%%   for (side : tcf) {
+%%     for (bucket_index : `$\ints_{2^k}$`) {
+%%       for (element : side.Bucket[bucket_index]) {
+%%         permuted := Concat(bucket_index, element.fingerprint)
+%%         hashed := side.Permutation`$^\texttt{-1}$`(permuted)
+%%         if (|tail| > 0) {
+%%           (head, tail) := Steal(hashed, element.tail)
+%%           InsertSide(result, 0, head, tail)
+%%         } else {
+%%           for (longhead : Steal(hashed, element.tail)) {
+%%             InsertSide(result, 0, longhead, element.tail)
+%%           }
+%%         }
+%%       }
+%%     }
+%%   }
+%%   tcf = result
+%% }
+%% \end{lstlisting}
 
 \paragraph{Union and Intersection}
 In addition to lookup, insert, and upsize, TCFs also support iterating over all elements.
-Iteration yields all of the recoverable hashed bits by performing the quotienting in reverse (combining element locations with element fingerprints), then appending the tail. (See Listing~\ref{tcf-iterate})
+Iteration yields all of the recoverable hashed bits by performing the quotienting in reverse (combining element locations with element fingerprints), then appending the tail. %(See Listing~\ref{tcf-iterate})
 Combined with lookup and insert, iterate enables union and intersection operations.
 
 %% TODO: talk about invertable Bloom filters
 
 %% TODO: talk more about union in the database application of build/probe side filters
 
-\begin{lstlisting}[escapeinside={`}{`},float,label=tcf-iterate,
-    caption={Pseudocode for iteration on TCFs; uses coroutines
-  }]
-Iterate(tcf: TCF(U, k)) {
-  result := new TCF(U, k + 1)
-  for (side : tcf) {
-    for (bucket_index : `$\mathbb{Z}_{2^k}$`)
-      for (element : side.Bucket[bucket_index]) {
-        permuted := Concat(bucket, element.fingerprint)
-        result := side.Permutation`$^\texttt{-1}$`(permuted)
-        yield Concat(result, element.tail)
-      }
-    }
-  }
-}
-\end{lstlisting}
+%% \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-iterate,
+%%     caption={Pseudocode for iteration on TCFs; uses coroutines
+%%   }]
+%% Iterate(tcf: TCF(U, k)) {
+%%   result := new TCF(U, k + 1)
+%%   for (side : tcf) {
+%%     for (bucket_index : `$\mathbb{Z}_{2^k}$`)
+%%       for (element : side.Bucket[bucket_index]) {
+%%         permuted := Concat(bucket, element.fingerprint)
+%%         result := side.Permutation`$^\texttt{-1}$`(permuted)
+%%         yield Concat(result, element.tail)
+%%       }
+%%     }
+%%   }
+%% }
+%% \end{lstlisting}
 
 For union, taffy cuckoo filers iterate over the smaller filter and insert each element into the larger filter, unless they are already present.
 For intersection, TCFs iterate over the smaller filter and lookup each element in the larger filter.
@@ -1165,27 +1159,28 @@ The table consists of four permutations, one hash function, $32$ levels, and one
 The maximum and minimum $k$ across all levels differ by at most 1.
 Levels at location less than the cursor have the larger size.
 If all levels have the same size, the cursor must be 0.
-See Listing~\ref{mtcf-types} and Figure~\ref{mtcf-diagram}.
+See %Listing~\ref{mtcf-types} and
+Figure~\ref{mtcf-diagram}.
 
 The permutations are grouped by side, two for each.
 The permutations are on values with length $k + 13$ and $k + 14$, where $2^k$ is the size of the smallest table, measured in buckets.
 
-\begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-types,
-    caption={
-      The types of an MTCF.
-      A Permutation(k) is a tagged union of permutations; wlog it can be applied to bit strings of known length.
-  }]
-MElement := {fingerprint: `$\ints_2^8 \dotcup \ints_2^9$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
-MSlot := MElement`$_\bot$`
-MBucket := MSlot[4]
-Level(k) := MBucket[2][2`$^k$`] `$\dotcup$` MBucket[2][2`$^{k+1}$`]
-Permutation(k) := `$S_{2^{k+13}} \dotcup S_{2^{k+14}}$`
-MTCF(U, k) := {cursor: `$\ints_{32}$`,
-               Level(k)[32],
-               Permutation(k)[2],
-               HashFunction: `$U \to \ints_2^{64}$`}
+%% \begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-types,
+%%     caption={
+%%       The types of an MTCF.
+%%       A Permutation(k) is a tagged union of permutations; wlog it can be applied to bit strings of known length.
+%%   }]
+%% MElement := {fingerprint: `$\ints_2^8 \dotcup \ints_2^9$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
+%% MSlot := MElement`$_\bot$`
+%% MBucket := MSlot[4]
+%% Level(k) := MBucket[2][2`$^k$`] `$\dotcup$` MBucket[2][2`$^{k+1}$`]
+%% Permutation(k) := `$S_{2^{k+13}} \dotcup S_{2^{k+14}}$`
+%% MTCF(U, k) := {cursor: `$\ints_{32}$`,
+%%                Level(k)[32],
+%%                Permutation(k)[2],
+%%                HashFunction: `$U \to \ints_2^{64}$`}
 
-\end{lstlisting}
+%% \end{lstlisting}
 
 \begin{figure}
   \includegraphics[width=\columnwidth]{mpcf-diagram}
@@ -1207,58 +1202,61 @@ As a result, the capacity of the filter tracks more closely the number of entrie
 \paragraph{Lookup}
 A lookup operation in an MTCF first applies each of the four permutations to the hashed key.
 \begin{itemize}
-\item For the permutations on $k + 14$ bits (Listing~\ref{mtcf-lookup}, line 11), the first five bits indicate the level (line 12), the next $k$ or $k+1$ indicate the bucket (line 14), and the remaining 8 or 9 bits are the fingerprint.
-Lookup proceeds as it does in the TCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up. (Lines~15--16.)
-\item For the permutations on $k + 13$ bits, the first five bits again indicate the level. (Line~3.)
+\item For the permutations on $k + 14$ bits %(Listing~\ref{mtcf-lookup}, line 11),
+the first five bits indicate the level %(line 12)
+, the next $k$ or $k+1$ indicate the bucket %(line 14)
+, and the remaining 8 or 9 bits are the fingerprint.
+Lookup proceeds as it does in the TCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up. %(Lines~15--16.)
+\item For the permutations on $k + 13$ bits, the first five bits again indicate the level. %(Line~3.)
 \begin{itemize}
 \item If the level has tables with $2^{k+1}$ buckets, the permuted key is not used for lookup; to do otherwise would leave only $k+13 - 5 - (k+1) = 7$ bits for the fingerprint, which is not possible.
-That key is simply skipped and the lookup continues with the next key. (Line~4)
-\item Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+14$ case. (Lines~5--10)
+That key is simply skipped and the lookup continues with the next key. %(Line~4)
+\item Otherwise, the level has tables with $2^k$ buckets, and we can proceed as in the $k+14$ case. %(Lines~5--10)
 \end{itemize}
 \end{itemize}
 
-\begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-lookup,
-    caption={
-      The lookup operation in an MTCF. Notice that up to four buckets may be searched: between one and two per side.
-  }]
-LookupSide(mtcf: MTCF(U, k), side: `$\ints_2$`, hashed: `$\ints_2^{64}$`) {
-  permuted := mtcf.Permutation[side](hashed[0, k+13))
-  level_number := permuted[0, 5)
-  if (level_number `$\ge$` mtcf.cursor) {
-    bucket := mtcf.Level[level_number][permuted[5, k + 5)]
-    if (LookupBucket(permuted[k+5, k+13),
-                     hashed[k+13, k+18), bucket)) {
-      return True
-    }
-  }
-  permuted = mtcf.Permutation[side](hashed[0, k+14))
-  level_number = permuted[0, 5)
-  middle := (level_number `$\ge$` mtcf.cursor) then k+5 else k+6
-  bucket := mtcf.Level[level_number][permuted[5, middle)]
-  return LookupBucket(permuted[middle, k+14),
-                      hashed[k+14, k+19), bucket)
-}
+%% \begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-lookup,
+%%     caption={
+%%       The lookup operation in an MTCF. Notice that up to four buckets may be searched: between one and two per side.
+%%   }]
+%% LookupSide(mtcf: MTCF(U, k), side: `$\ints_2$`, hashed: `$\ints_2^{64}$`) {
+%%   permuted := mtcf.Permutation[side](hashed[0, k+13))
+%%   level_number := permuted[0, 5)
+%%   if (level_number `$\ge$` mtcf.cursor) {
+%%     bucket := mtcf.Level[level_number][permuted[5, k + 5)]
+%%     if (LookupBucket(permuted[k+5, k+13),
+%%                      hashed[k+13, k+18), bucket)) {
+%%       return True
+%%     }
+%%   }
+%%   permuted = mtcf.Permutation[side](hashed[0, k+14))
+%%   level_number = permuted[0, 5)
+%%   middle := (level_number `$\ge$` mtcf.cursor) then k+5 else k+6
+%%   bucket := mtcf.Level[level_number][permuted[5, middle)]
+%%   return LookupBucket(permuted[middle, k+14),
+%%                       hashed[k+14, k+19), bucket)
+%% }
 
-MLookup(mtcf: TCF(U, k), key: U) {
-  hashed := mtcf.HashFunction(key)
-  for (side : {0, 1}) {
-    if (LookupSide(mtcf, side, hashed)) return True
-  }
-  return False
-}
-\end{lstlisting}
+%% MLookup(mtcf: TCF(U, k), key: U) {
+%%   hashed := mtcf.HashFunction(key)
+%%   for (side : {0, 1}) {
+%%     if (LookupSide(mtcf, side, hashed)) return True
+%%   }
+%%   return False
+%% }
+%% \end{lstlisting}
 
 %% Upsize only increases the size of one level.
 %% After 31 upsizes, the next one makes all of the levels the same size.
 %% At that point, two new permutations must be initialized to handle new longer key prefixes.
 
 \paragraph{Insert}
-In insert operations, as in lookup, the first five bits of the permuted item indicate the level. (Listing~\ref{mtcf-insert}, lines~17, 19, 26, and 47--48)
-Just as in TCFs, the insert operation on a bucket produces an eviction. (Listing~\ref{mtcf-insert}, lines~5--8)
+In insert operations, as in lookup, the first five bits of the permuted item indicate the level. %(Listing~\ref{mtcf-insert}, lines~17, 19, 26, and 47--48)
+Just as in TCFs, the insert operation on a bucket produces an eviction. %(Listing~\ref{mtcf-insert}, lines~5--8)
 During an evict operation in an insert, an element may move between levels with differently-sized arrays of buckets.
 When the fingerprint has size 8 and the level moved {\em from} has a bucket array of size $2^k$ and the level moved {\em to} has a bucket array of size $2^{k+1}$, the number of explicitly stored bits (the fingerprint bits) is now $(k + 8) - (k+1) = 7$.
-Since every fingerprint must be of length 8 or 9, a bit must be stolen from the tail. (Lines~29--36)
-As in TCFs, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key. (Line 34)
+Since every fingerprint must be of length 8 or 9, a bit must be stolen from the tail. %(Lines~29--36)
+As in TCFs, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key. %(Line 34)
 See Figure~\ref{mtcf-state-transition}.
 
 \begin{figure}
@@ -1274,67 +1272,67 @@ For elements in a short level with a short fingerprint and no tail, when they ar
 }
 \end{figure}
 
-\begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the insert operation on MTCFs},float,label=mtcf-insert]
-MInsertSide(mtcf: MTCF(U, k), side: `$\ints_{2}$`,
-            level_number: `$\ints_{32}$`,
-            bucket_number: `$\ints_{2^k} \dotcup \ints_{2^{k+1}}$`,
-            fingerprint `$\ints_2^8 \dotcup \ints_2^9$`,
-            tail: `$\sum_{i \le 5}\ints_2^i$`,) {
-  bucket := mtcf.Level[level_number][side][bucket_number]
-  new_slot := InsertBucket(fingerprint, tail, bucket)
-  if (new_slot == `$\bot$`) return
-  fingerprint = new_slot.fingerprint
-  tail = new_slot.tail
-  permuted := Concat(level_number, bucket_number,
-                     fingerprint)
-  hashed := mtcf.Permutation[side]`$^\texttt{-1}$`(permuted)
-  permuted = mtcf.Permutation[1 - side](hashed)
-  MInsertPermuted(mtcf, side, permuted, tail)
-}
+%% \begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the insert operation on MTCFs},float,label=mtcf-insert]
+%% MInsertSide(mtcf: MTCF(U, k), side: `$\ints_{2}$`,
+%%             level_number: `$\ints_{32}$`,
+%%             bucket_number: `$\ints_{2^k} \dotcup \ints_{2^{k+1}}$`,
+%%             fingerprint `$\ints_2^8 \dotcup \ints_2^9$`,
+%%             tail: `$\sum_{i \le 5}\ints_2^i$`,) {
+%%   bucket := mtcf.Level[level_number][side][bucket_number]
+%%   new_slot := InsertBucket(fingerprint, tail, bucket)
+%%   if (new_slot == `$\bot$`) return
+%%   fingerprint = new_slot.fingerprint
+%%   tail = new_slot.tail
+%%   permuted := Concat(level_number, bucket_number,
+%%                      fingerprint)
+%%   hashed := mtcf.Permutation[side]`$^\texttt{-1}$`(permuted)
+%%   permuted = mtcf.Permutation[1 - side](hashed)
+%%   MInsertPermuted(mtcf, side, permuted, tail)
+%% }
 
-MInsertPermuted(mtcf: MTCF(U, k), side: `$\ints_2$`,
-                permuted: `$\ints_2^{k+13} \dotcup \ints_2^{k+14}$`, tail: `$\sum_{i \le 5}\ints_2^i$`) {
-  level_number := permuted[0, 5)
-  if (|permuted| == k + 14) {
-    middle := if (level_number `$\ge$` mtcf.cursor)
-              then k+5 else k+6
-    MInsertSide(mtcf, 1 - side, level_number,
-                permuted[5, middle),
-                permuted[middle, k+14), tail)
-    return
-  }
-  if (level_number `$\ge$` mtcf.cursor) {
-    permuteds := {permuted}
-    middle := k + 5
-  } else if (|tail| > 0) {
-    (permuted, tail) := Steal(permuted, tail)
-    permuteds := {permuted}
-    middle := k + 6
-  } else {
-    permuteds := Steal(permuted, tail)
-    middle := k + 6
-  }
-  for (p : permuteds) {
-    MInsertSide(mtcf, 1 - side, level_number,
-                p[5, middle),
-                p[middle, middle + 8), tail)
-  }
-}
+%% MInsertPermuted(mtcf: MTCF(U, k), side: `$\ints_2$`,
+%%                 permuted: `$\ints_2^{k+13} \dotcup \ints_2^{k+14}$`, tail: `$\sum_{i \le 5}\ints_2^i$`) {
+%%   level_number := permuted[0, 5)
+%%   if (|permuted| == k + 14) {
+%%     middle := if (level_number `$\ge$` mtcf.cursor)
+%%               then k+5 else k+6
+%%     MInsertSide(mtcf, 1 - side, level_number,
+%%                 permuted[5, middle),
+%%                 permuted[middle, k+14), tail)
+%%     return
+%%   }
+%%   if (level_number `$\ge$` mtcf.cursor) {
+%%     permuteds := {permuted}
+%%     middle := k + 5
+%%   } else if (|tail| > 0) {
+%%     (permuted, tail) := Steal(permuted, tail)
+%%     permuteds := {permuted}
+%%     middle := k + 6
+%%   } else {
+%%     permuteds := Steal(permuted, tail)
+%%     middle := k + 6
+%%   }
+%%   for (p : permuteds) {
+%%     MInsertSide(mtcf, 1 - side, level_number,
+%%                 p[5, middle),
+%%                 p[middle, middle + 8), tail)
+%%   }
+%% }
 
-InsertMTCF(mtcf: MTCF(U, k), key: U) {
-  if (MLookup(mtcf, key)) return
-  hashed := mtcf.HashFunction(key)
-  permuted := mtcf.Permutation[0](hashed[0, k+14))
-  level_number := permuted[0, 5)
-  middle := if (level_number `$\ge$` mtcf.cursor)
-            then k+5 else k+6
-  bucket_number := permuted[5, middle)
-  fingerprint := permuted[middle, k+14)
-  tail := hashed[k+14, k+19)
-  MInsertSide(mtcf, 0, level_number,  bucket_number,
-              fingerprint, tail)
-}
-\end{lstlisting}
+%% InsertMTCF(mtcf: MTCF(U, k), key: U) {
+%%   if (MLookup(mtcf, key)) return
+%%   hashed := mtcf.HashFunction(key)
+%%   permuted := mtcf.Permutation[0](hashed[0, k+14))
+%%   level_number := permuted[0, 5)
+%%   middle := if (level_number `$\ge$` mtcf.cursor)
+%%             then k+5 else k+6
+%%   bucket_number := permuted[5, middle)
+%%   fingerprint := permuted[middle, k+14)
+%%   tail := hashed[k+14, k+19)
+%%   MInsertSide(mtcf, 0, level_number,  bucket_number,
+%%               fingerprint, tail)
+%% }
+%% \end{lstlisting}
 
 The analysis of iterate, union, intersection, and freeze/thaw is identical to that of TCFs.
 
