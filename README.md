@@ -63,6 +63,23 @@ mvn -f ./java/ install -Dmaven.test.skip=true
 [optional: copy java/target/libfilter-*.jar to your classpath]
 ```
 
+The C and C++ libraries can also be installed with CMake:
+```shell
+cmake -B build -S . -DCMAKE_INSTALL_PATH=<where/to/install>
+cmake --build build
+# probably needs a sudo:
+cmake --install build
+```
+
+The library targets are exported and can be used in `CMakeLists.txt`:
+```cmake
+find_package(libfilter)
+# The C API:
+target_link_libraries(mylib PRIVATE libfilter::c)
+# The C++ API:
+target_link_libraries(mylib PRIVATE libfilter::cxx)
+```
+
 Block filters are most space-efficient at around 11.5 bits per
 distinct value, which produces a false positive probability of
 0.65%. A traditional Bloom filter would only need 10.5 bits per
