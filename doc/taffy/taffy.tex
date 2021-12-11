@@ -226,7 +226,7 @@ The resulting code is available on GitHub under a permissive open source license
 
 The Bloom filter is a ubiquitous data structure that allows storing a set with a low amount of space.
 Bloom filters support the operations insert -- which adds an item to the set -- and lookup, which returns true if an element is in the filter; if an element is not in the filter, true is returned with some configurable probability $\varepsilon \ll 1$.
-This is called the ``false positive probability'', or ``fpp''
+This is called the ``false positive probability'', or ``fpp''.
 
 There are a number of other structures also supporting insert and lookup with a false positive probability greater than 0~\cite{vacuum,morton-journal,ribbon,xor-filter,quotient-filter,broom,vector-quotient}.
 A lookup operation with these guarantees is sometimes called an ``approximate membership query'', and structures that support approximate membership queries are sometimes referred to ``AMQ structures'' or just ``filters''.
@@ -369,7 +369,7 @@ This technique is used with linear probing as the collision resolution mechanism
 Quotienting can also be used with cuckooing as the collision resolution mechanism.
 Cuckoo hash tables maintain $L \ge 1$ potential locations for each key, each of which could be stored in any of its potential locations~\cite{cuckoo-journal}.
 %When a new element is inserted, if its locations are full, it evicts an existing element out of one of the locations; that evicted element must then be placed in one of its $L$ locations, and so on.
-Because more than one hash function is used and because eviction occurs, it must be possible to translate from a location-element pair to an alternate location-element pair for the same key
+Because more than one hash function is used and because eviction occurs, it must be possible to translate from a location-element pair to an alternate location-element pair for the same key.
 %% Let $k$ be the number of locations and let $h_i$ for $0 \le i < k$ be the hash functions that map
 
 %% It thus
@@ -730,7 +730,7 @@ For union, taffy cuckoo filers iterate over the smaller filter and insert each e
 For intersection, TCFs iterate over the smaller filter and lookup each element in the larger filter.
 If the lookup fails, iteration proceeds to the next element.
 Otherwise, the longer bit string of the two elements is inserted into the intersection.
-Note that this may sometimes be the element from the smaller TCF, since the tails have variable length
+Note that this may sometimes be the element from the smaller TCF, since the tails have variable length.
 
 %% TODO: pseudocode and an analysis of the fpp.
 %% For union, it should be the sum of the input fpp, minus their product, but need to explain that, since we earlier said all filters have the same low fpp.
@@ -1188,7 +1188,7 @@ The permutations are on values with length $k + 13$ and $k + 14$, where $2^k$ is
 A diagram of an MTCF.
 In this example, $k = 2$, so the larger levels have $2^{k+1} = 8$ buckets on each side, while the smaller levels have four.
 In the first bucket of side 0 of the 32nd level, the last three slots are empty.
-If the entry were from one of the larger levels above the cursor, then the fingerprint would have to be from $\ints_2^8$, rather than from $\ints_2^8 \dotcup \ints_2^9$
+If the entry were from one of the larger levels above the cursor, then the fingerprint would have to be from $\ints_2^8$, rather than from $\ints_2^8 \dotcup \ints_2^9$.
 }
 
 \end{figure}
