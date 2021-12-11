@@ -33,20 +33,22 @@
 \epigraphfalse
 
 % \documentclass[letterpaper]{article}
-\documentclass[sigconf]{acmart}
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix-2020-09}
+%\documentclass[sigconf]{acmart}
 %\documentclass[manuscript,screen,review]{acmart}
 
-\setcopyright{acmcopyright}
-\copyrightyear{2018}
-\acmYear{2018}
-\acmDOI{10.1145/1122445.1122456}
+%% \setcopyright{acmcopyright}
+%% \copyrightyear{2018}
+%% \acmYear{2018}
+%% \acmDOI{10.1145/1122445.1122456}
 
-\acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
-  Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
-\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
-  June 03--05, 2018, Woodstock, NY}
-\acmPrice{15.00}
-\acmISBN{978-1-4503-XXXX-X/18/06}
+%% \acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
+%%   Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
+%% \acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+%%   June 03--05, 2018, Woodstock, NY}
+%% \acmPrice{15.00}
+%% \acmISBN{978-1-4503-XXXX-X/18/06}
 
 \pdfoutput=1
 
@@ -72,6 +74,8 @@
 %\usepackage[export]{adjustbox}
 %\usepackage{framed}
 \usepackage{float}
+\usepackage{caption}
+
 
 \newtheorem{theorem}{Theorem}
 
@@ -136,33 +140,34 @@
 \ifanon
 \else
 \author{Jim Apple}
-\orcid{0000-0002-8685-9451}
-\affiliation{%
-  \city{Los Gatos}
-  \state{California}
-%  \country{United States of America}
-}
-\email{jbapple@jbapple.com}
+% \orcid{0000-0002-8685-9451}
+%% \affiliation{%
+%%   \city{Los Gatos}
+%%   \state{California}
+%% %  \country{United States of America}
+%% }
+%\email{jbapple@jbapple.com}
 \fi
 
-\begin{CCSXML}
-<ccs2012>
-   <concept>
-       <concept_id>10003752.10003809.10010055.10010056</concept_id>
-       <concept_desc>Theory of computation~Bloom filters and hashing</concept_desc>
-       <concept_significance>500</concept_significance>
-   </concept>
- </ccs2012>
-\end{CCSXML}
+%% \begin{CCSXML}
+%% <ccs2012>
+%%    <concept>
+%%        <concept_id>10003752.10003809.10010055.10010056</concept_id>
+%%        <concept_desc>Theory of computation~Bloom filters and hashing</concept_desc>
+%%        <concept_significance>500</concept_significance>
+%%    </concept>
+%%  </ccs2012>
+%% \end{CCSXML}
 
-\ccsdesc[500]{Theory of computation~Bloom filters and hashing}
-% \ccsdesc[500]{Information systems~Point lookups}
+%% \ccsdesc[500]{Theory of computation~Bloom filters and hashing}
+%% % \ccsdesc[500]{Information systems~Point lookups}
 
 
-\keywords{Bloom filters, dictionaries, hash tables}
+% \keywords{Bloom filters, dictionaries, hash tables}
 
 %\thispagestyle{empty}
 
+\maketitle
 
 \begin{abstract}
 Popular approximate membership query structures such as Bloom filters and cuckoo filters are widely used in databases, security, and networking.
@@ -178,7 +183,7 @@ The resulting code is available on GitHub under a permissive open source license
 \fi
 \end{abstract}
 
-\maketitle
+
 
 %% %%% do not modify the following VLDB block %%
 %% %%% VLDB block start %%%
@@ -524,6 +529,7 @@ A TCF consists of two sides and one hash function that produces a 64-bit key.
 The two sides have the same number of buckets but different permutations.
 See Listing~\ref{tcf-types}.
 
+\begin{figure*}
 \begin{lstlisting}[escapeinside={`}{`},label=tcf-types,
     caption={The types of a TCF.
       \texttt{T}$_\bot$ means the type \texttt{T} extended with the element $\bot$, indicating ``null'' or ``empty''.
@@ -533,14 +539,15 @@ See Listing~\ref{tcf-types}.
       $A \dotcup B$ represents a tagged disjoint union of $A$ and $B$; even if $A \subseteq B$, $A \dotcup B \ne B$.
       Structs are denoted by curly brackets \{\}, and members of structs can be referenced by their name or by their type.
       For instance, if \texttt{s} is a \texttt{Side(k)}, then \texttt{s.Bucket} and \texttt{s.Permutation} are both meaningful expressions.
-    },
-    float]
+    }
+    ]
 Element := {fingerprint: `$\ints_2^{10}$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
 Slot := Element`$_\bot$`
 Bucket := Slot[4]
 Side(k) := {Bucket[2`$^k$`], Permutation: `$S_{2^{k+10}}$`}
 TCF(U, k) := {Side(k)[2], HashFunction: `$U \to \ints_2^{64}$`}
 \end{lstlisting}
+\end{figure*}
 
 \paragraph{Lookup}
 A lookup begins by hashing a key with the TCF's hash function. (Listing~\ref{tcf-lookup}, line 12)
@@ -559,8 +566,8 @@ Otherwise, returns \verb|False|.
 
 %TODO: endianness problems pervade the pseudocode?
 
+\begin{figure*}
 \begin{lstlisting}[escapeinside={`}{`},
-    float,
     label=tcf-lookup,
     caption={
       Pseudocode for the lookup operation on TCFs.
@@ -568,8 +575,7 @@ Otherwise, returns \verb|False|.
     }]
 LookupBucket(fingerprint, tail, bucket) {
   for (element : bucket) {
-    if (element.fingerprint == fingerprint
-        && element.tail IsPrefixOf tail) {
+    if (element.fingerprint == fingerprint && element.tail IsPrefixOf tail) {
       return True
     }
   }
@@ -581,14 +587,14 @@ Lookup(input: U, tcf: TCF(U, k)) {
   for (side : tcf.Side[0], tcf.Side[1]) {
     permuted := side.Permutation(hashed[0, k+10))
     bucket := side.Bucket[permuted[0, k)]
-    if LookupBucket(permuted[k, k+10), hashed[k+10, k+15),
-                    bucket) {
+    if LookupBucket(permuted[k, k+10), hashed[k+10, k+15), bucket) {
       return True
     }
   }
   return False
 }
 \end{lstlisting}
+\end{figure*}
 %% \caption{\label{tcf-lookup}
 %% Pseudocode for the lookup operation on TCFs.
 %% \texttt{S[a,~b)} denotes the bits in $S$ starting at location $a$ and continuing through $b-1$.
@@ -633,7 +639,8 @@ InsertSide(tcf: TCF(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{k+10}$`,
   Evict(tcf, side, permuted[0, k), slot)
 }
 
-Evict(tcf: TCF(U,k), side: `$\ints_2$`, bucket_index: `$\ints_{2^k}$`, element) {
+Evict(tcf: TCF(U,k), side: `$\ints_2$`, bucket_index: `$\ints_{2^k}$`,
+      element) {
   permuted := Concat(bucket_index, element.fingerprint)
   hashed := tcf[side].Permutation`$^\texttt{-1}$`(permuted)
   InsertSide(tcf, 1 - side, hashed, element.tail)
@@ -1268,15 +1275,18 @@ For elements in a short level with a short fingerprint and no tail, when they ar
 \end{figure}
 
 \begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the insert operation on MTCFs},float,label=mtcf-insert]
-MInsertSide(mtcf: MTCF(U, k), side: `$\ints_{2}$`, level_number: `$\ints_{32}$`,
-            bucket_number: `$\ints_{2^k} \dotcup \ints_{2^{k+1}}$`, fingerprint `$\ints_2^8 \dotcup \ints_2^9$`,
+MInsertSide(mtcf: MTCF(U, k), side: `$\ints_{2}$`,
+            level_number: `$\ints_{32}$`,
+            bucket_number: `$\ints_{2^k} \dotcup \ints_{2^{k+1}}$`,
+            fingerprint `$\ints_2^8 \dotcup \ints_2^9$`,
             tail: `$\sum_{i \le 5}\ints_2^i$`,) {
   bucket := mtcf.Level[level_number][side][bucket_number]
   new_slot := InsertBucket(fingerprint, tail, bucket)
   if (new_slot == `$\bot$`) return
   fingerprint = new_slot.fingerprint
   tail = new_slot.tail
-  permuted := Concat(level_number, bucket_number, fingerprint)
+  permuted := Concat(level_number, bucket_number,
+                     fingerprint)
   hashed := mtcf.Permutation[side]`$^\texttt{-1}$`(permuted)
   permuted = mtcf.Permutation[1 - side](hashed)
   MInsertPermuted(mtcf, side, permuted, tail)
@@ -1305,7 +1315,8 @@ MInsertPermuted(mtcf: MTCF(U, k), side: `$\ints_2$`,
     middle := k + 6
   }
   for (p : permuteds) {
-    MInsertSide(mtcf, 1 - side, level_number, p[5, middle),
+    MInsertSide(mtcf, 1 - side, level_number,
+                p[5, middle),
                 p[middle, middle + 8), tail)
   }
 }
@@ -1549,12 +1560,12 @@ However, a practical version of this may be possible to build.
 
 \ifanon
 \else
-\begin{acks}
+\section*{Acknowledgments}
 Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
-\end{acks}
 \fi
 
-\bibliographystyle{ACM-Reference-Format}
+\bibliographystyle{plain}
+% \bibliographystyle{ACM-Reference-Format}
 \bibliography{taffy}
 
 %% \pagebreak
