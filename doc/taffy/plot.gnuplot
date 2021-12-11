@@ -16,10 +16,11 @@ set output 'bits-per-item.eps';
 unset grid;
 unset logscale y;
 set logscale x;
-set xlabel "keys inserted";
+set xlabel "keys inserted (power of 10)";
 set ylabel "bits per key"
 set datafile separator ",";
 unset format
+set format x "10^{%.0T}";
 set yrange [0:60]
 set key bottom left
 #set title "Bits per key"
@@ -40,6 +41,7 @@ set ylabel "false positive probability"
 set datafile separator ",";
 unset format;
 set format y '%g%%';
+set format x "10^{%.0T}"
 set yrange [0.01:3];
 set key top left;
 #set title "Empirical false positive probabilty after adding N keys"
@@ -149,9 +151,11 @@ unset logscale x;
 set datafile separator ",";
 set key top left;
 set xrange[1:100000000];
-set xlabel "keys inserted";
-set ylabel "bytes occupied";
+set xlabel "keys inserted (millions)";
+set ylabel "bytes occupied (millions)";
 unset format;
+set format x "%.0s";
+set format y "%.0s";
 #set title "Space used"
 plot "< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:4 with linespoints title "TCF", \
@@ -262,6 +266,7 @@ set xlabel "keys inserted";
 set ylabel "average nanoseconds per key";
 #set title "Insert performance"
 unset format;
+set format x "10^{%.0T}";
 plot "< python3 running-sum.py all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
      "< python3 running-sum.py all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "TCF", \
      "< python3 running-sum.py all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "TBF", \
@@ -279,6 +284,7 @@ set xlabel "keys inserted";
 set ylabel "average nanoseconds per key";
 #set title "Insert performance"
 unset format;
+set format x "10^{%.0T}";
 plot "< python3 running-sum.py m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
      "< python3 running-sum.py m6g.medium.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "TCF", \
      "< python3 running-sum.py m6g.medium.txt | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "TBF", \
