@@ -150,6 +150,7 @@ unset logscale y;
 unset logscale x;
 set datafile separator ",";
 set key top left;
+set yrange[*:*]
 set xrange[1:100000000];
 set xlabel "keys inserted (millions)";
 set ylabel "bytes occupied (millions)";
@@ -212,11 +213,18 @@ set ylabel "nanoseconds";
 set yrange [5:*]
 #set title "Lookup performance (present)"
 unset format;
-plot "< grep find all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "MTCF", \
-     "< grep find all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TCF", \
-     "< grep find all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep find all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
-     "< grep find all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "SBBF"
+set format x "10^{%.0T}";
+plot "< grep find_missing all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 9 title "MTCF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with linespoints  title "TCF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines  title "TBF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with linespoints lw 1  title "CF", \
+     "< grep find_missing all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 5  title "SBBF"
+
+# plot "< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:4 with linespoints title "TCF", \
+     "< grep fpp all-bench-100000000-017.txt | grep TaffyBlock  | sort -n -t , -k 3" using 3:4 with lines title "TBF", \
+     "< grep fpp all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:4 with linespoints  lw 1 title "CF", \
+     "< grep fpp all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:4 with lines lw 5 title "SBBF"
 
 
 set terminal postscript eps enhanced color size 3.333in,9cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -231,11 +239,12 @@ set ylabel "nanoseconds";
 set yrange [5:*]
 #set title "Lookup performance (present)"
 unset format;
-plot "< grep find m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "MTCF", \
-     "< grep find m6g.medium.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TCF", \
-     "< grep find m6g.medium.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines lw 1 title "TBF", \
-     "< grep find m6g.medium.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "CF", \
-     "< grep find m6g.medium.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 1  title "SBBF"
+set format x "10^{%.0T}";
+plot "< grep find_missing m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 2,3" using 3:6 with lines lw 9 title "MTCF", \
+     "< grep find_missing m6g.medium.txt | grep TaffyCuckoo | sort -n -t , -k 2,3" using 3:6 with linespoints title "TCF", \
+     "< grep find_missing m6g.medium.txt | grep TaffyBlock  | sort -n -t , -k 2,3" using 3:6 with lines title "TBF", \
+     "< grep find_missing m6g.medium.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 3:6 with linespoints lw 1  title "CF", \
+     "< grep find_missing m6g.medium.txt | grep Simd        | sort -n -t , -k 2,3" using 3:6 with lines lw 5  title "SBBF"
 
 # insert time; lower is better
 # set terminal postscript eps enhanced color size 9cm,6cm; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
