@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
 
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
-    BenchWithBytes<Cuckoo32Shim>(reps, bytes, 1.05, to_insert, to_find);
+    // BenchWithBytes<Cuckoo32Shim>(reps, bytes, 1.05, to_insert, to_find);
     BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, fpp);
     BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
     BenchWithBytes<TaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
