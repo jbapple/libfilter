@@ -27,7 +27,7 @@
 % CIDR - August 27, 2021: Submission deadline for all contributions, October 15, 2021: author notification for all contributions, Chaminade, on-site, 6 pages maximum
 
 \newif\ifanon
-\anontrue
+\anonfalse
 
 \newif\ifepigraph
 \epigraphfalse
@@ -710,10 +710,15 @@ This works as long as the tail has positive length.
 If the tail has length zero, there is nothing to steal from.
 Instead, two candidate keys are created from the reverse-permuted $k+10$ bits by appending a zero and a one. %(Listing~\ref{tcf-upsize}, line 5)
 It's indeterminate which one of these was in the original key, so both are inserted. %(Line 20)
-Pagh \etal{} show that the fpp remains less than $2^{-F+2}$~\cite{psw}:
-After adding $n$ elements to the filter, the filter holds $n/2$ fingerprint-tail pairs with tail length $\lg \lg N$, $n/4$ pairs with tail length $\lg \lg N - 1$, and \dots $n/\lg N$ pairs with tail length 1.
+
+The fpp remains less than $2^{-F+2}$:
+after adding $n$ elements to the filter, the filter holds $n/2$ fingerprint-tail pairs with tail length $\lg \lg N$, $n/4$ pairs with tail length $\lg \lg N - 1$, \dots and $n/\lg N$ pairs with tail length 1.
 It also contains $(\lg n - \lg \lg N)  n / 2 \lg N$ pairs with tail length 0.
 Overall that's $3n/2 - O(n)$ pairs, so the space usage is still linear in the number of elements.
+Now the odds that any bitstring of length $L$ matches any of $m$ different $L$-bit strings is $m 2^{-L}$.
+Applying this to TCFs, since the space usage is linear, and since the ``sides'' (the two arrays of buckets) are of length $\lg n - O(1)$, then by reversing the quotienting operation we get that the probability that any random value that {\em wasn't} inserted matches with any of the existing elements is $O(n) 2^{-\lg n + O(1) - F}$.
+If the tails all started with length 0, rather than $\lg \lg N$, then the space usage would be $\Theta(n \lg n)$ and the fpp would be $2^{-F+O(1) + \lg \lg n}$.
+See also~\cite{psw}.
 
 %% \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-upsize,
 %%     caption={Pseudocode for the upsize operation on TCFs.
@@ -1183,7 +1188,7 @@ This isomer of cuckoo filters shows how to support in cuckoo filters techniques 
 \label{mtcf}
 
 Taffy cuckoo filters suffer from a step-function space usage:
-at each point, the structure has a size which is a power of two, sometimes allocating twice as mush space as is needed. (See Figure~\ref{space-steps}.)
+at each point, the structure has a size which is a power of two, sometimes allocating twice as much space as is needed. (See Figure~\ref{space-steps}.)
 Even if the size were not limited to being a power of two, as in vacuum filters, doubling the capacity during upsize would reduce the space utilization to less than 50\%~\cite{vacuum}.
 To address this, this section describes a cuckooing structure based on DySECT to reduce the space usage closer to only what is needed~\cite{dysect}.
 
