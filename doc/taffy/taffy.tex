@@ -285,9 +285,17 @@ Log-structured merge trees store data in sorted ``runs'' of exponentially-increa
 In order to cheaply discover if a key is present in a run, systems like RocksDB equip each run with a filter~\cite{lsm, ribbon}.
 In typical LSM trees, the data in each run is fixed for the lifetime of that level, so each filter can be created with knowledge of the number of keys it will contain, even when the structure as a whole can grow without bound.
 However, point lookups that go through the filters require accessing $\lg n$ filters, where $n$ is the number of keys in the LSM tree.
-A single growable filter structure can reduce this to a single filter query by storing one structure for all keys, rather than $\lg n$ structures.\footnote{The ``Chucky'' system is built on this premise, but requires a full filter rewrite at each last-level compaction~\cite{chucky}.}
+A single growable filter structure can reduce this to a single filter query by storing one structure for all keys, rather than $\lg n$ structures.
+Here a Bloomier filter (sometimes called a retrieval data structure) is called for, in which every positive result from a lookup operation has an attached value~\cite{bloomier}.
+For LSM trees, that value should be the identifier of the most-recently-created sorted run a key is associated with.
+Upon a positive lookup in the filter, the run identifier is retrieved, and a more expensive probe of that sorted run can begin.
+Bloom filters do not na\"ively support such ``satellite'' data, though cuckoo filters and similar filters can~\cite{cuckoo}.
+The ``Chucky'' system is built on this premise, but requires a full filter rewrite at each last-level compaction~\cite{chucky}.
+SlimDB also uses a cuckoo filter to implement a retrieval structure on the most-recently-created ``sub-level'' that a key is in in an LSM~\cite{slim}.
 
-%% TODO: associate satellite data with each entry. Explain in LSM subsection of applications section?
+A final example is previously-used passwords~\cite{opus}.
+The goal of a filter for these cases is to allow lookups during password creation time and prevent users from using a previously used password.
+These sets can have long lifetimes and grow arbitrarily large; the ``Have I Been Pwned'' data set is 11GB of SHA1-hashed passwords~\cite{pwned}.
 
 %% TODO: data deduplication?
 
@@ -1516,6 +1524,8 @@ The MTCF lags behind both.
   \caption{
     \label{insert-time}
     Insert times for filters, i7-7800X.
+    The dip in insert times per key reflects the overhead of measuring a small number of insert operations.
+    The benchmark was performed by taking a timestamp for every 5\% growth in the filter.
     %% TODO: the dip is an artifact; redo with more samples and longer time between timer start \& stop.
   }
 \end{figure}
@@ -1525,6 +1535,7 @@ The MTCF lags behind both.
   \caption{
     \label{arm-insert-time}
     Insert times for filters on an AWS EC2 m6g.medium with an ARM-based Graviton2.
+    See Figure~\ref{insert-time} for notes.
     %% TODO: the dip is an artifact; redo with more samples and longer time between timer start \& stop.
   }
 \end{figure}
@@ -1572,6 +1583,7 @@ Split block Bloom filters and cuckoo filters are still attractive choices when t
 When a growable filter is needed, the application matters quite a bit.
 If saving every byte matters, MTCFs are called for.
 If union, intersection, or freeze operations are needed, a TCF or MTCF is called for.
+If satellite data (as in a Bloomier filter) is needed, such as when using the filter in front of an LSM tree, a TCF or MTCF should be used, as TBFs do not support satellite data.
 Otherwise, a practitioner must ask themselves:
 
 \begin{itemize}
