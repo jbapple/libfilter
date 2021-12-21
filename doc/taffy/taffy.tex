@@ -723,6 +723,7 @@ The fpp remains less than $2^{-F+2}$:
 after adding $n$ elements to the filter, the filter holds $n/2$ fingerprint-tail pairs with tail length $\lg \lg N$, $n/4$ pairs with tail length $\lg \lg N - 1$, \dots and $n/\lg N$ pairs with tail length 1.
 It also contains $(\lg n - \lg \lg N)  n / 2 \lg N$ pairs with tail length 0.
 Overall that's $3n/2 - O(n)$ pairs, so the space usage is still linear in the number of elements.
+(Note that if the tails started with length 0 instead of $\lg \lg N$, this would work out to $\Theta(n \lg n)$ rather than $3n/2 - O(n)$.)
 Now the odds that any bitstring of length $L$ matches any of $m$ different $L$-bit strings is $m 2^{-L}$.
 Applying this to TCFs, since the space usage is linear, and since the ``sides'' (the two arrays of buckets) are of length $\lg n - O(1)$, then by reversing the quotienting operation we get that the probability that any random value that {\em wasn't} inserted matches with any of the existing elements is $O(n) 2^{-\lg n + O(1) - F}$.
 If the tails all started with length 0, rather than $\lg \lg N$, then the space usage would be $\Theta(n \lg n)$ and the fpp would be $2^{-F+O(1) + \lg \lg n}$.
@@ -1429,6 +1430,12 @@ For comparison, the graphs also include a cuckoo filter (labeled ``CF'') with fi
 The keys used in the experiments are all randomly-generated 64-bit integers.
 This suffices for testing larger universes as well, as noted in Section~\ref{filters-that-grow}.
 
+To benchmark the insert time, 100 million elements are inserted.
+The start time and the time at various intermediate points is measured, then the average insert time per key is calculated.
+The samples (the intermediate points) are taken every time the number of values having been inserted grows by 5\%.
+At each intermediate point we also benchmark the lookup operation one million times both on integer keys that are expected to be present and on randomly-generated integer keys.
+
+
 \subsection{Space}
 
 A filter with a false positive probability of $\varepsilon$ must take up at least $\lg (1/\varepsilon)$ bits per element~\cite{lower-bound}.
@@ -1630,7 +1637,7 @@ However, a practical version of this may be possible to build.
 
 \item For the TCF, alternate quotienting dictionaries, including quotient filters, broom filters, or bucketing hash tables (as presented by K\"oppl \etal{}) could potentially improve performance~\cite{raman-practical,broom,quotient-filter}.
 
-\item Testing taffy filters in various applications requiring the use of extensible approximate membership query structures would be of interest.
+\item Testing taffy filters in various applications would be of interest.
 
 \item Support for deletions.
 \end{itemize}
