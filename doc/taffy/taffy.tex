@@ -27,7 +27,7 @@
 % CIDR - August 27, 2021: Submission deadline for all contributions, October 15, 2021: author notification for all contributions, Chaminade, on-site, 6 pages maximum
 
 \newif\ifanon
-\anonfalse
+\anontrue
 
 \newif\ifepigraph
 \epigraphfalse
@@ -77,7 +77,7 @@
 \usepackage{caption}
 \usepackage{tabularx}
 \usepackage{array}
-
+\usepackage{wrapfig}
 
 \newtheorem{theorem}{Theorem}
 
@@ -252,7 +252,7 @@ This is not always possible, or, when possible, may not be time efficient.
 See Figure~\ref{prior-work-table}.
 
 \begin{figure*}
-\begin{tabular}{|m{2in}|m{5in}|}
+\begin{tabular}{|m{2in}|m{4.667in}|}
 \hline {\bf Behavior} & {\bf Filters} \\
 \hline $\omega(1)$ lookup & dynamic bloom \cite{dynamic-bloom}, scalable bloom \cite{scalable-bloom}, dynamic cuckoo \cite{dynamic-cuckoo}, monkey \cite{monkey}\\
 \hline doubled fpp when size doubles & logarithmic dynamic cuckoo \cite{logarithm}, Morton \cite{morton-journal}, vacuum \cite{vacuum}, rank select quotient \cite{rsqf}, consistent cuckoo \cite{consistent-cuckoo}, dynamic cuckoo \cite{dynamic-cuckoo}, entry-extensible cuckoo \cite{entry-extensible} \\
@@ -296,6 +296,20 @@ SlimDB also uses a cuckoo filter to implement a retrieval structure on the most-
 A final example is previously-used passwords~\cite{opus}.
 The goal of a filter for these cases is to allow lookups during password creation time and prevent users from using a previously used password.
 These sets can have long lifetimes and grow arbitrarily large; the ``Have I Been Pwned'' data set is 11GB of SHA1-hashed passwords~\cite{pwned}.
+
+%% Number of passwords, tbf size, tcf size, 0.004 fpp in TBF, both starting at 1 NDV, 847223402       5857722176      4294967296
+
+%% number of passwords, tbf size, tcf size, tbf insert nanos, tcf insert nanos, tbf fpp, tcf fpp, (out of 1000 * 1000)
+%% 847223402       5857722176      4294967296      161450865155    596096873064
+%% 660     2564
+
+%% Now with configured 1.6% for TBF and lookup time for a million elements
+%% 847223402       4481419456      4294967296      154608817118    589962485050
+%% 2447    2554
+%% 297013362       109570877
+
+
+
 
 %% TODO: data deduplication?
 
@@ -344,8 +358,8 @@ In a split Bloom filter, the filter is split into $k$ equal-sized non-overlappin
 Upon insertion, the bits $i L + (h_i(x) \bmod L)$ for $0 \le i < k$ are set.
 See Figure~\ref{sbbf-diagram}.
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{sbbf-diagram}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{sbbf-diagram}
 \caption{\label{sbbf-diagram}
 A diagram of a split block Bloom filter with $k = 8$ and $B = 256$.
 When inserting an element, a single bit is written in each of eight 32-bit lanes.
@@ -392,8 +406,8 @@ Because only $\lfloor k / n \rfloor$ is stored as the key, only $\lg U - \lfloor
 Coming back to the array, this reduces the total storage required to $n (\lg U - \lfloor \lg n \rfloor)$.
 See Figure~\ref{quotienting-figure}.
 
-\begin{figure}
-\includegraphics[width=\columnwidth]{quotienting-diagram}
+\begin{figure}[h!]
+\includegraphics[width=3.333in]{quotienting-diagram}
 \caption{\label{quotienting-figure}
 Quotienting with $n=4$ and all buckets holding exactly one element.
 The column on the left represents a set of values in $\ints_{128}$, with each element taking 7 bits to store.
@@ -449,8 +463,8 @@ Pagh \etal{} reduce the lookup cost to $O(\lg n)$ by using a dictionary like Ram
 They also reduce the space usage to $O(\lg \lg n + \lg (1/\varepsilon))$ bits per element by using the sequence $\langle O(\varepsilon / i^2),  2^i \rangle$, rather than  $\langle \varepsilon / 2^i,  2^i \rangle$.
 See Figure~\ref{pagh-1-diagram}.
 
-\begin{figure}
-\includegraphics[width=\columnwidth]{pagh-1-diagram}
+\begin{figure}[h!]
+\includegraphics[width=3.333in]{pagh-1-diagram}
 \caption{\label{pagh-1-diagram}
 Pagh \etal{}'s first construction.
 In this construction, $\lceil\lg (n-1) \rceil$ dictionaries are maintained with exponentially increasing capacities and logarithmically increasing bit widths.
@@ -469,8 +483,8 @@ After every $2^i$ insertions, a new map is created where the keys are one bit lo
 The extra bit in the key is acquired by ``stealing'' a single bit from the value.
 See Figure~\ref{pagh-diagram} and Section~\ref{tcf}.
 
-\begin{figure}
-\includegraphics[width=\columnwidth]{pagh-diagram}
+\begin{figure}[h!]
+\includegraphics[width=3.333in]{pagh-diagram}
 \caption{\label{pagh-diagram}
 Pagh \etal{}'s second construction.
 In this construction of a growable filter, when a filter contains $n$ items, it is stored as a dictionary in which the keys are bit stings of length $\lceil \lg n \rceil + \lg (1/\varepsilon) + 2$ and the values are bit strings of length up to $\lg \lg N$, where $N$ is the largest the filter will grow to.
@@ -837,7 +851,7 @@ This isomer of cuckoo filters shows how to support in cuckoo filters techniques 
 
 %% % TODO: intersection
 
-%% \begin{figure}
+%% \begin{figure}[h!]
 %% \begin{lstlisting}[escapeinside={`}{`}]
 %% InsertUnion(tcf: TCF(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{j+10}$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`) {
 %%   if (j == k) return InsertSide(tcf, side, hashed, tail)
@@ -1246,15 +1260,14 @@ MTCF(U, k) := {cursor: `$\ints_{32}$`,
                HashFunction: `$U \to \ints_2^{64}$`}
 \end{lstlisting}
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{mpcf-diagram}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{mpcf-diagram}
 \caption{\label{mtcf-diagram}
 A diagram of an MTCF.
 In this example, $k = 2$, so the larger levels have $2^{k+1} = 8$ buckets on each side, while the smaller levels have four.
 In the first bucket of side 0 of the 32nd level, the last three slots are empty.
 If the entry were from one of the larger levels above the cursor, then the fingerprint would have to be from $\ints_2^8$, rather than from $\ints_2^8 \dotcup \ints_2^9$.
 }
-
 \end{figure}
 
 If there are larger and smaller levels, then every element in the larger levels has a fingerprint of size 8, not 9.
@@ -1324,8 +1337,8 @@ As in TCFs, if there are no bits to steal, two new key prefixes are created and 
 See Figure~\ref{mtcf-state-transition}.
 Note that TCFs only steal bits during upsize operations.
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{mtcf-state-transition}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{mtcf-state-transition}
 \caption{\label{mtcf-state-transition}
 This diagram illustrates the transitions an element in an MTCF can go through when evicted.
 % The diagram can be read as ``an element in state A can become an element in state B when evicted''.
@@ -1435,7 +1448,6 @@ The start time and the time at various intermediate points is measured, then the
 The samples (the intermediate points) are taken every time the number of values having been inserted grows by 5\%.
 At each intermediate point we also benchmark the lookup operation one million times both on integer keys that are expected to be present and on randomly-generated integer keys.
 
-
 \subsection{Space}
 
 A filter with a false positive probability of $\varepsilon$ must take up at least $\lg (1/\varepsilon)$ bits per element~\cite{lower-bound}.
@@ -1466,15 +1478,15 @@ MTCFs moderate this pattern, but do not eliminate it.
 % TODO: compare standard bloom filters, filters with exponentially decreasing fpp
 
 
-\begin{figure}
+\begin{figure}[h!]
 
-  \includegraphics[width=\columnwidth]{bits-per-item}
+  \includegraphics[width=3.333in]{bits-per-item}
   \caption{  \label{bits-per-item}
 Number of bits (per element) each filter type needs.}
 \end{figure}
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{space}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{space}
   \caption{
     \label{space-steps}
     The amount of space used by each filter at the given number of keys inserted.
@@ -1483,8 +1495,8 @@ Number of bits (per element) each filter type needs.}
   }
 \end{figure}
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{ideal-bits-per-item}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{ideal-bits-per-item}
   \caption{  \label{ideal-bits-per-item}
     This figure shows $\varepsilon$, the false positive probability.
     %% TODO: explain the sudden jump in taffy filters around 500-5000.
@@ -1526,8 +1538,8 @@ Of the resizable filters, the taffy cuckoo filter is the fastest once the size o
 The MTCF lags behind both.
 %One reason for this is that the ARM split block Bloom filters that the TBF is based on only have 128-bit vector units, not 256-bit units like the x86 machine does.
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{insert-cumulative}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{insert-cumulative}
   \caption{
     \label{insert-time}
     Insert times for filters, i7-7800X.
@@ -1537,8 +1549,8 @@ The MTCF lags behind both.
   }
 \end{figure}
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{arm-insert-cumulative}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{arm-insert-cumulative}
   \caption{
     \label{arm-insert-time}
     Insert times for filters on an AWS EC2 m6g.medium with an ARM-based Graviton2.
@@ -1547,8 +1559,8 @@ The MTCF lags behind both.
   }
 \end{figure}
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{lookup-both}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{lookup-both}
   \caption{
     \label{lookup-both}
     Lookup times for filters, i7-7800X.
@@ -1556,8 +1568,8 @@ The MTCF lags behind both.
   }
 \end{figure}
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{arm-lookup-both}
+\begin{figure}[h!]
+  \includegraphics[width=3.333in]{arm-lookup-both}
   \caption{
     \label{arm-lookup-both}
     Lookup times for filters on an AWS EC2 m6g.medium with an ARM-based Graviton2.
@@ -1574,6 +1586,39 @@ The MTCF lags behind both.
 %%     Lookup times for filters when the key is absent.
 %%   }
 %% \end{figure}
+
+\subsection{Previously-used-password filter}
+
+In this section we test the dataset of previously used passwords from ``Have I Been Pwned''~\cite{pwned}.
+This dataset consists of 847 million SHA-1 hashes of leaked passwords.
+It has grown over time, starting in August 2017 with 306 million passwords. It is currently\footnote{As of December 2021} on version 8.
+
+Taffy Bloom filters and taffy cuckoo filters were tested on this dataset using the low-order bits from the SHA-1 hashes as the keys.
+Both filters started out configured with an initial capacity of a single element.
+Experiments were conducted on an EC2 r6i.xlarge with 32GiB of memory and an Intel Xeon Platinum 8375C CPU @ 2.90GHz.
+
+%The dataset is large enough that this experiment processed it in a streaming fashion, interleaving parsing and filter insertion.
+%As a result, the insertion timings show significant overhead from the measurement code.
+To insert all of the keys took 37 nanoseconds per key for the TBF and 674 nanoseconds per key for the TCF.
+The filters had fpps of 0.25\% and 0.27\%, respectively.
+Lookups in the full filters took 349 nanoseconds each for the TBF and 119 nanoseconds each for the TCF.
+
+As in the case of the synthetic benchmarks, insert is faster for the TBF and lookup is faster for the TCF.
+
+The compressed list of SHA-1 hashes uses 15.1GiB (34.8 GiB in uncompressed hex ASCII, with no lookup facilities such as being stored in a hash table or B-tree), while the taffy filters use 4.2GiB and 4.0GiB in memory, respectively.
+
+% TODO: test MTCF, SBBF, and CF
+
+%% Now with configured 1.6% for TBF and lookup time for a million elements
+%% 847223402       4481419456      4294967296      154608817118    589962485050
+%% 2447    2554
+%% 297013362       109570877
+
+%% 0.4% in TBF. NDV, TBF size, TCF size, TBF insert nanos, TCF insert nanos, FPP out of 1000000 for TBF, """ TCF, lookup time TBF, lookup time TCF
+%847223402       1637463040      2147483648      1.90629e+10     2.57225e+11
+%6865    518
+%38851604        101168713
+
 
 \subsection{Discussion}
 
@@ -1596,7 +1641,7 @@ Otherwise, a practitioner must ask themselves:
 \begin{itemize}
 \item Is the workload write-heavy or read-heavy?
   Write-heavy workloads favor TBFs over TCFs.
-\item Is the set likely to exceed one million elements (x86) or 10,000 elements (ARM)?
+\item Is the set likely to exceed one million elements (x86) or 1000 elements (ARM)?
   If yes, a TCF is an attractive choice.
 %% \item Are union, intersection, or freeze operations needed?
 %%   A TCF or MTCF is the only choice.
@@ -1629,7 +1674,7 @@ Future work includes:
 
 \begin{itemize}
 \item The stash limitations for the TCF and MTCF are very low - tuned for a linear search.
-It is not necessary that the stashes be unstructured - giving structure to the stash, as in backyard cuckoo hashing, could allow the stash to grow and the fill factor to go higher without needing to upsize~\cite{backyard}.
+Giving structure to the stash, as in backyard cuckoo hashing, could allow the stash to grow and the fill factor to go higher without needing to upsize~\cite{backyard}.
 
 \item There is an additional structure supporting sets of unknown sizes described in Liu \etal~\cite{unknown-prefix}.
 This structure is mostly theoretical and depends on a certain type of prefix search structure with large embedded constants.
@@ -1637,7 +1682,7 @@ However, a practical version of this may be possible to build.
 
 \item For the TCF, alternate quotienting dictionaries, including quotient filters, broom filters, or bucketing hash tables (as presented by K\"oppl \etal{}) could potentially improve performance~\cite{raman-practical,broom,quotient-filter}.
 
-\item Testing taffy filters in various applications would be of interest.
+\item Testing taffy filters in more applications.
 
 \item Support for deletions.
 \end{itemize}

@@ -8,7 +8,7 @@
 # 12cm,6.4cm
 
 
-set terminal postscript eps enhanced color size 3.333in,7cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
+set terminal postscript eps enhanced color size 3.333in,9cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
 #font "libertine"
 #fontfile "/usr/share/fonts/opentype/linux-libertine/LinBiolinum_K.otf"
 #fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
@@ -21,9 +21,9 @@ set ylabel "bits per key"
 set datafile separator ",";
 unset format
 set format x "10^{%.0T}";
-set yrange [10:50]
-set key outside;
-set key top center;
+set yrange [0:50]
+set key inside;
+set key bottom left;
 #set title "Bits per key"
 plot '< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3' using 3:(8*$4/$3) with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints title "TCF", \
@@ -31,7 +31,7 @@ plot '< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -
      "< grep fpp all-bench-100000000-017.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:(8*$4/$3) with linespoints  lw 1  title "CF", \
      "< grep fpp all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:(8*$4/$3) with lines lw 5  title "SBBF"
 
-set terminal postscript eps enhanced color size 3.333in,2.5in fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
+set terminal postscript eps enhanced color size 3.333in,9cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
 set output 'ideal-bits-per-item.eps';
 set grid noxtics ytics;
 unset grid
@@ -145,7 +145,7 @@ plot '< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -
 
 
 # space usage; lower is better
-set terminal postscript eps enhanced color size 3.333in,5cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'space.eps'
 unset grid;
 unset logscale y;
@@ -204,7 +204,7 @@ plot "< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -
 #      "< csvsql -H all-bench-100000000-010.txt all-bench-100000000-010.txt --tables x,y --query \"select x.a, x.c, x.f, y.f from x, y where x.b = y.b and x.e = y.e and y.a = 'Cuckoo' and x.a = 'Cuckoo' and x.e = y.e and x.e like 'find%' order by x.b asc, x.e\"" using 2:($3/$4) with lines lw 1 title "CF", \
 #      "< csvsql -H all-bench-100000000-010.txt all-bench-100000000-010.txt --tables x,y --query \"select x.a, x.c, x.f, y.f from x, y where x.b = y.b and x.e = y.e and y.a = 'Cuckoo' and x.a = 'SimdBlockFilter' and x.e = y.e and x.e like 'find%' order by x.b asc, x.e\"" using 2:($3/$4) with lines lw 5 title "SBBF"
 
-set terminal postscript eps enhanced color size 3.333in,5cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'lookup-both.eps'
 unset grid;
 set logscale y;
@@ -231,13 +231,13 @@ plot "< grep find_missing all-bench-100000000-017.txt | grep MinTaffy    | sort 
      "< grep fpp all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 3:4 with lines lw 5 title "SBBF"
 
 
-set terminal postscript eps enhanced color size 3.333in,7cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'arm-lookup-both.eps'
 unset grid;
 set logscale y;
 set logscale x;
-set key outside;
-set key top center;
+set key inside;
+set key top left;
 set datafile separator ",";
 set xlabel "keys inserted";
 set ylabel "nanoseconds";
@@ -269,7 +269,7 @@ plot "< grep find_missing m6g.medium.txt | grep MinTaffy    | sort -n -t , -k 2,
 #      "< grep insert m6g.medium.txt | grep \\\"Cuckoo\\\"  | sort -n -t , -k 3" using 3:6 with lines lw 1 title "CF", \
 #      "< grep insert m6g.medium.txt | grep Simd        | sort -n -t , -k 3" using 3:6 with lines lw 1 title "SBBF"
 
-set terminal postscript eps enhanced color size 3.333in,7cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set terminal postscript eps enhanced color size 3.333in,9cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19"; # fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
 set output 'insert-cumulative.eps'
 unset grid;
 set logscale y 10;
@@ -288,13 +288,13 @@ plot "< python3 running-sum.py all-bench-100000000-017.txt | grep MinTaffy    | 
      "< python3 running-sum.py all-bench-100000000-017.txt | grep '^Cuckoo,'   | sort -n -t , -k 3" using 2:($3/$2) with linespoints lw 1 title "CF", \
      "< python3 running-sum.py all-bench-100000000-017.txt | grep Simd        | sort -n -t , -k 3" using 2:($3/$2) with lines lw 5 title "SBBF"
 
-set terminal postscript eps enhanced color size 3.333in,7cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
+set terminal postscript eps enhanced color size 3.333in,9cm fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
 set output 'arm-insert-cumulative.eps'
 unset grid;
 set logscale y 10;
 set logscale x;
-set key outside
-set key top center;
+set key inside
+set key top left;
 set datafile separator ",";
 set xlabel "keys inserted";
 set ylabel "average nanoseconds per key";

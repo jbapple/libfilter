@@ -432,9 +432,6 @@ struct TaffyCuckooFilter {
     uint64_t hashed = detail::FromPathNoTail(p, that.sides[side].f, that.log_side_size);
     // hashed is high that.log_side_size + detail::kHeadSize, in high bits of 64-bit word
     int tail_size = detail::kTailSize - __builtin_ctz(p.tail);
-    // std::cout << "tail " << std::hex << p.tail;
-    // std::cout << " " << (p.tail >> 1);
-    // std::cout << " " << ((p.tail & (p.tail - 1)) >> 1) << std::endl;
     if (that.log_side_size == log_side_size) {
       detail::Path q = detail::ToPath(hashed, sides[0].f, log_side_size);
       q.tail = p.tail;
@@ -487,40 +484,10 @@ struct TaffyCuckooFilter {
         p.bucket = bucket;
         for (int slot = 0; slot < detail::kBuckets; ++slot) {
           if (that.sides[side][bucket][slot].tail == 0) continue;
-          // std::cout << std::boolalpha << FindHash(0x9c009b646129524a) << "\t";
-          // std::cout << std::boolalpha << that.FindHash(0x9c009b646129524a) << std::endl;
           p.fingerprint = that.sides[side][bucket][slot].fingerprint;
           p.tail = that.sides[side][bucket][slot].tail;
           UnionHelp(that, side, p);
           continue;
-          // uint64_t hashed =
-          //     detail::FromPathNoTail(p, that.sides[side].f, that.log_side_size);
-          // int tail_size = detail::kTailSize - __builtin_ctz(that.sides[side][bucket][slot].tail);
-          // if (that.log_side_size == log_side_size) {
-          //   detail::Path q = detail::ToPath(hashed, sides[0].f, log_side_size);
-          //   q.tail = that.sides[side][bucket][slot].tail;
-          //   Insert(0, q);
-          //   q.tail = 0; // dummy line just to break on
-          // } else if (that.log_side_size + tail_size >= log_side_size) {
-          //   hashed |=
-          //     (static_cast<uint64_t>(that.sides[side][bucket][slot].tail >> 1)
-          //        << (64 - that.log_side_size - detail::kHeadSize - detail::kTailSize));
-          //   detail::Path q = ToPath(hashed, sides[0].f, log_side_size);
-          //   q.tail = (that.sides[side][bucket][slot].tail
-          //             << (log_side_size - that.log_side_size));
-          //   Insert(0, q);
-          // } else {
-          //   hashed |=
-          //       (static_cast<uint64_t>(that.sides[side][bucket][slot].tail >> 1)
-          //        << (64 - that.log_side_size - detail::kHeadSize - detail::kTailSize));
-          //   for (uint64_t i = 0;
-          //        i < (1u << (log_side_size - that.log_side_size - tail_size)); ++i) {
-          //     hashed |= (i << (64 - log_side_size));
-          //     detail::Path q = ToPath(hashed, sides[0].f, log_side_size);
-          //     q.tail = (1u << detail::kTailSize);
-          //     Insert(0, q);
-          //   }
-          // }
         }
       }
     }
