@@ -107,6 +107,20 @@
 \newcommand{\dotcup}{\ensuremath{\mathaccent\cdot\cup}}
 \newcommand{\etal}{et al.}
 
+\ifanon
+\newcommand{\taffy}{stretchy}
+\newcommand{\Taffy}{Stretchy}
+\newcommand{\TBF}{SBF}
+\newcommand{\TCF}{SCF}
+\newcommand{\MTCF}{MSCF}
+\else
+\newcommand{\taffy}{taffy}
+\newcommand{\Taffy}{Taffy}
+\newcommand{\TBF}{TBF}
+\newcommand{\TCF}{TCF}
+\newcommand{\MTCF}{MTCF}
+\fi
+
 %\pagestyle{empty}
 
 % https://tex.stackexchange.com/questions/171803/change-font-size-of-the-verbatim-environment
@@ -139,9 +153,9 @@
 \begin{document}
 
 \ifanon
-\title{Taffy Filters: Stretchable Bloom and Cuckoo Filters}
+\title{\Taffy{} Filters: Growable Bloom and Cuckoo Filters}
 \else
-\title{Stretching Your Data With Taffy Filters}
+\title{Stretching Your Data With \Taffy{} Filters}
 \fi
 
 \ifanon
@@ -184,7 +198,7 @@ Compensatory for these false positives, filters can be much smaller than hash ta
 However, unlike hash tables, cuckoo filters and Bloom filters must be initialized with the intended number of inserts to be performed, and cannot grow larger --
 inserts beyond this number may fail or increase the false positive probability.
 This paper presents designs and implementations of filters than can grow without inserts failing and without significantly increasing the false positive probability, even if the filters are created with a small initial size.
-The resulting code is available on GitHub under a permissive open source license.
+The resulting code is available \ifanon\else on GitHub \fi under a permissive open source license.
 \ifepigraph
 \epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}
 \fi
@@ -225,11 +239,11 @@ The resulting code is available on GitHub under a permissive open source license
 
 %% TODO: LSM trees in a single filter: no ribbon filters required, all data in one bloomier filter
 
-%% TODO: TBF can't have satellite data, TCF can
+%% TODO: TBF can't have satellite data, \TCF{} can
 
 %% TODO: huge pages
 
-%% TODO: Vacuumize or Mortonize TCF and MTCF
+%% TODO: Vacuumize or Mortonize \TCF{} and \MTCF{}
 
 The Bloom filter is a ubiquitous data structure that allows storing a set with a low amount of space.
 Bloom filters support the operations insert -- which adds an item to the set -- and lookup, which returns true if an element is in the filter; if an element is not in the filter, true is returned with some configurable probability $0 < \varepsilon \ll 1$.
@@ -261,12 +275,14 @@ See Figure~\ref{prior-work-table}.
 \end{tabular}
 \caption{The filter types that exhibit various undesirable behavior in order to grow.
 Some filters are in two lists.
-Unlike taffy filters, all filters listed in this table use either $\lg (1 / \varepsilon) + \omega(\lg \lg n)$ or $\omega(\lg(1/\varepsilon))$ bits to represent sets with size $n$ and false positive probability $\varepsilon$.
+Unlike \taffy{} filters, all filters listed in this table use either $\lg (1 / \varepsilon) + \omega(\lg \lg n)$ or $\omega(\lg(1/\varepsilon))$ bits to represent sets with size $n$ and false positive probability $\varepsilon$.
 \label{prior-work-table}}
 \end{figure*}
 %% TODO: implement the sequence-of-Bloom-filters approach and benchmark it.
 
 Pagh \etal{} introduced structures that perform lookups in $O(\lg n)$ or $O(1)$ time while still allowing the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created), all while using no more than $O( \lg \lg n + \lg (1/\varepsilon))$ bits of space per element~\cite{psw}.
+
+\subsection{Applications}
 
 Growable filters are potentially useful in situations where there is no known bound on the number of keys to be inserted.
 One example is in joins in query processing systems.
@@ -295,7 +311,8 @@ SlimDB also uses a cuckoo filter to implement a retrieval structure on the most-
 
 A final example is previously-used passwords~\cite{opus}.
 The goal of a filter for these cases is to allow lookups during password creation time and prevent users from using a previously used password.
-These sets can have long lifetimes and grow arbitrarily large; the ``Have I Been Pwned'' data set is 11GB of SHA1-hashed passwords~\cite{pwned}.
+These sets can have long lifetimes and grow arbitrarily large; the ``Have I Been Pwned'' data set is 11GB of SHA-1-hashed passwords~\cite{pwned}.
+Because of password databases' propensity for growth, static-capacity structures like Bloom filters or cuckoo filters are less well suited for these data sets.
 
 %% Number of passwords, tbf size, tcf size, 0.004 fpp in TBF, both starting at 1 NDV, 847223402       5857722176      4294967296
 
@@ -319,16 +336,16 @@ Pagh \etal{} ends with an open problem of implementing these structures in a pra
 This work answers that challenge with three practical extensible filters:
 
 \begin{enumerate}
-\item Section~\ref{tbf}  presents the {\em taffy block filter}          (``TBF''),  a Bloom-filter-backed  AMQ structure with $O(\lg n)$ lookup cost.
-\item Section~\ref{tcf}  presents the {\em taffy cuckoo filter}         (``TCF''),  a cuckoo-hashing-based AMQ structure with $O(1)$ lookup cost.
-\item Section~\ref{mtcf} presents the {\em minimal taffy cuckoo filter} (``MTCF''), a cuckoo-hashing-based AMQ structure that decreases the space needed in a TCF by up to a factor of 2.
+\item Section~\ref{tbf}  presents the {\em \taffy{} block filter}          (``\TBF{}''),  a Bloom-filter-backed  AMQ structure with $O(\lg n)$ lookup cost.
+\item Section~\ref{tcf}  presents the {\em \taffy{} cuckoo filter}         (``\TCF{}''),  a cuckoo-hashing-based AMQ structure with $O(1)$ lookup cost.
+\item Section~\ref{mtcf} presents the {\em minimal \taffy{} cuckoo filter} (``\MTCF{}''), a cuckoo-hashing-based AMQ structure that decreases the space needed in a \TCF{} by up to a factor of 2.
 \end{enumerate}
 
-TBFs are a direct application of Pagh \etal{}
-TCFs present a new understanding of cuckoo filters as dictionaries.
-Finally, MTCFs are a novel structure, applying for the first time the technique of quotienting to growable dictionaries that have a capacity that is not a power of two, which may be of independent interest.
+\TBF{}s are a direct application of Pagh \etal{}
+\TCF{}s present a new understanding of cuckoo filters as dictionaries.
+Finally, \MTCF{}s are a novel structure, applying for the first time the technique of quotienting to growable dictionaries that have a capacity that is not a power of two, which may be of independent interest.
 
-Section~\ref{eval} describes experimental performance results on all three taffy filters and what circumstances each is suited for. %\footnote{Experiments can be replicated with \url{https://github.com/jbapple/libfilter}}
+Section~\ref{eval} describes experimental performance results on all three \taffy{} filters and what circumstances each is suited for. %\footnote{Experiments can be replicated with \url{https://github.com/jbapple/libfilter}}
 Section~\ref{conclusion} concludes with open questions.
 
 % TODO: block filters with 16 hash functions - when useful?
@@ -358,7 +375,7 @@ In a split Bloom filter, the filter is split into $k$ equal-sized non-overlappin
 Upon insertion, the bits $i L + (h_i(x) \bmod L)$ for $0 \le i < k$ are set.
 See Figure~\ref{sbbf-diagram}.
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{sbbf-diagram}
 \caption{\label{sbbf-diagram}
 A diagram of a split block Bloom filter with $k = 8$ and $B = 256$.
@@ -372,7 +389,7 @@ When a block Bloom filter is used with block size $B = 256$, $k = 8$ hash functi
 %in what Polychroniou and Ross call ``horizontal vectorization''~\cite{horizontal}.
 The resulting Bloom filter has constant-time branch-free insert and lookup and is consistently faster than a cuckoo filter of the same size (See Figures~\ref{lookup-both}~and~\ref{arm-lookup-both})~\cite{cuckoo-filter-github,ultra-fast,overtakes,impala-bloom}.
 
-Taffy block filters use split block Bloom filters as the building block to make an extensible filter with lower query time than a traditional Bloom filter would require in the same application.
+\Taffy{} block filters use split block Bloom filters as the building block to make an extensible filter with lower query time than a traditional Bloom filter would require in the same application.
 
 \subsection{Cuckoo hashing}
 
@@ -388,7 +405,7 @@ With high probability, eventually the evictions find an empty slot and the chain
 
 This bounds the occupancy of the table below 50\%~\cite{cuckoo-journal}.
 To improve the fill factor, cuckoo tables are usually implemented with finite-sized buckets instead of slots, where buckets can hold two or more elements~\cite{buckets}.
-Cuckoo filters, taffy cuckoo filters, and minimum taffy cuckoo filters all use buckets of size four~\cite{cuckoo}.
+Cuckoo filters, \taffy{} cuckoo filters, and minimum \taffy{} cuckoo filters all use buckets of size four~\cite{cuckoo}.
 In cuckoo filters, this raises the occupancy limit from 50\% to over 90\%~\cite{load-thresholds}.
 
 \subsection{Succinct dictionaries with quotienting}
@@ -406,7 +423,7 @@ Because only $\lfloor k / n \rfloor$ is stored as the key, only $\lg U - \lfloor
 Coming back to the array, this reduces the total storage required to $n (\lg U - \lfloor \lg n \rfloor)$.
 See Figure~\ref{quotienting-figure}.
 
-\begin{figure}[h!]
+\begin{figure}[b!]
 \includegraphics[width=3.333in]{quotienting-diagram}
 \caption{\label{quotienting-figure}
 Quotienting with $n=4$ and all buckets holding exactly one element.
@@ -434,7 +451,7 @@ That is, an element $x$ maps to $h_i(x)$ for $i < L$, and then the slot $h_i(x) 
 When an element is evicted, it is moved from $h_i(x)$ to some other $h_j(x)$, $j \ne i$.
 In order to calculate $h_j(x)$ from $h_i(x)$, each hash function $h_i$ is a permutation with an inverse, so $h_j(x)$ can be calculated as $h_j(h_i^{-1}(h_i(x)))$.
 
-% Taffy cuckoo filters and minimal taffy cuckoo filters are practical implementations of the theory of quotienting cuckoo hash tables.
+% \Taffy{} cuckoo filters and minimal \taffy{} cuckoo filters are practical implementations of the theory of quotienting cuckoo hash tables.
 
 %% TODO: make one hash permutation the identity?
 
@@ -463,7 +480,7 @@ Pagh \etal{} reduce the lookup cost to $O(\lg n)$ by using a dictionary like Ram
 They also reduce the space usage to $O(\lg \lg n + \lg (1/\varepsilon))$ bits per element by using the sequence $\langle O(\varepsilon / i^2),  2^i \rangle$, rather than  $\langle \varepsilon / 2^i,  2^i \rangle$.
 See Figure~\ref{pagh-1-diagram}.
 
-\begin{figure}[h!]
+\begin{figure}[b!]
 \includegraphics[width=3.333in]{pagh-1-diagram}
 \caption{\label{pagh-1-diagram}
 Pagh \etal{}'s first construction.
@@ -483,7 +500,7 @@ After every $2^i$ insertions, a new map is created where the keys are one bit lo
 The extra bit in the key is acquired by ``stealing'' a single bit from the value.
 See Figure~\ref{pagh-diagram} and Section~\ref{tcf}.
 
-\begin{figure}[h!]
+\begin{figure}[b!]
 \includegraphics[width=3.333in]{pagh-diagram}
 \caption{\label{pagh-diagram}
 Pagh \etal{}'s second construction.
@@ -493,7 +510,7 @@ Pagh \etal{} show that the fpp of such a dictionary is no more than $\varepsilon
 }
 \end{figure}
 
-Taffy filters extend the work of Pagh \etal{} to support Bloom filters in the first construction and space-efficient cuckoo hashing in the second.
+\Taffy{} filters extend the work of Pagh \etal{} to support Bloom filters in the first construction and space-efficient cuckoo hashing in the second.
 %This work also implements the Pagh \etal{} structures for the first time and recommends circumstances under which each construction should be used.
 
 \subsection{Compact extensible dictionaries}
@@ -507,9 +524,9 @@ When the table gets close to full, exactly one of the sub-arrays is doubled in s
 This frees up room that's available in future eviction sequences, and the new space will slowly be filled.
 Eventually all arrays will have been doubled in size, thereby causing the whole table to have doubled in size without going through a phase with as low as 50\% space usage.
 
-Taffy filters extend quotienting-based dictionaries to DySECT tables for the first time.
+\Taffy{} filters extend quotienting-based dictionaries to DySECT tables for the first time.
 
-\section{Taffy block filters}
+\section{\Taffy{} block filters}
 \label{tbf}
 
 The first construction from Pagh \etal{} consists of a set of sub-filters of geometrically decreasing false positive probabilities but exponentially increasing size~\cite{psw}.
@@ -532,18 +549,18 @@ Using traditional Bloom filters, the lookup cost would be
 Instead, Pagh \etal{} use dictionary-based filters that support constant-time lookup -- such as cuckoo filters or Raman and Rao's dictionary -- rather than Bloom filters~\cite{succinct,psw}.
 This reduces the lookup time to $O(\lg n)$.
 
-{\bf Taffy block filters} (``TBFs'') use split block Bloom filters to keep the lookup time logarithmic and independent of $\varepsilon$.
+{\bf \Taffy{} block filters} (``\TBF{}s'') use split block Bloom filters to keep the lookup time logarithmic and independent of $\varepsilon$.
 Split block Bloom filters are the fastest dynamic Bloom filters for doing single-element lookups in recent works on the matter~\cite{overtakes,ribbon,bloom-simd}.
-See Section~\ref{eval} for performance of TBFs compared to pre-sized split block Bloom filters.
+See Section~\ref{eval} for performance of \TBF{}s compared to pre-sized split block Bloom filters.
 
-%% TBFs cannot perform the union operation without significant increases in false positive probability.
+%% \TBF{}s cannot perform the union operation without significant increases in false positive probability.
 %% For instance, in two split block Bloom filters of size $m$ where each level has $\delta m$ its bits set, the expected number of bits set in their union is $(2 \delta - \delta^2) m$.
 %% Each of the input filters has false positive probability $\delta ^ 8$, while the output filter has false positive probability of nearly $2^8$ times that.
 
-\section{Taffy cuckoo filters}
+\section{\Taffy{} cuckoo filters}
 \label{tcf}
 
-%% Taffy cuckoo filters (``TCFs'') are approximate membership query structures that offer the following operations:
+%% \Taffy{} cuckoo filters (``\TCF{}s'') are approximate membership query structures that offer the following operations:
 
 %% \begin{itemize}
 %% \item {\bf Create} initializes an empty filter with the given size.
@@ -559,11 +576,11 @@ See Section~\ref{eval} for performance of TBFs compared to pre-sized split block
 %% %% \item {\bf Intersection} Produces a new filter with only the items in both input filters, taking O(min(m,n)) time
 %% \end{itemize}
 
-Taffy block filters require $\lg n$ lookup operations on their sub-filters.
+\Taffy{} block filters require $\lg n$ lookup operations on their sub-filters.
 Pagh \etal{}'s second construction requires only $O(1)$ time per lookup.
-Taffy cuckoo filters are a concrete implementation of that that shows how the ideas from quotienting can be applied to cuckoo filters to produce a dictionary.
+\Taffy{} cuckoo filters are a concrete implementation of that that shows how the ideas from quotienting can be applied to cuckoo filters to produce a dictionary.
 
-Taffy cuckoo filters (``TCFs'') use quotienting cuckoo tables (as in backyard cuckoo hashing~\cite{backyard}) to store their data, as this reduces the storage space by a significant margin (See section~\ref{quotienting}).
+\Taffy{} cuckoo filters (``\TCF{}s'') use quotienting cuckoo tables (as in backyard cuckoo hashing~\cite{backyard}) to store their data, as this reduces the storage space by a significant margin (See section~\ref{quotienting}).
 The keys are bit-strings of length $\lfloor \lg n \rfloor + F$ and the values are bit-strings of length $T$, for some fixed $F$ (for ``fingerprint'') and $T$ (for ``tail'').
 By quotienting in an array of size $\Omega(n)$, each fingerprint-tail pair can be stored in $\lfloor \lg n \rfloor + F + T - \lg n + O(1)$ bits, for a total space usage of $(F+T)n + O(n)$.
 For performance and simplicity purposes, we pick $F + T = 16$, but this is not a requirement of the structure.
@@ -574,23 +591,43 @@ For performance and simplicity purposes, we pick $F + T = 16$, but this is not a
 %% The top $\lg n - O(1)$ bits are omitted from the stored hash values, since these are implicitly stored in the location of the key within the table.
 %% In this way, data can be moved from one sub-table to the other via key reconstruction, even without storing the key explicitly.
 
-TCFs are based on cuckoo tables and have two arrays of slots, referred to as ``sides'', just as (some) cuckoo filter designs break up the address space into multiple regions, one per hash function.
-With TCFs, this is a requirement in order to be able to recover enough of the original key in order to re-hash it to a larger address space.
-TCFs, unlike backyard cuckoo hashing, use bucketing in order to increase the usable capacity and thus reduce wasted space~\cite{buckets}.
+\TCF{}s are based on cuckoo tables and have two arrays of slots, referred to as ``sides'', just as (some) cuckoo filter designs break up the address space into multiple regions, one per hash function.
+With \TCF{}s, this is a requirement in order to be able to recover enough of the original key in order to re-hash it to a larger address space.
+\TCF{}s, unlike backyard cuckoo hashing, use bucketing in order to increase the usable capacity and thus reduce wasted space~\cite{buckets}.
 Like quotienting, this is not required for the correctness of the structure, just its succinctness.
-Each side of a TCF comes equipped with a permutation on bit-strings of length $\lg n + F - O(1)$, analogous to how each side of a cuckoo hash table comes equipped with a hash function.
+Each side of a \TCF{} comes equipped with a permutation on bit-strings of length $\lg n + F - O(1)$, analogous to how each side of a cuckoo hash table comes equipped with a hash function.
 A fingerprint-tail pair $(f, t)$ is stored in one of two buckets: the one in side 0 pointed to by the high-order $\lg n - O(1)$ bits of $P_0(f)$ or the one in side 1 pointed to by the high-order $\lg n - O(1)$ bits of $P_1(f)$, where $P_i$ is the permutation associated with side $i$.
 
 More concretely, an {\em element} consists of two groups of bits: one of size 10, and the other of size up to 5.
 The former is called the {\em fingerprint} and is tested for equality when executing the \texttt{Find} operation; the latter is called the {\em tail} and is the unused parts of the hashed key that will eventually be used in the fingerprint (after permuting -- see below).
 A {\em bucket} consists of four (possibly empty) slots, each of which can hold one element or be empty.
 A {\em side} consists of $2^k$ buckets for some $k$ as well as a permutation on $\ints_2^{k+10}$. %\footnote{$\ints_2^m$ and $\ints_{2^m}$.}
-A TCF consists of two sides and one hash function that produces a 64-bit key.
+A \TCF{} consists of two sides and one hash function that produces a 64-bit key.
 The two sides have the same number of buckets but different permutations.
 See Listing~\ref{tcf-types}.
 
+
+\ifanon
 \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-types,
-    caption={The types of a TCF.
+    caption={The types of a \TCF{}.
+      \texttt{T}$_\bot$ means the type \texttt{T} extended with the element $\bot$, indicating ``null'' or ``empty''.
+      $S_i$ is the symmetric group on $\ints_i$ -- the set of all permutations on $\ints_i$.
+      %As above, pseudocode will not make a distinction between $\ints_2^i$ and $\ints_{2^i}$.
+      \texttt{T[n]} denotes an array of $n$ values of type $T$.
+      $A \dotcup B$ represents a tagged disjoint union of $A$ and $B$; even if $A \subseteq B$, $A \dotcup B \ne B$.
+      Structs are denoted by curly brackets \{\}. %, and members of structs can be referenced by their name or by their type.
+%      For instance, if \texttt{s} is a \texttt{Side(k)}, then \texttt{s.Bucket} and \texttt{s.Permutation} are both meaningful expressions.
+    }
+    ]
+Element := {fingerprint: `$\ints_2^{10}$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
+Slot := Element`$_\bot$`
+Bucket := Slot[4]
+Side(k) := {Bucket[2`$^k$`], Permutation: `$S_{2^{k+10}}$`}
+SCF(U, k) := {Side(k)[2], HashFunction: `$U \to \ints_2^{64}$`}
+\end{lstlisting}
+\else
+\begin{lstlisting}[escapeinside={`}{`},float,label=tcf-types,
+    caption={The types of a \TCF{}.
       \texttt{T}$_\bot$ means the type \texttt{T} extended with the element $\bot$, indicating ``null'' or ``empty''.
       $S_i$ is the symmetric group on $\ints_i$ -- the set of all permutations on $\ints_i$.
       %As above, pseudocode will not make a distinction between $\ints_2^i$ and $\ints_{2^i}$.
@@ -606,6 +643,7 @@ Bucket := Slot[4]
 Side(k) := {Bucket[2`$^k$`], Permutation: `$S_{2^{k+10}}$`}
 TCF(U, k) := {Side(k)[2], HashFunction: `$U \to \ints_2^{64}$`}
 \end{lstlisting}
+\fi
 
 A slot is encoded in a bitfield of size 16 as follows.
 If the last six bits are all zero, the slot is empty.
@@ -614,7 +652,7 @@ All bits following that one bit are the tail.
 Bits 1-10 are the ten-bit fingerprint.
 
 \paragraph{Lookup}
-A lookup begins by hashing a key with the TCF's hash function. %(Listing~\ref{tcf-lookup}, line 12)
+A lookup begins by hashing a key with the \TCF{}'s hash function. %(Listing~\ref{tcf-lookup}, line 12)
 Then the lookup operation does the following:
 
 \begin{enumerate}
@@ -635,7 +673,7 @@ Otherwise, returns \verb|False|.
 %% \begin{lstlisting}[escapeinside={`}{`},
 %%     label=tcf-lookup,
 %%     caption={
-%%       Pseudocode for the lookup operation on TCFs.
+%%       Pseudocode for the lookup operation on \TCF{}s.
 %%       \texttt{S[a,~b)} denotes the bits in $S$ starting at location $a$ and continuing through (and including) $b-1$.
 %%     }]
 %% LookupBucket(fingerprint, tail, bucket) {
@@ -647,7 +685,7 @@ Otherwise, returns \verb|False|.
 %%   return False
 %% }
 
-%% Lookup(input: U, tcf: TCF(U, k)) {
+%% Lookup(input: U, tcf: \TCF{}(U, k)) {
 %%   hashed := tcf.HashFunction(input)
 %%   for (side : tcf.Side[0], tcf.Side[1]) {
 %%     permuted := side.Permutation(hashed[0, k+10))
@@ -675,7 +713,7 @@ this continues until an empty slot is encountered %(Line 18).
 %%     label=tcf-insert,
 %%     float,
 %%     caption={
-%%       Pseudocode for the insert operation on TCFs
+%%       Pseudocode for the insert operation on \TCF{}s
 %%   }]
 %% InsertBucket(fingerprint, tail, bucket) {
 %%   new_element := {fingerprint, tail}
@@ -689,7 +727,7 @@ this continues until an empty slot is encountered %(Line 18).
 %%   return new_element
 %% }
 
-%% InsertSide(tcf: TCF(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{k+10}$`,
+%% InsertSide(tcf: \TCF{}(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{k+10}$`,
 %%            tail: `$\dotcup_{i \le 5} \ints_2^i$`) {
 %%   permuted := side.Permutation(hashed)
 %%   bucket := side.Bucket[permuted[0, k)]
@@ -698,14 +736,14 @@ this continues until an empty slot is encountered %(Line 18).
 %%   Evict(tcf, side, permuted[0, k), slot)
 %% }
 
-%% Evict(tcf: TCF(U,k), side: `$\ints_2$`, bucket_index: `$\ints_{2^k}$`,
+%% Evict(tcf: \TCF{}(U,k), side: `$\ints_2$`, bucket_index: `$\ints_{2^k}$`,
 %%       element) {
 %%   permuted := Concat(bucket_index, element.fingerprint)
 %%   hashed := tcf[side].Permutation`$^\texttt{-1}$`(permuted)
 %%   InsertSide(tcf, 1 - side, hashed, element.tail)
 %% }
 
-%% InsertTCF(input: U, tcf: TCF(U, k)) {
+%% Insert\TCF{}(input: U, tcf: \TCF{}(U, k)) {
 %%   if (Lookup(input, tcf)) return
 %%   hashed := tcf.HashFunction(input)
 %%   InsertSide(tcf, 0, hashed[0, k+10), hashed[k+10, k+15))
@@ -713,20 +751,20 @@ this continues until an empty slot is encountered %(Line 18).
 %% \end{lstlisting}
 
 \paragraph{Upsize}
-When a TCF is nearly full, inserts may fail.
+When a \TCF{} is nearly full, inserts may fail.
 This is identical to the situation with cuckoo filters.
 When this happens, the \texttt{Upsize} method must be called to double the size of the structure. %(Listing~\ref{tcf-upsize})
 (This is not available in cuckoo filters without shortening the fingerprints.)
 
-The upsize operation begins by creating a new TCF. %(Line 9)
-To transfer the data from the older to the newer TCF, upsize uses a modified version of the evict algorithm, as follows:
+The upsize operation begins by creating a new \TCF{}. %(Line 9)
+To transfer the data from the older to the newer \TCF{}, upsize uses a modified version of the evict algorithm, as follows:
 
 Upsize first reconstructs the $k+10$ bits of the key that were used to construct the bucket index and fingerprint. %(Line 14)
 Then a bit is ``stolen'' from the tail and appended onto the end of the key. %(Line 3)
 The high order bit of the tail is removed from the tail and added to the low-order end of the key.
 Since the tail was taken unaltered from the key, this gives $k+11$ bits of the original key.
 The new tail has now been decreased in size by one.
-The key and the new tail of it can now be inserted into one of the sides of the new TCF as described above. %(Line 17)
+The key and the new tail of it can now be inserted into one of the sides of the new \TCF{} as described above. %(Line 17)
 
 This works as long as the tail has positive length.
 If the tail has length zero, there is nothing to steal from.
@@ -739,12 +777,12 @@ It also contains $(\lg n - \lg \lg N)  n / 2 \lg N$ pairs with tail length 0.
 Overall that's $3n/2 - O(n)$ pairs, so the space usage is still linear in the number of elements.
 (Note that if the tails started with length 0 instead of $\lg \lg N$, this would work out to $\Theta(n \lg n)$ rather than $3n/2 - O(n)$.)
 Now the odds that any bitstring of length $L$ matches any of $m$ different $L$-bit strings is $m 2^{-L}$.
-Applying this to TCFs, since the space usage is linear, and since the ``sides'' (the two arrays of buckets) are of length $\lg n - O(1)$, then by reversing the quotienting operation we get that the probability that any random value that {\em wasn't} inserted matches with any of the existing elements is $O(n) 2^{-\lg n + O(1) - F}$.
+Applying this to \TCF{}s, since the space usage is linear, and since the ``sides'' (the two arrays of buckets) are of length $\lg n - O(1)$, then by reversing the quotienting operation we get that the probability that any random value that {\em wasn't} inserted matches with any of the existing elements is $O(n) 2^{-\lg n + O(1) - F}$.
 If the tails all started with length 0, rather than $\lg \lg N$, then the space usage would be $\Theta(n \lg n)$ and the fpp would be $2^{-F+O(1) + \lg \lg n}$.
 See also~\cite{psw}.
 
 %% \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-upsize,
-%%     caption={Pseudocode for the upsize operation on TCFs.
+%%     caption={Pseudocode for the upsize operation on \TCF{}s.
 %%   }]
 %% Steal(head, tail) {
 %%   if (|tail| > 0) {
@@ -753,8 +791,8 @@ See also~\cite{psw}.
 %%   return Concat(head, 0), Concat(head, 1)
 %% }
 
-%% Upsize(tcf: TCF(U, k)) {
-%%   result := new TCF(U, k + 1)
+%% Upsize(tcf: \TCF{}(U, k)) {
+%%   result := new \TCF{}(U, k + 1)
 %%   for (side : tcf) {
 %%     for (bucket_index : `$\ints_{2^k}$`) {
 %%       for (element : side.Bucket[bucket_index]) {
@@ -776,7 +814,7 @@ See also~\cite{psw}.
 %% \end{lstlisting}
 
 \paragraph{Union and Intersection}
-In addition to lookup, insert, and upsize, TCFs also support iterating over all elements.
+In addition to lookup, insert, and upsize, \TCF{}s also support iterating over all elements.
 Iteration yields all of the recoverable hashed bits by performing the quotienting in reverse (combining element locations with element fingerprints), then appending the tail. %(See Listing~\ref{tcf-iterate})
 Combined with lookup and insert, iterate enables union and intersection operations as follows:
 
@@ -785,10 +823,10 @@ Combined with lookup and insert, iterate enables union and intersection operatio
 %% TODO: talk more about union in the database application of build/probe side filters
 
 %% \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-iterate,
-%%     caption={Pseudocode for iteration on TCFs; uses coroutines
+%%     caption={Pseudocode for iteration on \TCF{}s; uses coroutines
 %%   }]
-%% Iterate(tcf: TCF(U, k)) {
-%%   result := new TCF(U, k + 1)
+%% Iterate(tcf: \TCF{}(U, k)) {
+%%   result := new \TCF{}(U, k + 1)
 %%   for (side : tcf) {
 %%     for (bucket_index : `$\mathbb{Z}_{2^k}$`)
 %%       for (element : side.Bucket[bucket_index]) {
@@ -802,32 +840,40 @@ Combined with lookup and insert, iterate enables union and intersection operatio
 %% \end{lstlisting}
 
 %% TODO: explain what a longer element means!
-For union, taffy cuckoo filers iterate over the smaller filter and insert each element into the larger filter, unless they are already present.
-For intersection, TCFs iterate over the smaller filter and lookup each element in the larger filter.
+For union, \taffy{} cuckoo filers iterate over the smaller filter and insert each element into the larger filter, unless they are already present.
+For intersection, \TCF{}s iterate over the smaller filter and lookup each element in the larger filter.
 If the lookup fails, iteration proceeds to the next element.
 Otherwise, the longer bit string of the two elements is inserted into the intersection.
-Note that this may sometimes be the element from the smaller TCF, since the tails have variable length.
+Note that this may sometimes be the element from the smaller \TCF{}, since the tails have variable length.
 
 %% TODO: pseudocode and an analysis of the fpp.
 %% For union, it should be the sum of the input fpp, minus their product, but need to explain that, since we earlier said all filters have the same low fpp.
 %% For intersection, the situation is tricky.
 %% We can depend on the inserted strings to be at least as long as the shortest strings in the larger dictionary.
 
-This support for union and intersection is in contrast to TBFs, which do not support iteration or intersection.
-TBFs do support union, but at a cost: while union operations on TCFs produce a filter with the sum of the false positive probabilities of the input filters, unions on TBFs perform like unions on Bloom filters.
+This support for union and intersection is in contrast to \TBF{}s, which do not support iteration or intersection.
+\TBF{}s do support union, but at a cost: while union operations on \TCF{}s produce a filter with the sum of the false positive probabilities of the input filters, unions on \TBF{}s perform like unions on Bloom filters.
 If one Bloom filter has a fraction $\alpha$ of its bits set and another $\beta$, the union has $\alpha + \beta - \alpha \beta$ of its bits set in expectation.
 %This increases the probability of a false positive from $\alpha^k + \beta^k$, where $k$ is the number of hash functions, to $(\alpha + \beta - \alpha \beta)^k$.
-For instance, when $\alpha = \beta = 0.5$ and $k = 8$, the false positive rate goes up by a factor of $0.75^8/0.5^8 \approx 25.63$. %, much more than the factor of $2$ with TCFs.
+For instance, when $\alpha = \beta = 0.5$ and $k = 8$, the false positive rate goes up by a factor of $0.75^8/0.5^8 \approx 25.63$. %, much more than the factor of $2$ with \TCF{}s.
 
 \paragraph{Freeze and Thaw}
-TCFs also support {\em freeze} and {\em thaw} operations.
-Freeze reduces the space consumption of a TCF from $O(\lg(1/\varepsilon) + \lg \lg N)$ to $O(\lg (1 / \varepsilon))$ bits per item, where $N$ is the largest size the structure will grow to.
-It does so by recreating the structure as a TCF with tail length capacity $0$.
-Thaw simply turns a frozen structure into an unfrozen structure by recreating a TCF with tail length capacity $\lg \lg N$ in which all of the tails are empty.
+\TCF{}s also support {\em freeze} and {\em thaw} operations.
+Freeze reduces the space consumption of a \TCF{} from $O(\lg(1/\varepsilon) + \lg \lg N)$ to $O(\lg (1 / \varepsilon))$ bits per item, where $N$ is the largest size the structure will grow to.
+It does so by recreating the structure as a \TCF{} with tail length capacity $0$.
+Thaw simply turns a frozen structure into an unfrozen structure by recreating a \TCF{} with tail length capacity $\lg \lg N$ in which all of the tails are empty.
 This allows new inserts to take place while capturing their tails.
 
-Note that the frozen structure is a variant of a cuckoo filter in which the fingerprint hash function takes into account the index as well.
-This isomer of cuckoo filters shows how to support in cuckoo filters techniques that were designed for cuckoo hash tables, including satellite data (making a cuckoo filter a type of Bloomier filter), overlapping windows, and stashes~\cite{cuckoo-simple,cuckoo-overlap,stash}.
+\subsection{Cuckoo filter $\cong$ cuckoo hashing with permutations and quotienting}
+
+Note that the frozen \taffy{} cuckoo filter is a variant of a cuckoo filter in which the fingerprint hash function takes into account the index as well.
+In the original cuckoo filters, the two buckets a fingerprint could reside in are separated by a hashed value of the fingerprint~\cite{cuckoo}.
+The fingerprint stored in either bucket is identical, and there is no recovery of the original hashed value.
+The difference between a frozen \TCF{} and the original cuckoo filter is that a frozen \TCF{} can recover a prefix of the hashed key by way of inverting the relevant permutation and applying it to the bucket index and fingerprint.
+Other than this difference, the structures have the same operations.
+
+This isomer of cuckoo filters shows how to support in cuckoo filters a straightforward method for porting techniques that were designed for cuckoo hash tables, including satellite data (making a cuckoo filter a type of Bloomier filter), overlapping blocks, stashes, $d > 2$ buckets, fast insertion algorithms, and cuckoo hashing with pages~\cite{cuckoo-simple,cuckoo-overlap,stash,d-ary,d-ary-filter,vertical,bloomier,cuckoo-linear-insertion,cuckoo-simd-insert,cuckoo-pages,cuckoo-pages-non-contiguous}.
+
 
 %% After thaw, the filter looks dangerously skinny.
 %% Since none of the slots have non-empty tails, it appears the false positive probability may rise as more items are added and upsize calls duplicate all keys that were present at the time of thaw.
@@ -839,11 +885,11 @@ This isomer of cuckoo filters shows how to support in cuckoo filters techniques 
 %% Pagh \etal{} show that the number of elements in a structure that has never been thawed and frozen is linear in the number of times insert has been called.
 %% This the total capacity is $O(n2^k)$ -- linear in the number of inserts.
 
-%% TCFs support a union operation as well, which operates by iterating over the smaller TCF and inserting into the larger.
+%% \TCF{}s support a union operation as well, which operates by iterating over the smaller \TCF{} and inserting into the larger.
 %% The iteration is able to partially reconstruct the original hashed key (before permutations) using the same method as in upsize in Figure~\ref{tcf-upsize}, lines 10-14.
 %% Although this does not allow the insert method to be used directly, a variation on insert (Figure~\ref{tcf-insert}, line 13-19) can insert a pair of a prefix of a hashed value and a tail.
-%% Like upsize, union then steals bits from the tail, except union keeps stealing until the hash value is as long as needed to fit with the insert of the TCF being uniond into.
-%% This results in a false positive probability that is the sum of the false positive probabilities of the two input TCFs.
+%% Like upsize, union then steals bits from the tail, except union keeps stealing until the hash value is as long as needed to fit with the insert of the \TCF{} being uniond into.
+%% This results in a false positive probability that is the sum of the false positive probabilities of the two input \TCF{}s.
 
 %% TODO:  union benchmarks
 
@@ -853,7 +899,7 @@ This isomer of cuckoo filters shows how to support in cuckoo filters techniques 
 
 %% \begin{figure}[h!]
 %% \begin{lstlisting}[escapeinside={`}{`}]
-%% InsertUnion(tcf: TCF(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{j+10}$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`) {
+%% InsertUnion(tcf: \TCF{}(U,k), side: `$\ints_2$`, hashed: `$\ints_2^{j+10}$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`) {
 %%   if (j == k) return InsertSide(tcf, side, hashed, tail)
 %%   if (|tail| > 0) {
 %%     (head, tail) := Steal(hashed, tail)
@@ -864,7 +910,7 @@ This isomer of cuckoo filters shows how to support in cuckoo filters techniques 
 %%   }
 %% }
 
-%% Union(from: TCF(U, k), to: TCF(U, j)) {
+%% Union(from: \TCF{}(U, k), to: \TCF{}(U, j)) {
 %%   if (k > j) return Union(to, from)
 %%   for (side : {0, 1}) {
 %%     for (bucket_index : `$\ints_{2^k}$`) {
@@ -878,8 +924,8 @@ This isomer of cuckoo filters shows how to support in cuckoo filters techniques 
 %% }
 %% \end{lstlisting}
 %% \caption{
-%% Pseudocode for the union opeation on TCFs.
-%% The two input TCFs must have the same hash function.
+%% Pseudocode for the union opeation on \TCF{}s.
+%% The two input \TCF{}s must have the same hash function.
 %% }
 %% \end{figure}
 
@@ -1207,10 +1253,10 @@ This isomer of cuckoo filters shows how to support in cuckoo filters techniques 
 % TODO: \paragraph{Satelite Data}
 
 
-\section{Minimal taffy cuckoo filters}
+\section{Minimal \taffy{} cuckoo filters}
 \label{mtcf}
 
-Taffy cuckoo filters suffer from a step-function space usage:
+\Taffy{} cuckoo filters suffer from a step-function space usage:
 at each point, the structure has a size which is a power of two, sometimes allocating twice as much space as is needed. (See Figure~\ref{space-steps}.)
 Even if the size were not limited to being a power of two, as in vacuum filters, doubling the capacity during upsize would reduce the space utilization to less than 50\%~\cite{vacuum}.
 To address this, this section describes a cuckooing structure based on DySECT to reduce the space usage closer to only what is needed~\cite{dysect}.
@@ -1220,17 +1266,17 @@ A DySECT table consists of some number of subtables, and as the table gets more 
 Just as in cuckoo hashing, upon an insertion, an element may be evicted.
 As new elements are inserted into the table, they evict older elements, and this movement causes the newly-doubled subtable to fill up.
 
-This section proposes minimal taffy cuckoo filters (``MTCFs''), an application of the DySECT idea to quotienting and taffy filters.
+This section proposes minimal \taffy{} cuckoo filters (``\MTCF{}s''), an application of the DySECT idea to quotienting and \taffy{} filters.
 Some complications arise:
 
 \begin{enumerate}
   \item Because subtables have different sizes, the bits that are implicitly stored using quotienting varies depends on which part of the table an element is in.
-    To address this, fingerprints in MTCFs have variable size.
+    To address this, fingerprints in \MTCF{}s have variable size.
   \item Because fingerprints have variable size, there must be multiple permutations per side, one for each size of fingerprint.
   \item Because there are multiple permutations per side, a key may be in multiple distinct buckets per side, which decreases the performance and increases the false positive probability.
 \end{enumerate}
 
-In an MTCF, each element has a fingerprint of size 8 or 9 and a tail of size up to 5.\footnote{As in TCFs, these constants are picked for performance and ease of implementation.
+In an \MTCF{}, each element has a fingerprint of size 8 or 9 and a tail of size up to 5.\footnote{As in \TCF{}s, these constants are picked for performance and ease of implementation.
 Any other constants are possible.
 }
 A bucket consists of four (possibly empty) slots, each of which can hold one element.
@@ -1244,9 +1290,26 @@ See Listing~\ref{mtcf-types} and Figure~\ref{mtcf-diagram}.
 The permutations are grouped by side, two for each.
 The permutations are on values with length $k + 13$ and $k + 14$, where $2^k$ is the size of the smallest table, measured in buckets.
 
+\ifanon
 \begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-types,
     caption={
-      The types of an MTCF.
+      The types of an \MTCF{}.
+      A Permutation(k) is a tagged union of permutations; wlog it can be applied to bit strings of known length.
+  }]
+MElement := {fingerprint: `$\ints_2^8 \dotcup \ints_2^9$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
+MSlot := MElement`$_\bot$`
+MBucket := MSlot[4]
+Level(k) := MBucket[2][2`$^k$`] `$\dotcup$` MBucket[2][2`$^{k+1}$`]
+Permutation(k) := `$S_{2^{k+13}} \dotcup S_{2^{k+14}}$`
+MSCF(U, k) := {cursor: `$\ints_{32}$`,
+               Level(k)[32],
+               Permutation(k)[2],
+               HashFunction: `$U \to \ints_2^{64}$`}
+\end{lstlisting}
+\else
+\begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-types,
+    caption={
+      The types of an \MTCF{}.
       A Permutation(k) is a tagged union of permutations; wlog it can be applied to bit strings of known length.
   }]
 MElement := {fingerprint: `$\ints_2^8 \dotcup \ints_2^9$`, tail: `$\dotcup_{i \le 5} \ints_2^i$`}
@@ -1259,11 +1322,12 @@ MTCF(U, k) := {cursor: `$\ints_{32}$`,
                Permutation(k)[2],
                HashFunction: `$U \to \ints_2^{64}$`}
 \end{lstlisting}
+\fi
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{mpcf-diagram}
 \caption{\label{mtcf-diagram}
-A diagram of an MTCF.
+A diagram of an \MTCF{}.
 In this example, $k = 2$, so the larger levels have $2^{k+1} = 8$ buckets on each side, while the smaller levels have four.
 In the first bucket of side 0 of the 32nd level, the last three slots are empty.
 If the entry were from one of the larger levels above the cursor, then the fingerprint would have to be from $\ints_2^8$, rather than from $\ints_2^8 \dotcup \ints_2^9$.
@@ -1273,17 +1337,17 @@ If the entry were from one of the larger levels above the cursor, then the finge
 If there are larger and smaller levels, then every element in the larger levels has a fingerprint of size 8, not 9.
 This is because the implicitly-stored part of the key is one-bit longer in the larger levels, so the explicitly stored part can be shorter.
 
-In an MTCF, upsize only increases the size of one of the levels, not the whole structure.
+In an \MTCF{}, upsize only increases the size of one of the levels, not the whole structure.
 As a result, the capacity of the filter tracks more closely the number of entries in the table. (See Figure~\ref{bits-per-item}.)
 
 \paragraph{Lookup}
-A lookup operation in an MTCF first applies each of the four permutations to the hashed key.
+A lookup operation in an \MTCF{} first applies each of the four permutations to the hashed key.
 \begin{itemize}
 \item For the permutations on $k + 14$ bits %(Listing~\ref{mtcf-lookup}, line 11),
 the first five bits indicate the level %(line 12)
 , the next $k$ or $k+1$ indicate the bucket %(line 14)
 , and the remaining 8 or 9 bits are the fingerprint.
-Lookup proceeds as it does in the TCF case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up. %(Lines~15--16.)
+Lookup proceeds as it does in the \TCF{} case, by checking if fingerprints match and if the stored tail is a prefix of the tail of the key being looked up. %(Lines~15--16.)
 \item For the permutations on $k + 13$ bits, the first five bits again indicate the level. %(Line~3.)
 \begin{itemize}
 \item If the level has tables with $2^{k+1}$ buckets, the permuted key is not used for lookup; to do otherwise would leave only $k+13 - 5 - (k+1) = 7$ bits for the fingerprint, which is not possible.
@@ -1294,9 +1358,9 @@ That key is simply skipped and the lookup continues with the next key. %(Line~4)
 
 %% \begin{lstlisting}[escapeinside={`}{`},float,label=mtcf-lookup,
 %%     caption={
-%%       The lookup operation in an MTCF. Notice that up to four buckets may be searched: between one and two per side.
+%%       The lookup operation in an \MTCF{}. Notice that up to four buckets may be searched: between one and two per side.
 %%   }]
-%% LookupSide(mtcf: MTCF(U, k), side: `$\ints_2$`, hashed: `$\ints_2^{64}$`) {
+%% LookupSide(mtcf: \MTCF{}(U, k), side: `$\ints_2$`, hashed: `$\ints_2^{64}$`) {
 %%   permuted := mtcf.Permutation[side](hashed[0, k+13))
 %%   level_number := permuted[0, 5)
 %%   if (level_number `$\ge$` mtcf.cursor) {
@@ -1314,7 +1378,7 @@ That key is simply skipped and the lookup continues with the next key. %(Line~4)
 %%                       hashed[k+14, k+19), bucket)
 %% }
 
-%% MLookup(mtcf: TCF(U, k), key: U) {
+%% MLookup(mtcf: \TCF{}(U, k), key: U) {
 %%   hashed := mtcf.HashFunction(key)
 %%   for (side : {0, 1}) {
 %%     if (LookupSide(mtcf, side, hashed)) return True
@@ -1329,18 +1393,18 @@ That key is simply skipped and the lookup continues with the next key. %(Line~4)
 
 \paragraph{Insert}
 In insert operations, as in lookup, the first five bits of the permuted item indicate the level. %(Listing~\ref{mtcf-insert}, lines~17, 19, 26, and 47--48)
-Just as in TCFs, the insert operation on a bucket produces an eviction. %(Listing~\ref{mtcf-insert}, lines~5--8)
+Just as in \TCF{}s, the insert operation on a bucket produces an eviction. %(Listing~\ref{mtcf-insert}, lines~5--8)
 During an evict operation in an insert, an element may move between levels with differently-sized arrays of buckets.
 When the fingerprint has size 8 and the level moved {\em from} has a bucket array of size $2^k$ and the level moved {\em to} has a bucket array of size $2^{k+1}$, the number of explicitly stored bits (the fingerprint bits) is now $(k + 8) - (k+1) = 7$.
 Since every fingerprint must be of length 8 or 9, a bit must be stolen from the tail. %(Lines~29--36)
-As in TCFs, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key. %(Line 34)
+As in \TCF{}s, if there are no bits to steal, two new key prefixes are created and inserted, as one of them must be the prefix of the original key. %(Line 34)
 See Figure~\ref{mtcf-state-transition}.
-Note that TCFs only steal bits during upsize operations.
+Note that \TCF{}s only steal bits during upsize operations.
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{mtcf-state-transition}
 \caption{\label{mtcf-state-transition}
-This diagram illustrates the transitions an element in an MTCF can go through when evicted.
+This diagram illustrates the transitions an element in an \MTCF{} can go through when evicted.
 % The diagram can be read as ``an element in state A can become an element in state B when evicted''.
 The states indicate the lengths of the level, fingerprint, and tail.
 For instance, when a level's index is less than the cursor (the center state in this diagram), the length of that level is twice what it would be if its index were higher.
@@ -1350,8 +1414,8 @@ For elements in a short level with a short fingerprint and no tail, when they ar
 }
 \end{figure}
 
-%% \begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the insert operation on MTCFs},float,label=mtcf-insert]
-%% MInsertSide(mtcf: MTCF(U, k), side: `$\ints_{2}$`,
+%% \begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the insert operation on \MTCF{}s},float,label=mtcf-insert]
+%% MInsertSide(mtcf: \MTCF{}(U, k), side: `$\ints_{2}$`,
 %%             level_number: `$\ints_{32}$`,
 %%             bucket_number: `$\ints_{2^k} \dotcup \ints_{2^{k+1}}$`,
 %%             fingerprint `$\ints_2^8 \dotcup \ints_2^9$`,
@@ -1368,7 +1432,7 @@ For elements in a short level with a short fingerprint and no tail, when they ar
 %%   MInsertPermuted(mtcf, side, permuted, tail)
 %% }
 
-%% MInsertPermuted(mtcf: MTCF(U, k), side: `$\ints_2$`,
+%% MInsertPermuted(mtcf: \MTCF{}(U, k), side: `$\ints_2$`,
 %%                 permuted: `$\ints_2^{k+13} \dotcup \ints_2^{k+14}$`, tail: `$\sum_{i \le 5}\ints_2^i$`) {
 %%   level_number := permuted[0, 5)
 %%   if (|permuted| == k + 14) {
@@ -1397,7 +1461,7 @@ For elements in a short level with a short fingerprint and no tail, when they ar
 %%   }
 %% }
 
-%% InsertMTCF(mtcf: MTCF(U, k), key: U) {
+%% Insert\MTCF{}(mtcf: \MTCF{}(U, k), key: U) {
 %%   if (MLookup(mtcf, key)) return
 %%   hashed := mtcf.HashFunction(key)
 %%   permuted := mtcf.Permutation[0](hashed[0, k+14))
@@ -1412,7 +1476,7 @@ For elements in a short level with a short fingerprint and no tail, when they ar
 %% }
 %% \end{lstlisting}
 
-The analysis of iterate, union, intersection, and freeze/thaw is identical to that of TCFs.
+The analysis of iterate, union, intersection, and freeze/thaw is identical to that of \TCF{}s.
 
 % Pseudocode for insert and upsize are available in Appendix~\ref{mtcf-appendix}.
 
@@ -1424,16 +1488,16 @@ The analysis of iterate, union, intersection, and freeze/thaw is identical to th
 \section{Evaluation}
 \label{eval}
 
-% TODO: evaluate starting taffy filters with more starting elements: maybe 1024
+% TODO: evaluate starting \taffy{} filters with more starting elements: maybe 1024
 
-TBFs, TCFs, and MTCFs have been implemented and tested for correctness; this section describes their space usage, false positive probabilities, and performance under the insert and lookup operations.
+\TBF{}s, \TCF{}s, and \MTCF{}s have been implemented and tested for correctness; this section describes their space usage, false positive probabilities, and performance under the insert and lookup operations.
 
-In each chart, TBFs are configured for a maximum fpp of 0.4\%.
-All taffy filters are configured with an initial capacity of 1. %, however the MTCF has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
+In each chart, \TBF{}s are configured for a maximum fpp of 0.4\%.
+All \taffy{} filters are configured with an initial capacity of 1. %, however the \MTCF{} has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
 All experiments were performed on both an Intel i7-7800X with 96GB of memory and SMT turned on and an AWS EC2 instance of class m6g.medium with 4GB of memory and a single Graviton2 ARM-based core.
 The experiments use Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, respectively.
 
-For performance testing, we equip both TCFs and MTCFs with stashes~\cite{stash}.
+For performance testing, we equip both \TCF{}s and \MTCF{}s with stashes~\cite{stash}.
 We set both filters to upsize when they are 90\% full or their stashes have size greater than 4.
 
 For permutations we use Feistel networks with 2-independent multiply-shift as the round function~\cite{two-independent-multiply-shift}.
@@ -1456,20 +1520,20 @@ For instance, Bloom filters use $\lg (1/\varepsilon)/\ln 2$ bits per element, wh
 Cuckoo filters and quotient filters use $(\lg (1/\varepsilon) + d) / \alpha$ where $d$ is between 2 and 3, and $\alpha$ is the fill factor, between 80\% - 99\%~\cite{cuckoo,quotient-filter,vector-quotient}.
 Static filters that do not support insert -- such as the ribbon filter -- can use nearly optimal space~\cite{ribbon}.
 
-However, Pagh \etal{} showed that filters that can grow, like taffy filters can, must use at least $\lg (1/\varepsilon) + \Omega(\lg \lg n)$ bits per element~\cite{psw}.
+However, Pagh \etal{} showed that filters that can grow, like \taffy{} filters can, must use at least $\lg (1/\varepsilon) + \Omega(\lg \lg n)$ bits per element~\cite{psw}.
 Figures~\ref{bits-per-item}~and~\ref{ideal-bits-per-item} show the actual bits per element and $\varepsilon$.
 
 Cuckoo filters cannot grow (without changing the number of bits per slot and doubling the false positive rate).
 As such, cuckoo filters are only visible over 10 million elements in Figure~\ref{bits-per-item}, since their bits per key starts out at over 1.2 billion.
 The same is true of split block Bloom filters.
 
-Figures~\ref{bits-per-item}~and~\ref{space-steps} show the periodic nature of the space used in taffy filters.
+Figures~\ref{bits-per-item}~and~\ref{space-steps} show the periodic nature of the space used in \taffy{} filters.
 When a filter increases in size, the number of bits per element increases as well.
-MTCFs moderate this pattern, but do not eliminate it.
+\MTCF{}s moderate this pattern, but do not eliminate it.
 
 
 
-% TODO: graph different MTCF variants based on level size, fingerprint size
+% TODO: graph different \MTCF{} variants based on level size, fingerprint size
 
 % TODO: graph fill factor
 
@@ -1478,14 +1542,13 @@ MTCFs moderate this pattern, but do not eliminate it.
 % TODO: compare standard bloom filters, filters with exponentially decreasing fpp
 
 
-\begin{figure}[h!]
-
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{bits-per-item}
   \caption{  \label{bits-per-item}
 Number of bits (per element) each filter type needs.}
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{space}
   \caption{
     \label{space-steps}
@@ -1495,13 +1558,13 @@ Number of bits (per element) each filter type needs.}
   }
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{ideal-bits-per-item}
   \caption{  \label{ideal-bits-per-item}
     This figure shows $\varepsilon$, the false positive probability.
-    %% TODO: explain the sudden jump in taffy filters around 500-5000.
+    %% TODO: explain the sudden jump in \taffy{} filters around 500-5000.
     %% Explain the low fpp of CF and lower of SBBF.
-    %% Explain the difference between MTCF and TCF/TBF.
+    %% Explain the difference between \MTCF{} and \TCF{}/\TBF{}.
   }
 \end{figure}
 
@@ -1528,38 +1591,37 @@ Number of bits (per element) each filter type needs.}
 
 \subsection{Time}
 
-Figures~\ref{insert-time},~\ref{arm-insert-time},~\ref{lookup-both},~and~\ref{arm-lookup-both} show the performance of taffy filter operations.
-For inserts, TBFs are the fastest of the three taffy filter variants; they are even faster than the fastest non-taffy variant, split block Bloom filters.
-TBFs inserts are faster than the other cuckoo filters because they are simple, branch-free, and induce a single cache miss; they are faster than the pre-sized split block Bloom filter because, while being built, the entirety of the TBF fits in cache until about 10 million elements have been inserted.
+Figures~\ref{insert-time},~\ref{arm-insert-time},~\ref{lookup-both},~and~\ref{arm-lookup-both} show the performance of \taffy{} filter operations.\footnote{All charts of time show the minimum over nine runs.}
+For inserts, \TBF{}s are the fastest of the three \taffy{} filter variants; they are even faster than the fastest non-\taffy{} variant, split block Bloom filters.
+\TBF{}s inserts are faster than the other cuckoo filters because they are simple, branch-free, and induce a single cache miss; they are faster than the pre-sized split block Bloom filter because, while being built, the entirety of the \TBF{} fits in cache until about 10 million elements have been inserted.
 This holds true across both machines, x86 and ARM.
 
 For lookups, the situation is more complex.
-Of the resizable filters, the taffy cuckoo filter is the fastest once the size of the filter is large enough, while a TBF is otherwise faster.
-The MTCF lags behind both.
-%One reason for this is that the ARM split block Bloom filters that the TBF is based on only have 128-bit vector units, not 256-bit units like the x86 machine does.
+Of the resizable filters, the \taffy{} cuckoo filter is the fastest once the size of the filter is large enough, while a \TBF{} is otherwise faster.
+The \MTCF{} lags behind both.
+%One reason for this is that the ARM split block Bloom filters that the \TBF{} is based on only have 128-bit vector units, not 256-bit units like the x86 machine does.
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{insert-cumulative}
   \caption{
     \label{insert-time}
     Insert times for filters, i7-7800X.
-    The dip in insert times per key reflects the overhead of measuring a small number of insert operations.
-    The benchmark was performed by taking a timestamp for every 5\% growth in the filter.
+    %The dip in insert times per key reflects the overhead of measuring a small number of insert operations.
+    %The benchmark was performed by taking a timestamp for every 5\% growth in the filter.
     %% TODO: the dip is an artifact; redo with more samples and longer time between timer start \& stop.
   }
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{arm-insert-cumulative}
   \caption{
     \label{arm-insert-time}
     Insert times for filters on an AWS EC2 m6g.medium with an ARM-based Graviton2.
-    See Figure~\ref{insert-time} for notes.
     %% TODO: the dip is an artifact; redo with more samples and longer time between timer start \& stop.
   }
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{lookup-both}
   \caption{
     \label{lookup-both}
@@ -1568,7 +1630,7 @@ The MTCF lags behind both.
   }
 \end{figure}
 
-\begin{figure}[h!]
+\begin{figure}[b!]
   \includegraphics[width=3.333in]{arm-lookup-both}
   \caption{
     \label{arm-lookup-both}
@@ -1593,63 +1655,74 @@ In this section we test the dataset of previously used passwords from ``Have I B
 This dataset consists of 847 million SHA-1 hashes of leaked passwords.
 It has grown over time, starting in August 2017 with 306 million passwords. It is currently\footnote{As of December 2021} on version 8.
 
-Taffy Bloom filters and taffy cuckoo filters were tested on this dataset using the low-order bits from the SHA-1 hashes as the keys.
-Both filters started out configured with an initial capacity of a single element.
-Experiments were conducted on an EC2 r6i.xlarge with 32GiB of memory and an Intel Xeon Platinum 8375C CPU @ 2.90GHz.
+\Taffy{} Bloom filters and \taffy{} cuckoo filters were tested on this dataset using the low-order bits from the SHA-1 hashes as the keys.
+Both filters started out configured with an initial capacity of a single element; the \TBF{} was configured to have a similar fpp to the \TCF{}.
+Experiments were conducted on an AWS EC2 r6i.xlarge with 32GiB of memory and an Intel Xeon Platinum 8375C clocked at 2.90GHz.
+Times are the minimum over a set of 33 runs; fpps are the median.
 
 %The dataset is large enough that this experiment processed it in a streaming fashion, interleaving parsing and filter insertion.
 %As a result, the insertion timings show significant overhead from the measurement code.
-To insert all of the keys took 37 nanoseconds per key for the TBF and 674 nanoseconds per key for the TCF.
-The filters had fpps of 0.25\% and 0.27\%, respectively.
-Lookups in the full filters took 349 nanoseconds each for the TBF and 119 nanoseconds each for the TCF.
+To insert all of the keys took 25 nanoseconds per key for the \TBF{} and 558 nanoseconds per key for the \TCF{}.
+The filters had fpps of 0.24\% and 0.26\%, respectively.\footnote{These are the numbers for the average and also for the median.}
+Lookups in the full filters took 288 nanoseconds each for the \TBF{} and 110 nanoseconds each for the \TCF{}.
+As in the case of the synthetic benchmarks, insert is faster for the \TBF{} and lookup is faster for the \TCF{}.
 
-As in the case of the synthetic benchmarks, insert is faster for the TBF and lookup is faster for the TCF.
+The compressed list of SHA-1 hashes uses 15.1GiB (34.8 GiB in uncompressed hex ASCII, with no lookup facilities such as being stored in a hash table or B-tree), while the \taffy{} filters use 4.2GiB and 4.0GiB in memory, respectively.
+Storing just the last 64 bits of each SHA-1 hash (the bits used in constructing the \taffy{} filters) without any lookup metadata like a hash table or B-tree would use 6.3GB.
 
-The compressed list of SHA-1 hashes uses 15.1GiB (34.8 GiB in uncompressed hex ASCII, with no lookup facilities such as being stored in a hash table or B-tree), while the taffy filters use 4.2GiB and 4.0GiB in memory, respectively.
+%% Min storage for uncompressed hashes: 20 bytes * 847 million = 15.8 GiB
 
-% TODO: test MTCF, SBBF, and CF
+%% When starting each filter from the initial dataset size, 306 million passwords, using 7 bits per password for our initial \TCF{} size, and tuning the \TBF{} to have a similar fpp to the \TCF{}, we get 2.4 GB for the size of the \TBF{}, 2.0GB for the size of the \TCF{}, 0.06\% fpp and 0.05\% fpp, 27 nanoseconds per key and 313 nanoseconds per key for the inserts, and 44 nanoseconds and 105 nanoseconds for the lookup, respectively.
+%% The \TBF{}'s lookup performance has improved so much because of the small number of split block Bloom filters it contains -- just two.
+%% Starting the \TCF{} with 14 bits per password gives the same result, but 7\% faster inserts, cumulatively, over the whole insert phase of the workload building from zero to 847 million keys.
 
-%% Now with configured 1.6% for TBF and lookup time for a million elements
+% TODO: test \MTCF{}, SBBF, and CF
+
+%% Now with configured 1.6% for \TBF{} and lookup time for a million elements
 %% 847223402       4481419456      4294967296      154608817118    589962485050
 %% 2447    2554
 %% 297013362       109570877
 
-%% 0.4% in TBF. NDV, TBF size, TCF size, TBF insert nanos, TCF insert nanos, FPP out of 1000000 for TBF, """ TCF, lookup time TBF, lookup time TCF
+%% 0.4% in \TBF{}. NDV, \TBF{} size, \TCF{} size, \TBF{} insert nanos, \TCF{} insert nanos, FPP out of 1000000 for \TBF{}, """ \TCF{}, lookup time \TBF{}, lookup time \TCF{}
 %847223402       1637463040      2147483648      1.90629e+10     2.57225e+11
 %6865    518
 %38851604        101168713
+% More tuned fpp in tbf:
+% 847223402       2572134464      2147483648      2.24517e+10     2.65516e+11
+%649     495
+%43916747        104781365
 
 
 \subsection{Discussion}
 
-The MTCF offers lower space than the other two taffy filters, but its speed is substantially worse.
+The \MTCF{} offers lower space than the other two \taffy{} filters, but its speed is substantially worse.
 It has significant insertion time increases when it is hard to find an eviction sequence; in this case consecutive insert operations may call upsize, causing a spike in the graph. (See Figures~\ref{insert-time}~and~\ref{arm-insert-time}.)
 This cyclic behavior was noted by Maier \etal~\cite{dysect}.
-%This behavior is also seen in the TCF, though less severely.
+%This behavior is also seen in the \TCF{}, though less severely.
 % Performance for lookup is also cyclic as the fill factor and size of the stashes grow and shrink.
 
-During lookup operations on MTCFs, when the cursor is close to 32, the performance improves as the four potential locations to look for a key are more frequently reduced to two, since the shorter permuted keys are no longer long enough for most of the levels in the structure.
+During lookup operations on \MTCF{}s, when the cursor is close to 32, the performance improves as the four potential locations to look for a key are more frequently reduced to two, since the shorter permuted keys are no longer long enough for most of the levels in the structure.
 See Figures~\ref{lookup-both}~and~\ref{arm-lookup-both}.
 
 Split block Bloom filters and cuckoo filters are still attractive choices when the size of the set to be approximated is known in advance.
 When a growable filter is needed, the application matters quite a bit.
-If saving every byte matters, MTCFs are called for.
-If union, intersection, or freeze operations are needed, a TCF or MTCF is called for.
-If satellite data (as in a Bloomier filter) is needed, such as when using the filter in front of an LSM tree, a TCF or MTCF should be used, as TBFs do not support satellite data.
+If saving every byte matters, \MTCF{}s are called for.
+If union, intersection, or freeze operations are needed, a \TCF{} or \MTCF{} is called for.
+If satellite data (as in a Bloomier filter) is needed, such as when using the filter in front of an LSM tree, a \TCF{} or \MTCF{} should be used, as \TBF{}s do not support satellite data.
 Otherwise, a practitioner must ask themselves:
 
 \begin{itemize}
 \item Is the workload write-heavy or read-heavy?
-  Write-heavy workloads favor TBFs over TCFs.
+  Write-heavy workloads favor \TBF{}s over \TCF{}s.
 \item Is the set likely to exceed one million elements (x86) or 1000 elements (ARM)?
-  If yes, a TCF is an attractive choice.
+  If yes, a \TCF{} is an attractive choice.
 %% \item Are union, intersection, or freeze operations needed?
-%%   A TCF or MTCF is the only choice.
+%%   A TCF or \MTCF{} is the only choice.
 %% \item Is the hardware known in advance?
-%%   If x86, the TBF may be the best choice.
+%%   If x86, the \TBF{} may be the best choice.
 \end{itemize}
 
-The code for taffy filters is available on GitHub under a permissive open-source license.\ifanon\else\footnote{\url{https://github.com/jbapple/libfilter}}\fi
+The code for \taffy{} filters is available \ifanon\else on GitHub\fi under a permissive open-source license.\ifanon\else\footnote{\url{https://github.com/jbapple/libfilter}}\fi
 
 % TODO: show different level counts and how that decreases the spikiness?
 
@@ -1673,16 +1746,16 @@ The code for taffy filters is available on GitHub under a permissive open-source
 Future work includes:
 
 \begin{itemize}
-\item The stash limitations for the TCF and MTCF are very low - tuned for a linear search.
+\item The stash limitations for the \TCF{} and \MTCF{} are very low - tuned for a linear search.
 Giving structure to the stash, as in backyard cuckoo hashing, could allow the stash to grow and the fill factor to go higher without needing to upsize~\cite{backyard}.
 
 \item There is an additional structure supporting sets of unknown sizes described in Liu \etal~\cite{unknown-prefix}.
 This structure is mostly theoretical and depends on a certain type of prefix search structure with large embedded constants.
 However, a practical version of this may be possible to build.
 
-\item For the TCF, alternate quotienting dictionaries, including quotient filters, broom filters, or bucketing hash tables (as presented by K\"oppl \etal{}) could potentially improve performance~\cite{raman-practical,broom,quotient-filter}.
+\item For the \TCF{}, alternate quotienting dictionaries, including quotient filters, broom filters, or bucketing hash tables (as presented by K\"oppl \etal{}) could potentially improve performance~\cite{raman-practical,broom,quotient-filter}.
 
-\item Testing taffy filters in more applications.
+\item Testing \taffy{} filters in more applications.
 
 \item Support for deletions.
 \end{itemize}
@@ -1699,25 +1772,25 @@ Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 
 %% \pagebreak
 %% \appendix
-%% \section{MTCF pseudocode}
+%% \section{\MTCF{} pseudocode}
 %% \label{mtcf-appendix}
  
 %% %% 1
 %% %\begin{figure}%[!htbp]
-%% %\caption{The lookup operation in an MTCF.}
+%% %\caption{The lookup operation in an \MTCF{}.}
 
 %% %\end{figure}
 %% %% 2
 %% %% \begin{figure}
 
-%% %% \caption{Pseudocode 2 for the insert operation on MTCFs}
+%% %% \caption{Pseudocode 2 for the insert operation on \MTCF{}s}
 %% %% \end{figure}
 
 %% %% 5
 
 %% %% \begin{figure}
-%% \begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the upsize operation on MTCFs}]
-%% UpsizeMTCF(mtcf: MTCF(U, k)) {
+%% \begin{lstlisting}[escapeinside={`}{`},caption={Pseudocode for the upsize operation on \MTCF{}s}]
+%% Upsize\MTCF{}(mtcf: \MTCF{}(U, k)) {
 %%   old := mtcf.Level[mtcf.cursor]
 %%   mtcf.Level[mtcf.cursor] = new Level(2`$^{{k+1}}$`)
 %%   mtcf.cursor = mtcf.cursor + 1
@@ -1737,12 +1810,12 @@ Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 %% }
 %% \end{lstlisting}
 
-%% \caption{Pseudocode for the upsize operation on MTCFs}
+%% \caption{Pseudocode for the upsize operation on \MTCF{}s}
 %% \end{figure}
 
 %% \begin{figure}
 %% \begin{lstlisting}[escapeinside={`}{`}]
-%% MInsertUnion(mtcf: MTCF(U, k), side: `$\ints_2$`, hashed: `$\ints_2^{j+13}\dotcup\ints_2^{j+14}$`,
+%% MInsertUnion(mtcf: \MTCF{}(U, k), side: `$\ints_2$`, hashed: `$\ints_2^{j+13}\dotcup\ints_2^{j+14}$`,
 %%              tail: `$\dotcup_{i \le 5} \ints_2^i$`) {
 %%   if (j == k) {
 %%     permuted = mtcf.Permutation[side](hashed)
@@ -1757,7 +1830,7 @@ Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 %%   }
 %% }
 
-%% Union(from: MTCF(U, k), to: MTCF(U, j)) {
+%% Union(from: \MTCF{}(U, k), to: \MTCF{}(U, j)) {
 %%   if (k > j) return Union(to, from)
 %%   for (level : `$\ints_32$`)
 %%     for (side : {0, 1}) {
@@ -1773,8 +1846,8 @@ Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 %% }
 
 %% \end{lstlisting}
-%% \caption{Pseudocode for the union operation on MTCFs.
-%% The input MTCFs must have the same hash function.}
+%% \caption{Pseudocode for the union operation on \MTCF{}s.
+%% The input \MTCF{}s must have the same hash function.}
 %% \end{figure}
 
 \end{document}
@@ -1786,8 +1859,8 @@ Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 %%  LocalWords:  upsizes TODO fpp LookupSide mtcf MLookup MInsertSide
 %%  LocalWords:  MInsertPermuted permuteds MTCFs InsertMTCF MElement
 %%  LocalWords:  UpsizeMTCF TBFs Structs structs SMT Pagh Segev FOCS
-%%  LocalWords:  Wieder longhead TBF onn Raman Rao's Rao Maier Gatos
+%%  LocalWords:  Wieder longhead TBF Raman Rao's Rao Maier Gatos
 %%  LocalWords:  Vasallo Breslow PVLDB VLDB ISSN logarithmically AWS
 %%  LocalWords:  Polychroniou vectorization subtables subtable SBBF
-%%  LocalWords:  Graviton resizable ApproxJoin LSM RocksDB Chucky
-%%  LocalWords:  cuckooing Bloomier Feistel
+%%  LocalWords:  Graviton resizable ApproxJoin LSM RocksDB Chucky GiB
+%%  LocalWords:  cuckooing Bloomier Feistel SlimDB dataset

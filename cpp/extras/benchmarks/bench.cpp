@@ -23,7 +23,9 @@
 #include "filter/minimal-taffy-cuckoo.hpp"
 #include "filter/taffy-block.hpp"
 #include "filter/taffy-cuckoo.hpp"
+#if defined(__x86_64)
 #include "filter/taffy-vector-quotient.hpp"
+#endif
 #include "util.hpp"  // for Rand
 
 using namespace filter;
@@ -310,7 +312,7 @@ int main(int argc, char** argv) {
       goto err;
     }
   }
-  if (reps == 0 or ndv == 0 or reps == 0 or fpp == 0 or bytes == 0) goto err;
+  if (reps == 0 or ndv == 0 or fpp == 0 or bytes == 0) goto err;
 
   vector<uint64_t> to_insert;
   vector<uint64_t> to_find;

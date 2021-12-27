@@ -2,7 +2,7 @@ import csv
 import sys
 
 with open(sys.argv[1], newline='') as csvfile:
-  reader = csv.DictReader(csvfile,['name','front','back','size','stat','value'])
+  reader = csv.DictReader(csvfile,['name','front','back','stat','value'])
   running = 0
   unique = {}
   for row in reader:

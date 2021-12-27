@@ -45,7 +45,7 @@ void PrintFpp(const TaffyBlockFilter& tbf, const TaffyCuckooFilter &tcf) {
     tcf_found += tcf.FindHash(randoms[i]);
   }
   auto ts3 = now();
-  cout << tbf_found << "\t" << tcf_found << endl;
+  cout << tbf_found << "\t" << tcf_found << "\t";
   cout << ts2 - ts1 << "\t" << ts3 - ts2 << endl;
 }
 
@@ -56,8 +56,8 @@ int main(int argc, char** argv) {
   }
   ifstream f(argv[1]);
   char sha1[40];
-  TaffyBlockFilter tbf = TaffyBlockFilter::CreateWithNdvFpp(306 * 1000 * 1000, 0.004);
-  TaffyCuckooFilter tcf = TaffyCuckooFilter::CreateWithBytes(306 * 1000 * 1000 );
+  TaffyBlockFilter tbf = TaffyBlockFilter::CreateWithNdvFpp(1, 0.016);
+  TaffyCuckooFilter tcf = TaffyCuckooFilter::CreateWithBytes(1);
   size_t count = 0, tbf_nanos = 0, tcf_nanos = 0;
   uint64_t buffer[1024];
   int buffer_fill = 0;
@@ -93,15 +93,15 @@ int main(int argc, char** argv) {
     // }
     count += buffer_fill;
     if (not(count & (count - 1))) {
-      cout << count << "\t" << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes();
-      cout << "\t" << 1.0 * tbf_nanos / count << "\t" << 1.0 * tcf_nanos / count << endl;
-      //PrintFpp(tbf, tcf);
+      // cout << count << "\t" << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes();
+      // cout << "\t" << 1.0 * tbf_nanos / count << "\t" << 1.0 * tcf_nanos / count << endl;
+      // PrintFpp(tbf, tcf);
     }
     if (buffer_fill < 1023) break;
     buffer_fill = 0;
   }
-  cout << "done\n";
-  cout << count << "\t" << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes();
-  cout << "\t" << 1.0 * tbf_nanos << "\t" << 1.0 * tcf_nanos << endl;
+  // cout << "done\n";
+  // cout << count << "\t" << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes();
+  cout << "\t" << 1.0 * tbf_nanos << "\t" << 1.0 * tcf_nanos << "\t";
   PrintFpp(tbf, tcf);
 }
