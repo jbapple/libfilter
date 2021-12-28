@@ -31,11 +31,12 @@ int FromHex(char x) {
 void PrintFpp(const TaffyBlockFilter& tbf, const TaffyCuckooFilter &tcf) {
   random_device d;
   auto d64 = [&d]() { return (static_cast<uint64_t>(d()) << 32) | d(); };
-  size_t tbf_found = 0, tcf_found = 0;
+  size_t tbf_found = 0, tcf_found = 0, ftcf_found = 0;
   vector<uint64_t> randoms(1000 * 1000);
   for (int i = 0; i < 1000 * 1000; ++i) {
     randoms[i] = d64();
   }
+  auto frozen = tcf.Freeze();
   auto ts1 = now();
   for (int i = 0; i < 1000 * 1000; ++i) {
     tbf_found += tbf.FindHash(randoms[i]);
@@ -45,8 +46,13 @@ void PrintFpp(const TaffyBlockFilter& tbf, const TaffyCuckooFilter &tcf) {
     tcf_found += tcf.FindHash(randoms[i]);
   }
   auto ts3 = now();
-  cout << tbf_found << "\t" << tcf_found << "\t";
-  cout << ts2 - ts1 << "\t" << ts3 - ts2 << endl;
+  for (int i = 0; i < 1000 * 1000; ++i) {
+    ftcf_found += frozen.FindHash(randoms[i]);
+  }
+  auto ts4 = now();
+  cout << tbf_found << "\t" << tcf_found << "\t" << ftcf_found << "\t";
+  cout << ts2 - ts1 << "\t" << ts3 - ts2 << "\t" << ts4 - ts3 << "\t";
+  cout << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes() << "\t" << frozen.SizeInBytes() << endl;
 }
 
 int main(int argc, char** argv) {

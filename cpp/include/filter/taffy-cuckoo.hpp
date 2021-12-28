@@ -202,7 +202,78 @@ struct Side {
 
 }  // namespace detail
 
+struct FrozenTaffyCuckoo {
+  struct Bucket {
+    uint64_t zero : detail::kHeadSize;
+    uint64_t one : detail::kHeadSize;
+    uint64_t two : detail::kHeadSize;
+    uint64_t three : detail::kHeadSize;
+  } __attribute__((packed));
+
+  static_assert(sizeof(Bucket) == detail::kBuckets * detail::kHeadSize / CHAR_BIT,
+                "packed");
+
+  bool FindHash(uint64_t x) {
+    for (int i = 0; i < 2; ++i) {
+      uint64_t y = x >> (64 - log_side_size_ - detail::kHeadSize);
+      uint64_t permuted = hash_[i].Permute(log_side_size_ + detail::kHeadSize, y);
+      for (auto v : stash_[i]) if (v == permuted) return true;
+      Bucket& b = data_[i][permuted >> detail::kHeadSize];
+      uint64_t fingerprint = permuted & ((1 << detail::kHeadSize) - 1);
+      if (0 == fingerprint) return true;
+      // TODO: SWAR
+      if (b.zero == fingerprint || b.one == fingerprint || b.two == fingerprint ||
+          b.three == fingerprint) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  size_t SizeInBytes() const { return sizeof(Bucket) * 2ul << log_side_size_; }
+  // bool InsertHash(uint64_t hash);
+
+  INLINE static const char* Name() {
+    thread_local const constexpr char result[] = "FrozenTaffyCuckoo";
+    return result;
+  }
+
+  ~FrozenTaffyCuckoo() {
+    delete[] data_[0];
+    delete[] data_[1];
+  }
+
+  FrozenTaffyCuckoo(const uint64_t entropy[8], int log_side_size)
+      : hash_{entropy, &entropy[4]},
+        log_side_size_(log_side_size),
+        data_{new Bucket[1ul << log_side_size](), new Bucket[1ul << log_side_size]()},
+        stash_{std::vector<uint64_t>(), std::vector<uint64_t>()} {}
+  detail::Feistel hash_[2];
+  int log_side_size_;
+  Bucket* data_[2];
+  std::vector<uint64_t> stash_[2];
+};
+
 struct TaffyCuckooFilter {
+
+  FrozenTaffyCuckoo Freeze() const {
+    FrozenTaffyCuckoo result(entropy, log_side_size);
+    for (int i : {0,1}) {
+      for (auto v : sides[i].stash) {
+        result.stash_[i].push_back(FromPathNoTail(v, sides[i].f, log_side_size));
+      }
+      for (size_t j = 0; j < (1ul << log_side_size); ++j) {
+        auto& out = result.data_[i][j];
+        const auto& in = sides[i].data[j];
+        out.zero  = in[0].fingerprint;
+        out.one   = in[1].fingerprint;
+        out.two   = in[2].fingerprint;
+        out.three = in[3].fingerprint;
+      }
+    }
+    return result;
+  }
+
   INLINE static const char* Name() {
     thread_local const constexpr char result[] = "TaffyCuckoo";
     return result;
