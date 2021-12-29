@@ -213,6 +213,9 @@ struct FrozenTaffyCuckoo {
   static_assert(sizeof(Bucket) == detail::kBuckets * detail::kHeadSize / CHAR_BIT,
                 "packed");
 
+#define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x1020010200ULL)
+#define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
+
   bool FindHash(uint64_t x) {
     for (int i = 0; i < 2; ++i) {
       uint64_t y = x >> (64 - log_side_size_ - detail::kHeadSize);
@@ -222,10 +225,9 @@ struct FrozenTaffyCuckoo {
       uint64_t fingerprint = permuted & ((1 << detail::kHeadSize) - 1);
       if (0 == fingerprint) return true;
       // TODO: SWAR
-      if (b.zero == fingerprint || b.one == fingerprint || b.two == fingerprint ||
-          b.three == fingerprint) {
-        return true;
-      }
+      uint64_t z = 0;
+      memcpy(&z, &b, sizeof(b));
+      if (hasvalue10(z, fingerprint)) return true;
     }
     return false;
   }
