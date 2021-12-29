@@ -49,8 +49,8 @@ thread_local const constexpr int kBuckets = 1 << kLogBuckets;
 struct Slot {
   uint64_t fingerprint : kHeadSize;
   uint64_t tail : kTailSize +
-                  1;  // +1 for the encoding of sequences above. tail == 0 indicates an
-                      // empty slot, no matter what's in fingerprint
+                  1;  // +1 for the encoding of sequences above. tail == 0 indicates
+                      // an empty slot, no matter what's in fingerprint
   INLINE void Print() const {
     std::cout << "{" << std::hex << fingerprint << ", " << tail << "}";
   }
@@ -213,7 +213,7 @@ struct FrozenTaffyCuckoo {
   static_assert(sizeof(Bucket) == detail::kBuckets * detail::kHeadSize / CHAR_BIT,
                 "packed");
 
-#define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x1020010200ULL)
+#define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL)
 #define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
 
   bool FindHash(uint64_t x) {
