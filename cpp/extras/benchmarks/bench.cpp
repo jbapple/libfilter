@@ -244,7 +244,13 @@ vector<Sample> BenchWithBytes(uint64_t reps, uint64_t bytes, double growth_facto
                               vector<uint64_t>& to_insert,
                               const vector<uint64_t>& to_find) {
   auto filter = FILTER_TYPE::CreateWithBytes(bytes);
-  return BenchHelp(reps, growth_factor, to_insert, to_find, filter);
+  const auto result = BenchHelp(reps, growth_factor, to_insert, to_find, filter);
+  auto frozen = filter.Freeze();
+  cout << filter.SizeInBytes() << "\t" << frozen.SizeInBytes() << endl;
+  for (size_t i = 0; i < to_insert.size(); ++i) {
+    if (not frozen.FindHash(to_insert[i])) throw 0;
+  }
+  return result;
 }
 
 template <typename FILTER_TYPE>
@@ -321,10 +327,10 @@ int main(int argc, char** argv) {
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
     // BenchWithBytes<Cuckoo32Shim>(reps, bytes, 1.05, to_insert, to_find);
-    BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, fpp);
-    BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
+    // BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, fpp);
+    // BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
     BenchWithBytes<TaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
-    BenchGrowWithNdvFpp<TaffyBlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
-    BenchWithNdvFpp<BlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
+    // BenchGrowWithNdvFpp<TaffyBlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
+    // BenchWithNdvFpp<BlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
   }
 }
