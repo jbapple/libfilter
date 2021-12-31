@@ -26,7 +26,6 @@ struct TaffyBlockFilter {
  protected:
   TaffyBlockFilter(uint64_t ndv, double fpp) : last_ndv(ndv), ttl(ndv), fpp(fpp) {
     const double sum =  6.0 / std::pow(3.1415, 2);
-    fpp = fpp / 0.4;
     ndv = std::max(ndv, BlockFilter::MaxCapacity(1, fpp * sum));
     last_ndv = ndv;
     ttl = ndv;

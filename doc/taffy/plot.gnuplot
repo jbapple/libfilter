@@ -16,11 +16,11 @@ set output 'bits-per-item.eps';
 unset grid;
 unset logscale y;
 set logscale x;
-set xlabel "Keys inserted (power of 10)";
+set xlabel "Keys inserted";
 set ylabel "Bits per key"
 set datafile separator ",";
 unset format
-set format x "10^{%.0T}";
+set format x "10^{%.1T}";
 set yrange [0:50]
 set key inside;
 set key bottom left;
@@ -42,7 +42,7 @@ set ylabel "False positive probability"
 set datafile separator ",";
 unset format;
 set format y '%g%%';
-set format x "10^{%.0T}"
+set format x "10^{%.1T}"
 set yrange [0.01:3];
 set key inside;
 set key top left;
@@ -90,7 +90,7 @@ set ylabel "Nanoseconds";
 set yrange [5:*]
 #set title "Lookup performance (present)"
 unset format;
-set format x "10^{%.0T}";
+set format x "10^{%.1T}";
 plot "< grep find_missing taffy-mins.csv | grep MinTaffy        | sort -n -t , -k 2,3" using 2:4 with lines lw 9 title "MSCF", \
      "< grep find_missing taffy-mins.csv | grep TaffyCuckoo     | sort -n -t , -k 2,3" using 2:4 with linespoints  title "SCF", \
      "< grep find_missing taffy-mins.csv | grep TaffyBlock      | sort -n -t , -k 2,3" using 2:4 with lines  title "SBF", \
@@ -117,7 +117,7 @@ set ylabel "Nanoseconds";
 set yrange [5:*]
 #set title "Lookup performance (present)"
 unset format;
-set format x "10^{%.0T}";
+set format x "10^{%.1T}";
 plot "< grep find_missing m6g.medium.again-mins.csv | grep MinTaffy    | sort -n -t , -k 2,3" using 2:4 with lines lw 9 title "MSCF", \
      "< grep find_missing m6g.medium.again-mins.csv | grep TaffyCuckoo | sort -n -t , -k 2,3" using 2:4 with linespoints title "SCF", \
      "< grep find_missing m6g.medium.again-mins.csv | grep TaffyBlock  | sort -n -t , -k 2,3" using 2:4 with lines title "SBF", \
@@ -154,7 +154,7 @@ set xlabel "Keys inserted";
 set ylabel "Average nanoseconds per key";
 #set title "Insert performance"
 unset format;
-set format x "10^{%.0T}";
+set format x "10^{%.1T}";
 plot "< python3 running-sum.py taffy-mins-with-ndv-finish.csv | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MSCF", \
      "< python3 running-sum.py taffy-mins-with-ndv-finish.csv | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "SCF", \
      "< python3 running-sum.py taffy-mins-with-ndv-finish.csv | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "SBF", \
@@ -174,7 +174,7 @@ set xlabel "Keys inserted";
 set ylabel "Average nanoseconds per key";
 #set title "Insert performance"
 unset format;
-set format x "10^{%.0T}";
+set format x "10^{%.1T}";
 plot "< python3 running-sum.py m6g.medium.again-mins-wth-ndv-finish.csv | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MSCF", \
      "< python3 running-sum.py m6g.medium.again-mins-wth-ndv-finish.csv | grep TaffyCuckoo | sort -n -t , -k 3" using 2:($3/$2) with linespoints title "SCF", \
      "< python3 running-sum.py m6g.medium.again-mins-wth-ndv-finish.csv | grep TaffyBlock  | sort -n -t , -k 3" using 2:($3/$2) with lines title "SBF", \
