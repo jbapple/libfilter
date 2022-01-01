@@ -192,13 +192,13 @@
 
 \begin{abstract}
 Popular approximate membership query structures such as Bloom filters and cuckoo filters are widely used in databases, security, and networking.
-These structures support two operations -- insert and lookup; lookup always returns true on elements inserted into the structure; it also returns true with some probability $0 < \varepsilon < 1$ on elements {\em not} inserted into the structure.
+These structures represent sets approximately, and support at least two operations -- insert and lookup; lookup always returns true on elements inserted into the structure; it also returns true with some probability $0 < \varepsilon < 1$ on elements {\em not} inserted into the structure.
 These latter elements are called false positives.
 Compensatory for these false positives, filters can be much smaller than hash tables that represent the same set.
 However, unlike hash tables, cuckoo filters and Bloom filters must be initialized with the intended number of inserts to be performed, and cannot grow larger --
 inserts beyond this number fail or significantly increase the false positive probability.
 This paper presents designs and implementations of filters than can grow without inserts failing and without meaningfully increasing the false positive probability, even if the filters are created with a small initial size.
-The resulting code is available \ifanon\else on GitHub \fi under a permissive open source license.
+The resulting code is available \ifanon\else on GitHub \fi under a permissive open source license.%\ifanon\footnote{https://drive.google.com/file/d/1e2mBfiUT3WGvh5juhdiRET5Kgjl7X4ZH/}\fi
 \ifepigraph
 \epigraph{If you can look into the seeds of time, and say which grain will grow and which will not, speak then unto me.}{Macbeth}
 \fi
@@ -258,30 +258,29 @@ The significant interest in filters is reflective of their utility in applicatio
 Each of the filter structures cited above supports approximate membership queries on sets with a given maximum size, but the question of extensible (or {\itshape extendable} or {\itshape incremental} or {\itshape growable}) filters that can increase in capacity as more elements are inserted is little studied.
 The classic answer is to create a sequence of filters, possibly of increasing sizes and/or lower false positive probabilities~\cite{dynamic-bloom,scalable-bloom,dynamic-cuckoo}.
 Inserts occur on the last filter to be created and lookups must search each filter.
-Even when this keeps the false positive rate low, lookup times balloon from constant to poly-logarithmic or even linear in $n$, the number of elements inserted~\cite{psw,logarithm,consistent-cuckoo}. %The Dynamic Cuckoo Filter
+Even in designs for which this keeps the false positive rate low, lookup times balloon from constant to poly-logarithmic or even linear in $n$, the number of elements inserted~\cite{psw,logarithm,consistent-cuckoo}. %The Dynamic Cuckoo Filter
 Additionally, the space usage often grows as $\Omega(n \lg n)$, at which point a traditional hash table would do the same work in the same space with constant-time operations and an $n^{-c}$ false positive probability, where $c$ depends on the constant in $\Omega(n \lg n)$.
 A newer approach to manage growing filters is to use cuckoo or quotient filters in which, each time the filter capacity grows, the false positive probability doubles~\cite{logarithm,morton-journal,vacuum,rsqf,entry-extensible}.
 Finally, a third approach to the problem of growing a filter is to depend on the original keys being available during rebuild time~\cite{elastic}.
-This is not always possible, or, when possible, may not be time efficient.
-See Figure~\ref{prior-work-table}.
+This approach is not always possible or time efficient.
+See Figure~\ref{prior-work-table}, which describes prior work and its limitations when filters grow.
 
 \begin{figure*}
 \begin{tabular}{|m{2in}|m{4.667in}|}
 \hline {\bf Behavior} & {\bf Filters} \\
 \hline $\omega(1)$ lookup & dynamic bloom \cite{dynamic-bloom}, scalable bloom \cite{scalable-bloom}, dynamic cuckoo \cite{dynamic-cuckoo}, monkey \cite{monkey}\\
-\hline doubled fpp when capacity doubles & logarithmic dynamic cuckoo \cite{logarithm}, Morton \cite{morton-journal}, vacuum \cite{vacuum}, rank select quotient \cite{rsqf}, consistent cuckoo \cite{consistent-cuckoo}, dynamic cuckoo \cite{dynamic-cuckoo}, entry-extensible cuckoo \cite{entry-extensible} \\
-\hline depend on storing $\Omega(\lg n)$ bits per element (in filter or in backing store) & elastic \cite{elastic}, consistent cuckoo \cite{consistent-cuckoo}, Chucky \cite{chucky} \\
-\hline more than double fpp when full beyond capacity & Bloom~\cite{bloom}, tinySet~\cite{tinyset} \\
+\hline Doubled fpp when capacity doubles & logarithmic dynamic cuckoo \cite{logarithm}, Morton \cite{morton-journal}, vacuum \cite{vacuum}, rank select quotient \cite{rsqf}, consistent cuckoo \cite{consistent-cuckoo}, dynamic cuckoo \cite{dynamic-cuckoo}, entry-extensible cuckoo \cite{entry-extensible} \\
+\hline Depend on storing $\Omega(\lg n)$ bits per element (in filter or in backing store) & elastic \cite{elastic}, consistent cuckoo \cite{consistent-cuckoo}, Chucky \cite{chucky} \\
+\hline More than double fpp when full beyond capacity & Bloom~\cite{bloom}, tinySet~\cite{tinyset} \\
 \hline
 \end{tabular}
-\caption{The filter types that exhibit various undesirable behavior in order to grow.
-Some filters are in two lists.
-Unlike \taffy{} filters, all filters listed in this table use either $\lg (1 / \varepsilon) + \omega(\lg \lg n)$ or $\omega(\lg(1/\varepsilon))$ bits to represent sets with size $n$ and false positive probability $\varepsilon$.
+\caption{The filter types that exhibit various undesirable behavior as more keys are inserted
 \label{prior-work-table}}
 \end{figure*}
 %% TODO: implement the sequence-of-Bloom-filters approach and benchmark it.
 
-Pagh \etal{} introduced structures that perform lookups in $O(\lg n)$ or $O(1)$ time while still allowing the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created), all while using no more than $O( \lg \lg n + \lg (1/\varepsilon))$ bits of space per element~\cite{psw}.
+Instead of these approaches, this paper investigates practical structures that allow the structure to grow and keep a low false positive rate (not exceeding a threshold specified when the structure was created), all while using no more than $O(\lg \lg n + \lg (1/\varepsilon))$ bits of space per element~\cite{psw}.
+This is a significant improvement over the status quo in which filters either cannot grow, such as standard Bloom filters, or use $\lg (1 / \varepsilon) + \omega(\lg \lg n)$ or $\omega(\lg(1/\varepsilon))$ bits to represent sets with size $n$ and false positive probability $\varepsilon$.
 
 \subsection{Applications}
 
@@ -400,8 +399,8 @@ Se Section~\ref{tcf}. \\
 %% TODO: mention name ``sectorized Bloom filters'' from Columbia group (Kenneth A. Ross?)
 
 The insert and lookup operations in standard Bloom filters access $\lg (1/\varepsilon)$ bits in an array of size $m$ that stores $m \ln 2 / \lg(1/\varepsilon)$ distinct elements~\cite{bloom-original}.
-These cause $\lg (1/\varepsilon)$ cache misses and require the same number of hash function applications.
-Block Bloom filters reduce the number of cache misses to 1 at a cost of a slightly increased false positive probability~\cite{block-bloom}.
+These cause $\lg (1/\varepsilon)$ memory accesses and require the same number of hash function applications.
+Block Bloom filters reduce the number of memory accesses to 1 at a cost of a slightly increased false positive probability~\cite{block-bloom}.
 
 Each block Bloom filter is implemented as an array of non-overlapping blocks; see Figure~\ref{sbbf-diagram}.
 Each block is itself a Bloom filter.
@@ -422,7 +421,7 @@ A diagram of a split block Bloom filter with $k = 8$ and $B = 256$.
 
 When a block Bloom filter is used with block size $B = 256$ and lane size $L = 32$, it is possible to use SIMD instructions to perform the eight hash function computations at once, set the eight bits at once (one per 32-bit lane), or check those eight bits at once.
 %in what Polychroniou and Ross call ``horizontal vectorization''~\cite{horizontal}.
-The resulting Bloom filter has constant-time branch-free insert and lookup and is consistently faster than a cuckoo filter of the same size (See Figures~\ref{lookup-both}~and~\ref{arm-lookup-both})~\cite{cuckoo-filter-github,ultra-fast,overtakes,impala-bloom}.
+The resulting Bloom filter has constant-time branch-free insert and lookup and is consistently faster than a cuckoo filter of the same size (See Figures~\ref{lookup-both}~and~\ref{arm-lookup-both} in Section~\ref{eval})~\cite{cuckoo-filter-github,ultra-fast,overtakes,impala-bloom}.
 
 {\bf \Taffy{} block filters use split block Bloom filters as a building block to make an extensible filter with lower query time than a traditional Bloom filter would require in the same application.}
 
@@ -534,6 +533,7 @@ In this construction of a growable filter, when a filter contains $n$ items, it 
 \subsection{Compact extensible dictionaries}
 
 Hash tables that are used to accommodate sets without a size known in advance typically do so by doubling in capacity as needed.
+This applies to \TCF{}s, as well.
 This means that at least 50\% of the space goes unused at points, with an average unused percentage of at least 25\%.
 Constructions like that of Raman and Rao are able to mitigate this, but they are largely theoretical~\cite{succinct}.
 Instead, Maier \etal{} use the cuckoo hashing evict operation to incrementally resize a hash table~\cite{dysect}.
@@ -568,7 +568,7 @@ This reduces the lookup time to $O(\lg n)$.
 
 {\bf \Taffy{} block filters} (``\TBF{}s'') use split block Bloom filters to keep the lookup time logarithmic and independent of $\varepsilon$, rather than Raman and Rao's dictionary, as the latter is a theoretical, not a practical design~\cite{psw,succinct}.
 Split block Bloom filters have proven to be the fastest dynamic filters for doing single-element lookups in recent works on the matter~\cite{overtakes,ribbon,bloom-simd}.
-Even though they are not based on dictionaries, they suffice for this construction.
+Even though they are not based on dictionaries, they suffice for this construction, as they support the two operations needed for each level: lookup and insert.
 See Section~\ref{eval} for performance of \TBF{}s compared to pre-sized split block Bloom filters.
 
 %% \TBF{}s cannot perform the union operation without significant increases in false positive probability.
@@ -1551,6 +1551,7 @@ This suffices for testing larger universes as well, as noted in Section~\ref{fil
 
 To benchmark the insert time, 100 million elements are inserted.
 At intermediate points we also benchmark the lookup operation one million times both on integer keys that are guaranteed to be present and on randomly-generated integer keys.
+Figures~\ref{lookup-both}~and~\ref{arm-lookup-both}, which show the results of lookup performance testing, only show the randomly-generated-keys result, as the same chart for guaranteed-to-be-present keys shows the same characteristics.
 
 \subsection{Space}
 
@@ -1565,6 +1566,7 @@ Figures~\ref{space-steps}~and~\ref{ideal-bits-per-item} show the space usage and
 Cuckoo filters cannot grow (without changing the number of bits per slot and doubling the false positive rate), and as such, cuckoo filters with sufficient capacity to insert up to 100 million keys use tens of millions of bytes even when the set currently stored is very small.
 %Its number of bytes per element starts out enormous are only visible over 10 million elements in Figure~\ref{bits-per-item}, since their bits per key starts out at over 1.2 billion.
 The same is true of split block Bloom filters.
+Even though the fpp of \taffy{} filters seems to grow as the capacity grows, it is bounded above by $2^{-F+O(1)}$; see Section~\ref{tcf}.
 
 %Figures~\ref{bits-per-item}~and~\ref{space-steps} show the periodic nature of the space used in \taffy{} filters.
 %When a filter increases in size, the number of bits per element increases as well.
@@ -1592,7 +1594,7 @@ The same is true of split block Bloom filters.
   \caption{
     \label{space-steps}
     The amount of space used by each filter at the given number of keys inserted.
-    The Bloom filter uses less space than the cuckoo filter as it is configured with a higher false positive probability than the cuckoo filter, as the original cuckoo filter is limited in the variety of bit widths it accommodates.
+%    The Bloom filter uses less space than the cuckoo filter as it is configured with a higher false positive probability than the cuckoo filter, as the original cuckoo filter is limited in the variety of bit widths it accommodates.
     %For false positive probabilities, see Figure~\ref{ideal-bits-per-item}.
   }
 \end{figure}
@@ -1600,7 +1602,7 @@ The same is true of split block Bloom filters.
 \begin{figure}[b!]
   \includegraphics[width=3.333in]{ideal-bits-per-item}
   \caption{  \label{ideal-bits-per-item}
-    This figure shows $\varepsilon$, the false positive probability.
+    $\varepsilon$, the false positive probability.
     %% TODO: explain the sudden jump in \taffy{} filters around 500-5000.
     %% Explain the low fpp of CF and lower of SBBF.
     %% Explain the difference between \MTCF{} and \TCF{}/\TBF{}.
@@ -1658,7 +1660,7 @@ The \MTCF{} lags behind both.
   \includegraphics[width=3.333in]{arm-insert-cumulative}
   \caption{
     \label{arm-insert-time}
-    Insert times for filters, m6g.medium, Graviton 2.
+    Insert times for filters, m6g.medium.
     %% TODO: the dip is an artifact; redo with more samples and longer time between timer start \& stop.
   }
 \end{figure}
@@ -1668,7 +1670,7 @@ The \MTCF{} lags behind both.
   \caption{
     \label{lookup-both}
     Lookup times for filters, i7-7800X.
-    This is for keys that are not found; the corresponding figure for found keys looks nearly identical.
+    % This is for keys that are not found; the corresponding figure for found keys looks nearly identical.
   }
 \end{figure}
 
@@ -1676,8 +1678,8 @@ The \MTCF{} lags behind both.
   \includegraphics[width=3.333in]{arm-lookup-both}
   \caption{
     \label{arm-lookup-both}
-    Lookup times for filters, m6g.medium, Graviton 2.
-    This is for keys that are not found; the corresponding figure for found keys looks nearly identical.
+    Lookup times for filters, m6g.medium.
+    % This is for keys that are not found; the corresponding figure for found keys looks nearly identical.
   }
 \end{figure}
 
@@ -1707,7 +1709,7 @@ The results are in Figure~\ref{hibp-table}.
 
 \begin{figure}[b!]
 \begin{tabular}{|m{0.5in}|m{0.5in}|m{0.5in}|m{0.5in}|m{0.5in}|}
-\hline & {\bf \TBF{}} & {\bf \TCF{}} & {\bf Frozen \TCF{}} & {\bf Raw data}\\
+\hline & {\bf \TBF{}} & {\bf \TCF{}} & {\bf Frozen} & {\bf Raw}\\
 \hline {\bf insert (ns/key)} & 25 & 558 & N/A & N/A\\
 \hline {\bf fpp} & 0.24\% & 0.26\% & 0.71\% & 0\%\\
 \hline {\bf lookup (ns/key)} & 294 & 111 & 74 & N/A\\
@@ -1724,7 +1726,7 @@ Performance on ``Have I Been Pwned''}
 %% The filters had fpps of 0.24\% and 0.26\%, respectively.\footnote{These are the numbers for the average and also for the median.}
 %% Lookups in the full filters took 294 nanoseconds each for the \TBF{} and 111 nanoseconds each for the \TCF{}.
 As in the case of the synthetic benchmarks, insert is faster for the \TBF{} and lookup is faster for the \TCF{}.
-This omission of the tails leaves the false positive rate higher, at 0.71\%, but the lookup faster, at 74 nanoseconds, since the prefix checks are now unnecessary and the fingerprint matches can now be performed with SIMD-within-a-register techniques, just as in the original cuckoo filter ~\cite{cuckoo-filter-github}.
+This omission of the tails leaves the false positive rate higher but the lookup faster, since the prefix checks are now unnecessary and the fingerprint matches can now be performed with SIMD-within-a-register techniques, just as in the original cuckoo filter ~\cite{cuckoo-filter-github}.
 For the ``Raw data'' column, we consider only the cost of storing the last 64 bits in each hash in a single flat file, with no associated lookup method.
 
 %The list of SHA-1 hashes uses 34.8 GiB in uncompressed hex ASCII, with no lookup facilities such as being stored in a hash table or B-tree, while the \taffy{} filters use 4.2GiB and 4.0GiB in memory, respectively.
