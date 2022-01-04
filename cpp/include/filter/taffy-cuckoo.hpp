@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <bits/stdint-uintn.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -638,15 +639,17 @@ TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase* x, const TaffyCuckoo
   return result;
 }
 
-INLINE void swap(TaffyCuckooFilterBase& x, TaffyCuckooFilterBase& y) {
+/*
+INLINE void swap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
   using std::swap;
-  swap(x.sides[0], y.sides[0]);
-  swap(x.sides[1], y.sides[1]);
-  swap(x.log_side_size, y.log_side_size);
-  swap(x.rng, y.rng);
-  swap(x.entropy, y.entropy);
-  swap(x.occupied, y.occupied);
+  swap(x->sides[0], y->sides[0]);
+  swap(x->sides[1], y->sides[1]);
+  swap(x->log_side_size, y->log_side_size);
+  swap(x->rng, y->rng);
+  swap(x->entropy, y->entropy);
+  swap(x->occupied, y->occupied);
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
