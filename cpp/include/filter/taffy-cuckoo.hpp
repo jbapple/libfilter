@@ -151,7 +151,7 @@ struct Side {
 
 Side SideCreate(int log_side_size, const uint64_t* keys) {
   Side here;
-  here.f = &keys[0];
+  here.f = detail_FeistelCreate(&keys[0]);
   here.data = new Bucket[1ul << log_side_size]();
   here.stash_capacity = 4;
   here.stash_size = 0;
@@ -282,8 +282,8 @@ void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
 
 FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
   FrozenTaffyCuckooBase here;
-  here.hash_[0] = entropy;
-  here.hash_[1] = &entropy[4];
+  here.hash_[0] = detail_FeistelCreate(entropy);
+  here.hash_[1] = detail_FeistelCreate(&entropy[4]);
   here.log_side_size_ = log_side_size;
   for (int i = 0; i < 2; ++i) {
     here.data_[i] = new FrozenTaffyCuckooBaseBucket[1ul << log_side_size]();

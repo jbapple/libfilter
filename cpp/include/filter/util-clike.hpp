@@ -39,9 +39,17 @@ struct detail_Feistel {
 
   detail_Feistel() : keys{{0, 0}, {0, 0}} {}
 
-  INLINE constexpr detail_Feistel(const uint64_t entropy[4])
-      : keys{{entropy[0], entropy[1]}, {entropy[2], entropy[3]}} {}
 };
+
+detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
+  detail_Feistel result;
+  result.keys[0][0] = entropy[0];
+  result.keys[0][1] = entropy[1];
+  result.keys[1][0] = entropy[2];
+  result.keys[1][1] = entropy[3];
+  return result;
+}
+
 
 // Performs the hash function "forwards". w is the width of x. This is ASYMMETRIC Feistel.
 INLINE constexpr uint64_t Permute(const detail_Feistel *here, int w, uint64_t x) {
