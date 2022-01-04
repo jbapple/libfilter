@@ -266,33 +266,24 @@ struct TaffyCuckooFilterBase {
 
   TaffyCuckooFilterBase() {}
 
-  TaffyCuckooFilterBase(int log_side_size, const uint64_t* entropy)
-      : sides{{log_side_size, entropy}, {log_side_size, entropy + 4}},
-        log_side_size(log_side_size),
-        entropy(entropy) {}
+  // TaffyCuckooFilterBase(int log_side_size, const uint64_t* entropy)
+  //     : sides{{log_side_size, entropy}, {log_side_size, entropy + 4}},
+  //       log_side_size(log_side_size),
+  //       entropy(entropy) {}
 
-  //TaffyCuckooFilterBase(const TaffyCuckooFilterBase& that) = delete;
-
-  // TaffyCuckooFilterBase(const TaffyCuckooFilterBase& that)
-  //     : sides{{(int)that.log_side_size, that.entropy},
-  //             {(int)that.log_side_size, that.entropy + 4}},
-  //       log_side_size(that.log_side_size),
-  //       rng(that.rng),
-  //       entropy(that.entropy),
-  //       occupied(that.occupied) {
-  //   for (int i = 0; i < 2; ++i) {
-  //     sides[i].stash = that.sides[i].stash;
-  //     memcpy(&sides[i].data[0], &that.sides[i].data[0],
-  //            sizeof(detail::Bucket) << that.log_side_size);
-  //   }
-  // }
-
-  // TaffyCuckooFilterBase& operator=(const TaffyCuckooFilterBase& that) {
-  //   this->~TaffyCuckooFilterBase();
-  //   new (this) TaffyCuckooFilterBase(that);
-  //   return *this;
-  // }
 };
+
+TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
+                                                  const uint64_t* entropy) {
+  TaffyCuckooFilterBase here;
+  here.sides[0] = detail::Side(log_side_size, entropy);
+  here.sides[1] = detail::Side(log_side_size, entropy + 4);
+  here.log_side_size = log_side_size;
+  here.rng.bit_width = detail::kLogBuckets;
+  here.entropy = entropy;
+  here.occupied = 0;
+  return here;
+}
 
 TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& that) {
   TaffyCuckooFilterBase here;
@@ -308,7 +299,7 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& th
            sizeof(detail::Bucket) << that.log_side_size);
   }
   return here;
-}
+  }
 
 TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
   thread_local constexpr const uint64_t kEntropy[13] = {
@@ -316,7 +307,7 @@ TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
       0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f,
       0x28a31cec9f6d4484, 0x688f3fe9de7245f6, 0x1dc17831966b41a2, 0xf227166e425e4b0c,
       0x15ab11b1a6bf4ea8};
-  return TaffyCuckooFilterBase(
+  return TaffyCuckooFilterBaseCreate(
       std::max(1.0,
                log(1.0 * bytes / 2 / detail::kBuckets / sizeof(detail::Slot)) / log(2)),
       kEntropy);
@@ -493,7 +484,8 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, detail::Slot sl, uint64_t 
 
 // Double the size of the filter
 void Upsize(TaffyCuckooFilterBase* here) {
-  TaffyCuckooFilterBase t(1 + here->log_side_size, here->entropy);
+  TaffyCuckooFilterBase t =
+      TaffyCuckooFilterBaseCreate(1 + here->log_side_size, here->entropy);
 
   std::vector<detail::Path> stashes[2] = {std::vector<detail::Path>(),
                                           std::vector<detail::Path>()};
