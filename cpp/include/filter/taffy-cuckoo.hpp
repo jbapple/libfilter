@@ -263,18 +263,6 @@ struct TaffyCuckooFilterBase {
   const uint64_t* entropy;
   uint64_t occupied = 0;
 
-  static TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
-    thread_local constexpr const uint64_t kEntropy[13] = {
-        0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
-        0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f,
-        0x28a31cec9f6d4484, 0x688f3fe9de7245f6, 0x1dc17831966b41a2, 0xf227166e425e4b0c,
-        0x15ab11b1a6bf4ea8};
-    return TaffyCuckooFilterBase(
-        std::max(1.0,
-                 log(1.0 * bytes / 2 / detail::kBuckets / sizeof(detail::Slot)) / log(2)),
-        kEntropy);
-  }
-
   TaffyCuckooFilterBase(int log_side_size, const uint64_t* entropy)
       : sides{{log_side_size, entropy}, {log_side_size, entropy + 4}},
         log_side_size(log_side_size),
@@ -300,6 +288,18 @@ struct TaffyCuckooFilterBase {
     return *this;
   }
 };
+
+TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
+  thread_local constexpr const uint64_t kEntropy[13] = {
+      0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
+      0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f,
+      0x28a31cec9f6d4484, 0x688f3fe9de7245f6, 0x1dc17831966b41a2, 0xf227166e425e4b0c,
+      0x15ab11b1a6bf4ea8};
+  return TaffyCuckooFilterBase(
+      std::max(1.0,
+               log(1.0 * bytes / 2 / detail::kBuckets / sizeof(detail::Slot)) / log(2)),
+      kEntropy);
+}
 
 FrozenTaffyCuckoo Freeze(const TaffyCuckooFilterBase* here) {
   FrozenTaffyCuckoo result(here->entropy, here->log_side_size);
@@ -596,7 +596,7 @@ struct TaffyCuckooFilter {
   TaffyCuckooFilterBase b;
 
   static TaffyCuckooFilter CreateWithBytes(size_t bytes) {
-    return TaffyCuckooFilter{TaffyCuckooFilterBase::CreateWithBytes(bytes)};
+    return TaffyCuckooFilter{filter::CreateWithBytes(bytes)};
   }
 
   static const char* Name() {

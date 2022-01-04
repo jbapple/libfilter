@@ -30,13 +30,13 @@ template <typename F>
 class NdvFppTest : public ::testing::Test {};
 
 using BlockTypes = ::testing::Types<BlockFilter, ScalarBlockFilter>;
-using CreateWithBytes = ::testing::Types<MinimalTaffyCuckooFilter, BlockFilter, ScalarBlockFilter, TaffyCuckooFilter>;
-using CreateWithNdvFpp = ::testing::Types<TaffyBlockFilter>;
+using CreatedWithBytes = ::testing::Types<MinimalTaffyCuckooFilter, BlockFilter, ScalarBlockFilter, TaffyCuckooFilter>;
+using CreatedWithNdvFpp = ::testing::Types<TaffyBlockFilter>;
 using UnionTypes = ::testing::Types<TaffyCuckooFilter>;
 
 TYPED_TEST_SUITE(BlockTest, BlockTypes);
-TYPED_TEST_SUITE(BytesTest, CreateWithBytes);
-TYPED_TEST_SUITE(NdvFppTest, CreateWithNdvFpp);
+TYPED_TEST_SUITE(BytesTest, CreatedWithBytes);
+TYPED_TEST_SUITE(NdvFppTest, CreatedWithNdvFpp);
 TYPED_TEST_SUITE(UnionTest, UnionTypes);
 // TODO: test hidden methods in libfilter.so
 
