@@ -399,6 +399,8 @@ mutable bool debug_lookup = false;
       using namespace std;
       for (int i : {0, 1}) swap(sides[i].lo, sides[i].hi);
     }
+    delete[] last_data[0];
+    delete[] last_data[1];
   }
 };
 
