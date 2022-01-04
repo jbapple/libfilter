@@ -29,6 +29,8 @@ struct Feistel {
     return Mask(w, x >> (s + t - w));
   }
 
+  Feistel() : keys{{0, 0}, {0, 0}} {}
+
   INLINE constexpr Feistel(const uint64_t entropy[4])
       : keys{{entropy[0], entropy[1]}, {entropy[2], entropy[3]}} {}
 

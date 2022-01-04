@@ -126,6 +126,8 @@ struct Side {
   Bucket* data;
   std::vector<Path> stash;
 
+  Side() {}
+
   INLINE Side(int log_side_size, const uint64_t* keys)
       : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
 
@@ -263,10 +265,14 @@ struct TaffyCuckooFilterBase {
   const uint64_t* entropy;
   uint64_t occupied = 0;
 
+  TaffyCuckooFilterBase() {}
+
   TaffyCuckooFilterBase(int log_side_size, const uint64_t* entropy)
       : sides{{log_side_size, entropy}, {log_side_size, entropy + 4}},
         log_side_size(log_side_size),
         entropy(entropy) {}
+
+  //TaffyCuckooFilterBase(const TaffyCuckooFilterBase& that) = delete;
 
   TaffyCuckooFilterBase(const TaffyCuckooFilterBase& that)
       : sides{{(int)that.log_side_size, that.entropy},
@@ -288,6 +294,22 @@ struct TaffyCuckooFilterBase {
     return *this;
   }
 };
+
+TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& that) {
+  TaffyCuckooFilterBase here;
+  here.sides[0] = detail::Side(that.log_side_size, that.entropy);
+  here.sides[1] = detail::Side(that.log_side_size, that.entropy + 4);
+  here.log_side_size = that.log_side_size;
+  here.rng = that.rng;
+  here.entropy = that.entropy;
+  here.occupied = that.occupied;
+  for (int i = 0; i < 2; ++i) {
+    here.sides[i].stash = that.sides[i].stash;
+    memcpy(here.sides[i].data, that.sides[i].data,
+           sizeof(detail::Bucket) << that.log_side_size);
+  }
+  return here;
+}
 
 TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
   thread_local constexpr const uint64_t kEntropy[13] = {
@@ -319,12 +341,6 @@ FrozenTaffyCuckoo Freeze(const TaffyCuckooFilterBase* here) {
   }
   return result;
 }
-
-
-  /*
-
-
-  */
 
 uint64_t SizeInBytes(const TaffyCuckooFilterBase* here) {
   return sizeof(detail::Path) *
@@ -571,7 +587,7 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
   }
 }
 
-TaffyCuckooFilterBase Union(const TaffyCuckooFilterBase& x, const TaffyCuckooFilterBase& y) {
+TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase& x, const TaffyCuckooFilterBase& y) {
   if (x.occupied > y.occupied) {
     TaffyCuckooFilterBase result = x;
     UnionOne(&result, y);
@@ -611,7 +627,7 @@ struct TaffyCuckooFilter {
 };
 
 TaffyCuckooFilter Union(const TaffyCuckooFilter& x, const TaffyCuckooFilter& y) {
-  return {Union(x.b, y.b)};
+  return {UnionTwo(x.b, y.b)};
 }
 
 }  // namespace filter
