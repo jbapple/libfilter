@@ -499,25 +499,9 @@ void Upsize(TaffyCuckooFilterBase* here) {
   TaffyCuckooFilterBase t =
       TaffyCuckooFilterBaseCreate(1 + here->log_side_size, here->entropy);
 
-  size_t stash_sizes[2] = {0, 0};
-  detail::Path* stashes[2] = {new detail::Path[4](), new detail::Path[4]()};
-
-  using std::swap;
-
-  swap(stash_sizes[0], here->sides[0].stash_size);
-  swap(stashes[0], here->sides[0].stash);
-  here->sides[0].stash_capacity = 4;
-
-  swap(stash_sizes[1], here->sides[1].stash_size);
-  swap(stashes[1], here->sides[1].stash);
-  here->sides[1].stash_capacity = 4;
-
-  here->occupied = here->occupied - stash_sizes[0];
-  here->occupied = here->occupied - stash_sizes[1];
-
   for (int s : {0, 1}) {
-    for (size_t i = 0; i < stash_sizes[s]; ++i) {
-      UpsizeHelper(here, stashes[s][i], stashes[s][i].bucket, s, t);
+    for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
+      UpsizeHelper(here, here->sides[s].stash[i], here->sides[s].stash[i].bucket, s, t);
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
@@ -532,8 +516,6 @@ void Upsize(TaffyCuckooFilterBase* here) {
   delete[] t.sides[0].stash;
   delete[] t.sides[1].data;
   delete[] t.sides[1].stash;
-  delete[] stashes[0];
-  delete[] stashes[1];
 }
 
 void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that, int side,
