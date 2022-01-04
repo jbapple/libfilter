@@ -85,15 +85,6 @@ INLINE void PrintSlot(Slot s) {
 struct Path {
   Slot slot;
   uint64_t bucket;
-
-  // INLINE void Print() const {
-  //   std::cout << "{" << std::dec << bucket << ", {" << std::hex << fingerprint << ", "
-  //             << tail << "}}";
-  // }
-
-  // INLINE bool operator==(const Path& that) const {
-  //   return bucket == that.bucket && fingerprint == that.fingerprint && tail == that.tail;
-  // }
 };
 
 INLINE void PrintPath(const Path* here) {
@@ -144,9 +135,7 @@ INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t log_side_size)
 }
 
 struct Bucket {
-  Slot data[kBuckets] = {};
-  //INLINE Slot& operator[](uint64_t x) { return data[x]; }
-  //INLINE const Slot& operator[](uint64_t x) const { return data[x]; }
+  Slot data[kBuckets];
 };
 
 static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
