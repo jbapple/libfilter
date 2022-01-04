@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <bits/stdint-uintn.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -23,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-#include "util.hpp"
+#include "util-clike.hpp"
 
 // From the paper, kTailSize is the log of the number of times the size will
 // double, while kHead size is two more than ceil(log(1/epsilon)) + i, bit i is only used
@@ -101,7 +100,7 @@ INLINE bool EqualPath(Path here, Path there) {
 //
 // Operates on the high bits, since bits must be moved from the tail into the fingerprint
 // and then bucket.
-INLINE Path ToPath(uint64_t raw, const filter::detail::Feistel* f, uint64_t log_side_size) {
+INLINE Path ToPath(uint64_t raw, const filter::detail_Feistel* f, uint64_t log_side_size) {
   uint64_t pre_hash_index_and_fp = raw >> (64 - log_side_size - kHeadSize);
   uint64_t hashed_index_and_fp =
       f->Permute(log_side_size + kHeadSize, pre_hash_index_and_fp);
@@ -112,7 +111,7 @@ INLINE Path ToPath(uint64_t raw, const filter::detail::Feistel* f, uint64_t log_
   p.slot.fingerprint = hashed_index_and_fp;
   uint64_t pre_hash_index_fp_and_tail =
       raw >> (64 - log_side_size - kHeadSize - kTailSize);
-  uint64_t raw_tail = filter::detail::Mask(kTailSize, pre_hash_index_fp_and_tail);
+  uint64_t raw_tail = filter::detail_Mask(kTailSize, pre_hash_index_fp_and_tail);
   // encode the tail using the encoding described above, in which the length of the tail i
   // the complement of the tzcnt plus one.
   uint64_t encoded_tail = raw_tail * 2 + 1;
@@ -123,7 +122,7 @@ INLINE Path ToPath(uint64_t raw, const filter::detail::Feistel* f, uint64_t log_
 // Uses reverse permuting to get back the high bits of the original hashed value. Elides
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
-INLINE uint64_t FromPathNoTail(Path p, const filter::detail::Feistel * f, uint64_t log_side_size) {
+INLINE uint64_t FromPathNoTail(Path p, const filter::detail_Feistel * f, uint64_t log_side_size) {
   uint64_t hashed_index_and_fp = (p.bucket << kHeadSize) | p.slot.fingerprint;
   uint64_t pre_hashed_index_and_fp =
       f->ReversePermute(log_side_size + kHeadSize, hashed_index_and_fp);
@@ -142,7 +141,7 @@ struct Bucket {
 // This is useful for random-walk cuckoo hashing, in which the leftover path needs  place
 // to be stored so it doesn't invalidate old inserts.
 struct Side {
-  filter::detail::Feistel f;
+  filter::detail_Feistel f;
   Bucket* data;
 
   size_t stash_capacity;
@@ -164,7 +163,7 @@ Side SideCreate(int log_side_size, const uint64_t* keys) {
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
 // succeded without anning anything new. Returns something else if that something else
 // was displaced by the insert. That item must be inserted then
-INLINE Path Insert(Side* here, Path p, filter::detail::PcgRandom* rng) {
+INLINE Path Insert(Side* here, Path p, filter::detail_PcgRandom* rng) {
   assert(p.tail != 0);
   Bucket* b = &here->data[p.bucket];
   for (int i = 0; i < kBuckets; ++i) {
@@ -176,7 +175,7 @@ INLINE Path Insert(Side* here, Path p, filter::detail::PcgRandom* rng) {
     }
     if (b->data[i].fingerprint == p.slot.fingerprint) {
       // already present in the table
-      if (filter::detail::IsPrefixOf(b->data[i].tail, p.slot.tail)) {
+      if (filter::detail_IsPrefixOf(b->data[i].tail, p.slot.tail)) {
         return p;
       }
       /*
@@ -202,7 +201,7 @@ INLINE bool Find(const Side* here, Path p) {
   for(unsigned i = 0; i < here->stash_size; ++i) {
     if (here->stash[i].slot.tail != 0 && p.bucket == here->stash[i].bucket &&
         p.slot.fingerprint == here->stash[i].slot.fingerprint &&
-        filter::detail::IsPrefixOf(here->stash[i].slot.tail, p.slot.tail)) {
+        filter::detail_IsPrefixOf(here->stash[i].slot.tail, p.slot.tail)) {
       return true;
     }
   }
@@ -210,7 +209,7 @@ INLINE bool Find(const Side* here, Path p) {
   for (int i = 0; i < kBuckets; ++i) {
     if (b->data[i].tail == 0) continue;
     if (b->data[i].fingerprint == p.slot.fingerprint &&
-        filter::detail::IsPrefixOf(b->data[i].tail, p.slot.tail)) {
+        filter::detail_IsPrefixOf(b->data[i].tail, p.slot.tail)) {
       return true;
     }
   }
@@ -240,7 +239,7 @@ struct FrozenTaffyCuckooBaseBucket {
 //               "packed");
 
 struct FrozenTaffyCuckooBase {
-  filter::detail::Feistel hash_[2];
+  filter::detail_Feistel hash_[2];
   int log_side_size_;
   FrozenTaffyCuckooBaseBucket* data_[2];
   uint64_t* stash_[2];
@@ -299,7 +298,7 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int
 struct TaffyCuckooFilterBase {
   Side sides[2];
   uint64_t log_side_size;
-  filter::detail::PcgRandom rng;
+  filter::detail_PcgRandom rng;
   const uint64_t* entropy;
   uint64_t occupied;
 };
