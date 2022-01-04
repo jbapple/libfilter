@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -123,7 +124,7 @@ static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
 // to be stored so it doesn't invalidate old inserts.
 struct Side {
   Feistel f;
-  Bucket* data;
+  std::unique_ptr<Bucket[]> data;
   std::vector<Path> stash;
 
   Side() {}
@@ -131,7 +132,7 @@ struct Side {
   INLINE Side(int log_side_size, const uint64_t* keys)
       : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
 
-  INLINE ~Side() { delete[] data; }
+  //INLINE ~Side() { delete[] data; }
 
   INLINE Bucket& operator[](unsigned i) { return data[i]; }
   INLINE const Bucket& operator[](unsigned i) const { return data[i]; }
@@ -196,9 +197,7 @@ struct Side {
  INLINE void swap(Side& x, Side& y) {
   using std::swap;
   swap(x.f, y.f);
-  auto* tmp = x.data;
-  x.data = y.data;
-  y.data = tmp;
+  swap(x.data, y.data);
   swap(x.stash, y.stash);
 }
 
@@ -274,25 +273,25 @@ struct TaffyCuckooFilterBase {
 
   //TaffyCuckooFilterBase(const TaffyCuckooFilterBase& that) = delete;
 
-  TaffyCuckooFilterBase(const TaffyCuckooFilterBase& that)
-      : sides{{(int)that.log_side_size, that.entropy},
-              {(int)that.log_side_size, that.entropy + 4}},
-        log_side_size(that.log_side_size),
-        rng(that.rng),
-        entropy(that.entropy),
-        occupied(that.occupied) {
-    for (int i = 0; i < 2; ++i) {
-      sides[i].stash = that.sides[i].stash;
-      memcpy(sides[i].data, that.sides[i].data,
-             sizeof(detail::Bucket) << that.log_side_size);
-    }
-  }
+  // TaffyCuckooFilterBase(const TaffyCuckooFilterBase& that)
+  //     : sides{{(int)that.log_side_size, that.entropy},
+  //             {(int)that.log_side_size, that.entropy + 4}},
+  //       log_side_size(that.log_side_size),
+  //       rng(that.rng),
+  //       entropy(that.entropy),
+  //       occupied(that.occupied) {
+  //   for (int i = 0; i < 2; ++i) {
+  //     sides[i].stash = that.sides[i].stash;
+  //     memcpy(&sides[i].data[0], &that.sides[i].data[0],
+  //            sizeof(detail::Bucket) << that.log_side_size);
+  //   }
+  // }
 
-  TaffyCuckooFilterBase& operator=(const TaffyCuckooFilterBase& that) {
-    this->~TaffyCuckooFilterBase();
-    new (this) TaffyCuckooFilterBase(that);
-    return *this;
-  }
+  // TaffyCuckooFilterBase& operator=(const TaffyCuckooFilterBase& that) {
+  //   this->~TaffyCuckooFilterBase();
+  //   new (this) TaffyCuckooFilterBase(that);
+  //   return *this;
+  // }
 };
 
 TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& that) {
@@ -305,7 +304,7 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& th
   here.occupied = that.occupied;
   for (int i = 0; i < 2; ++i) {
     here.sides[i].stash = that.sides[i].stash;
-    memcpy(here.sides[i].data, that.sides[i].data,
+    memcpy(&here.sides[i].data[0], &that.sides[i].data[0],
            sizeof(detail::Bucket) << that.log_side_size);
   }
   return here;
@@ -589,11 +588,11 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
 
 TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase& x, const TaffyCuckooFilterBase& y) {
   if (x.occupied > y.occupied) {
-    TaffyCuckooFilterBase result = x;
+    TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(x);
     UnionOne(&result, y);
     return result;
   }
-  TaffyCuckooFilterBase result = y;
+  TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(y);
   UnionOne(&result, x);
   return result;
 }
