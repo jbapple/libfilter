@@ -262,17 +262,17 @@ struct FrozenTaffyCuckooBase {
   size_t SizeInBytes() const { return sizeof(Bucket) * 2ul << log_side_size_; }
   // bool InsertHash(uint64_t hash);
 
-  INLINE static const char* Name() {
-    thread_local const constexpr char result[] = "FrozenTaffyCuckoo";
-    return result;
-  }
-
-  ~FrozenTaffyCuckooBase() {
-    delete[] data_[0];
-    delete[] data_[1];
-  }
+  // ~FrozenTaffyCuckooBase() {
+  //   delete[] data_[0];
+  //   delete[] data_[1];
+  // }
 
 };
+
+void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
+  delete[] here->data_[0];
+  delete[] here->data_[1];
+}
 
 FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
   FrozenTaffyCuckooBase here;
@@ -297,6 +297,7 @@ struct FrozenTaffyCuckoo {
     return result;
   }
 
+  ~FrozenTaffyCuckoo() { FrozenTaffyCuckooBaseDestroy(&b); }
 };
 
 struct TaffyCuckooFilterBase {
