@@ -92,7 +92,7 @@ INLINE void PrintPath(const Path* here) {
             << here->slot.tail << "}}";
 }
 
-INLINE bool EqualPath(const Path& here, const Path& there) {
+INLINE bool EqualPath(Path here, Path there) {
   return here.bucket == there.bucket && here.slot.fingerprint == there.slot.fingerprint &&
          here.slot.tail == there.slot.tail;
 }
@@ -104,10 +104,10 @@ INLINE bool EqualPath(const Path& here, const Path& there) {
 //
 // Operates on the high bits, since bits must be moved from the tail into the fingerprint
 // and then bucket.
-INLINE Path ToPath(uint64_t raw, const Feistel& f, uint64_t log_side_size) {
+INLINE Path ToPath(uint64_t raw, const Feistel* f, uint64_t log_side_size) {
   uint64_t pre_hash_index_and_fp = raw >> (64 - log_side_size - kHeadSize);
   uint64_t hashed_index_and_fp =
-      f.Permute(log_side_size + kHeadSize, pre_hash_index_and_fp);
+      f->Permute(log_side_size + kHeadSize, pre_hash_index_and_fp);
   uint64_t index = hashed_index_and_fp >> kHeadSize;
   Path p;
   p.bucket = index;
@@ -126,10 +126,10 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, uint64_t log_side_size) {
 // Uses reverse permuting to get back the high bits of the original hashed value. Elides
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
-INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t log_side_size) {
+INLINE uint64_t FromPathNoTail(Path p, const Feistel * f, uint64_t log_side_size) {
   uint64_t hashed_index_and_fp = (p.bucket << kHeadSize) | p.slot.fingerprint;
   uint64_t pre_hashed_index_and_fp =
-      f.ReversePermute(log_side_size + kHeadSize, hashed_index_and_fp);
+      f->ReversePermute(log_side_size + kHeadSize, hashed_index_and_fp);
   uint64_t shifted_up = pre_hashed_index_and_fp << (64 - log_side_size - kHeadSize);
   return shifted_up;
 }
@@ -151,11 +151,6 @@ struct Side {
   size_t stash_capacity;
   size_t stash_size;
   Path * stash;
-  //Side() {}
-
-  // INLINE Side(int log_side_size, const uint64_t* keys)
-  //     : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
-
 };
 
 Side SideCreate(int log_side_size, const uint64_t* keys) {
@@ -172,19 +167,19 @@ Side SideCreate(int log_side_size, const uint64_t* keys) {
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
 // succeded without anning anything new. Returns something else if that something else
 // was displaced by the insert. That item must be inserted then
-INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
+INLINE Path Insert(Side* here, Path p, PcgRandom* rng) {
   assert(p.tail != 0);
-  Bucket& b = here->data[p.bucket];
+  Bucket* b = &here->data[p.bucket];
   for (int i = 0; i < kBuckets; ++i) {
-    if (b.data[i].tail == 0) {
+    if (b->data[i].tail == 0) {
       // empty slot
-      b.data[i] = p.slot;
+      b->data[i] = p.slot;
       p.slot.tail = 0;
       return p;
     }
-    if (b.data[i].fingerprint == p.slot.fingerprint) {
+    if (b->data[i].fingerprint == p.slot.fingerprint) {
       // already present in the table
-      if (IsPrefixOf(b.data[i].tail, p.slot.tail)) {
+      if (IsPrefixOf(b->data[i].tail, p.slot.tail)) {
         return p;
       }
       /*
@@ -198,10 +193,10 @@ INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
     }
   }
   // Kick something random and return it
-  int i = rng.Get();
+  int i = rng->Get();
   Path result = p;
-  result.slot = b.data[i];
-  b.data[i] = p.slot;
+  result.slot = b->data[i];
+  b->data[i] = p.slot;
   return result;
 }
 
@@ -214,10 +209,10 @@ INLINE bool Find(const Side* here, Path p) {
       return true;
     }
   }
-  Bucket& b = here->data[p.bucket];
+  Bucket* b = &here->data[p.bucket];
   for (int i = 0; i < kBuckets; ++i) {
-    if (b.data[i].tail == 0) continue;
-    if (b.data[i].fingerprint == p.slot.fingerprint && IsPrefixOf(b.data[i].tail, p.slot.tail)) {
+    if (b->data[i].tail == 0) continue;
+    if (b->data[i].fingerprint == p.slot.fingerprint && IsPrefixOf(b->data[i].tail, p.slot.tail)) {
       return true;
     }
   }
@@ -270,12 +265,12 @@ bool FindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
     for (size_t j = 0; j < here->stash_size_[i]; ++j) {
       if (here->stash_[i][j] == permuted) return true;
     }
-    FrozenTaffyCuckooBaseBucket& b = here->data_[i][permuted >> kHeadSize];
+    FrozenTaffyCuckooBaseBucket* b = &here->data_[i][permuted >> kHeadSize];
     uint64_t fingerprint = permuted & ((1 << kHeadSize) - 1);
     if (0 == fingerprint) return true;
     // TODO: SWAR
     uint64_t z = 0;
-    memcpy(&z, &b, sizeof(b));
+    memcpy(&z, b, sizeof(*b));
     if (hasvalue10(z, fingerprint)) return true;
   }
   return false;
@@ -322,23 +317,23 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
   return here;
 }
 
-TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& that) {
+TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase* that) {
   TaffyCuckooFilterBase here;
-  here.sides[0] = detail::SideCreate(that.log_side_size, that.entropy);
-  here.sides[1] = detail::SideCreate(that.log_side_size, that.entropy + 4);
-  here.log_side_size = that.log_side_size;
-  here.rng = that.rng;
-  here.entropy = that.entropy;
-  here.occupied = that.occupied;
+  here.sides[0] = detail::SideCreate(that->log_side_size, that->entropy);
+  here.sides[1] = detail::SideCreate(that->log_side_size, that->entropy + 4);
+  here.log_side_size = that->log_side_size;
+  here.rng = that->rng;
+  here.entropy = that->entropy;
+  here.occupied = that->occupied;
   for (int i = 0; i < 2; ++i) {
     delete[] here.sides[i].stash;
-    here.sides[i].stash = new detail::Path[that.sides[i].stash_capacity]();
-    here.sides[i].stash_capacity = that.sides[i].stash_capacity;
-    here.sides[i].stash_size = that.sides[i].stash_size;
-    memcpy(&here.sides[i].stash[0], &that.sides[i].stash[0],
-           that.sides[i].stash_size * sizeof(detail::Path));
-    memcpy(&here.sides[i].data[0], &that.sides[i].data[0],
-           sizeof(detail::Bucket) << that.log_side_size);
+    here.sides[i].stash = new detail::Path[that->sides[i].stash_capacity]();
+    here.sides[i].stash_capacity = that->sides[i].stash_capacity;
+    here.sides[i].stash_size = that->sides[i].stash_size;
+    memcpy(&here.sides[i].stash[0], &that->sides[i].stash[0],
+           that->sides[i].stash_size * sizeof(detail::Path));
+    memcpy(&here.sides[i].data[0], &that->sides[i].data[0],
+           sizeof(detail::Bucket) << that->log_side_size);
   }
   return here;
 }
@@ -358,7 +353,7 @@ FrozenTaffyCuckooBase Freeze(const TaffyCuckooFilterBase* here) {
       FrozenTaffyCuckooBaseCreate(here->entropy, here->log_side_size);
   for (int i : {0, 1}) {
     for (size_t j = 0; j < here->sides[i].stash_size; ++j) {
-      auto topush = FromPathNoTail(here->sides[i].stash[j], here->sides[i].f,
+      auto topush = FromPathNoTail(here->sides[i].stash[j], &here->sides[i].f,
                                    here->log_side_size);
       if (result.stash_size_[i] == result.stash_capacity_[i]) {
         result.stash_capacity_[i] *= 2;
@@ -370,12 +365,12 @@ FrozenTaffyCuckooBase Freeze(const TaffyCuckooFilterBase* here) {
       result.stash_[i][result.stash_size_[i]++] = topush;
     }
     for (size_t j = 0; j < (1ul << here->log_side_size); ++j) {
-      auto& out = result.data_[i][j];
-      const auto& in = here->sides[i].data[j];
-      out.zero = in.data[0].fingerprint;
-      out.one = in.data[1].fingerprint;
-      out.two = in.data[2].fingerprint;
-      out.three = in.data[3].fingerprint;
+      auto* out = &result.data_[i][j];
+      const auto* in = &here->sides[i].data[j];
+      out->zero = in->data[0].fingerprint;
+      out->one = in->data[1].fingerprint;
+      out->two = in->data[2].fingerprint;
+      out->three = in->data[3].fingerprint;
     }
   }
   return result;
@@ -423,7 +418,7 @@ INLINE bool FindHash(const TaffyCuckooFilterBase* here, uint64_t k) {
 #pragma GCC unroll 2
 #endif
     for (int s = 0; s < 2; ++s) {
-      if (Find(&here->sides[s], detail::ToPath(k, here->sides[s].f, here->log_side_size)))
+      if (Find(&here->sides[s], detail::ToPath(k, &here->sides[s].f, here->log_side_size)))
         return true;
     }
     return false;
@@ -442,7 +437,7 @@ INLINE bool InsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
          here->sides[0].stash_size + here->sides[1].stash_size > 8) {
     Upsize(here);
   }
-  Insert(here, 0, detail::ToPath(k, here->sides[0].f, here->log_side_size));
+  Insert(here, 0, detail::ToPath(k, &here->sides[0].f, here->log_side_size));
   return true;
 }
 
@@ -461,7 +456,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
 #endif
     for (int i = 0; i < 2; ++i) {
       detail::Path q = p;
-      p = Insert(both[i], p, here->rng);
+      p = Insert(both[i], p, &here->rng);
       if (p.slot.tail == 0) {
         // Found an empty slot
         ++here->occupied;
@@ -491,8 +486,8 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
       }
       --ttl;
       // translate p to beign a path about the right half of the table
-      p = detail::ToPath(detail::FromPathNoTail(p, both[i]->f, here->log_side_size),
-                         both[1 - i]->f, here->log_side_size);
+      p = detail::ToPath(detail::FromPathNoTail(p, &both[i]->f, here->log_side_size),
+                         &both[1 - i]->f, here->log_side_size);
       // P's tail is now artificiall 0, but it should stay the same as we move from side
       // to side
       p.slot.tail = tail;
@@ -511,31 +506,31 @@ INLINE bool Insert(TaffyCuckooFilterBase* here, int s, detail::Path q) {
 // sl is in, and a filter to move sl to, does so, potentially inserting TWO items in t,
 // as described in the paper.
 INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, detail::Slot sl, uint64_t i, int s,
-                         TaffyCuckooFilterBase& t) {
+                         TaffyCuckooFilterBase* t) {
   if (sl.tail == 0) return;
   detail::Path p;
   p.slot = sl;
   p.bucket = i;
-  uint64_t q = detail::FromPathNoTail(p, here->sides[s].f, here->log_side_size);
+  uint64_t q = detail::FromPathNoTail(p, &here->sides[s].f, here->log_side_size);
   if (sl.tail == 1ul << kTailSize) {
     // There are no tail bits left! Insert two values.
     // First, hash to the left side of the larger table.
-    p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
+    p = detail::ToPath(q, &t->sides[0].f, t->log_side_size);
     // Still no tail! :-)
     p.slot.tail = sl.tail;
-    Insert(&t, 0, p);
+    Insert(t, 0, p);
     // change the raw value by just one bit: its last
     q |= (1ul << (64 - here->log_side_size - kHeadSize - 1));
-    p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
+    p = detail::ToPath(q, &t->sides[0].f, t->log_side_size);
     p.slot.tail = sl.tail;
-    Insert(&t, 0, p);
+    Insert(t, 0, p);
   } else {
     // steal a bit from the tail
     q |= static_cast<uint64_t>(sl.tail >> kTailSize)
          << (64 - here->log_side_size - kHeadSize - 1);
-    detail::Path r = detail::ToPath(q, t.sides[0].f, t.log_side_size);
+    detail::Path r = detail::ToPath(q, &t->sides[0].f, t->log_side_size);
     r.slot.tail = (sl.tail << 1);
-    Insert(&t, 0, r);
+    Insert(t, 0, r);
   }
 }
 
@@ -546,12 +541,13 @@ void Upsize(TaffyCuckooFilterBase* here) {
 
   for (int s : {0, 1}) {
     for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
-      UpsizeHelper(here, here->sides[s].stash[i].slot, here->sides[s].stash[i].bucket, s, t);
+      UpsizeHelper(here, here->sides[s].stash[i].slot, here->sides[s].stash[i].bucket, s,
+                   &t);
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
       for (int j = 0; j < kBuckets; ++j) {
         detail::Slot sl = here->sides[s].data[i].data[j];
-        UpsizeHelper(here, sl, i, s, t);
+        UpsizeHelper(here, sl, i, s, &t);
       }
     }
   }
@@ -563,24 +559,24 @@ void Upsize(TaffyCuckooFilterBase* here) {
   delete[] t.sides[1].stash;
 }
 
-void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that, int side,
+void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, int side,
                detail::Path p) {
-  uint64_t hashed = detail::FromPathNoTail(p, that.sides[side].f, that.log_side_size);
-  // hashed is high that.log_side_size + kHeadSize, in high bits of 64-bit word
+  uint64_t hashed = detail::FromPathNoTail(p, &that->sides[side].f, that->log_side_size);
+  // hashed is high that->log_side_size + kHeadSize, in high bits of 64-bit word
   int tail_size = kTailSize - __builtin_ctz(p.slot.tail);
-  if (that.log_side_size == here->log_side_size) {
-    detail::Path q = detail::ToPath(hashed, here->sides[0].f, here->log_side_size);
+  if (that->log_side_size == here->log_side_size) {
+    detail::Path q = detail::ToPath(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = p.slot.tail;
     Insert(here, 0, q);
     q.slot.tail = 0;  // dummy line just to break on
-  } else if (that.log_side_size + tail_size >= here->log_side_size) {
+  } else if (that->log_side_size + tail_size >= here->log_side_size) {
     uint64_t orin3 =
         (static_cast<uint64_t>(p.slot.tail & (p.slot.tail - 1))
-         << (64 - that.log_side_size - kHeadSize - kTailSize - 1));
+         << (64 - that->log_side_size - kHeadSize - kTailSize - 1));
     assert((hashed & orin3) == 0);
     hashed |= orin3;
-    detail::Path q = ToPath(hashed, here->sides[0].f, here->log_side_size);
-    q.slot.tail = (p.slot.tail << (here->log_side_size - that.log_side_size));
+    detail::Path q = ToPath(hashed, &here->sides[0].f, here->log_side_size);
+    q.slot.tail = (p.slot.tail << (here->log_side_size - that->log_side_size));
     Insert(here, 0, q);
   } else {
     // p.tail & (p.tail - 1) removes the final 1 marker. The resulting length is
@@ -588,22 +584,22 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that, i
     // section with size kTailSize + 1.
     uint64_t orin2 =
         (static_cast<uint64_t>(p.slot.tail & (p.slot.tail - 1))
-         << (64 - that.log_side_size - kHeadSize - kTailSize - 1));
+         << (64 - that->log_side_size - kHeadSize - kTailSize - 1));
     assert(0 == (orin2 & hashed));
     hashed |= orin2;
-    // The total size is now that.log_side_size + kHeadSize + tail_size
+    // The total size is now that->log_side_size + kHeadSize + tail_size
     //
     // To fill up the required log_size_size + kHeadSize, we need values of width up to
-    // log_size_size + kHeadSize - (that.log_side_size + kHeadSize +
+    // log_size_size + kHeadSize - (that->log_side_size + kHeadSize +
     // tail_size)
     for (uint64_t i = 0;
-         i < (1u << (here->log_side_size - that.log_side_size - tail_size)); ++i) {
-      // To append these, need to shift up to that.log_side_size + kHeadSize +
+         i < (1u << (here->log_side_size - that->log_side_size - tail_size)); ++i) {
+      // To append these, need to shift up to that->log_side_size + kHeadSize +
       // tail_size
       uint64_t orin = (i << (64 - here->log_side_size - kHeadSize));
       assert(0 == (orin & hashed));
       uint64_t tmphashed = (hashed | orin);
-      detail::Path q = ToPath(tmphashed, here->sides[0].f, here->log_side_size);
+      detail::Path q = ToPath(tmphashed, &here->sides[0].f, here->log_side_size);
       q.slot.tail = (1u << kTailSize);
       Insert(here, 0, q);
     }
@@ -615,7 +611,7 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
   detail::Path p;
   for (int side : {0, 1}) {
     for (size_t i = 0; i < that.sides[side].stash_size; ++i) {
-      UnionHelp(here, that, side, that.sides[side].stash[i]);
+      UnionHelp(here, &that, side, that.sides[side].stash[i]);
     }
     for (uint64_t bucket = 0; bucket < (1ul << that.log_side_size); ++bucket) {
       p.bucket = bucket;
@@ -623,7 +619,7 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
         if (that.sides[side].data[bucket].data[slot].tail == 0) continue;
         p.slot.fingerprint = that.sides[side].data[bucket].data[slot].fingerprint;
         p.slot.tail = that.sides[side].data[bucket].data[slot].tail;
-        UnionHelp(here, that, side, p);
+        UnionHelp(here, &that, side, p);
         continue;
       }
     }
@@ -632,11 +628,11 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
 
 TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase& x, const TaffyCuckooFilterBase& y) {
   if (x.occupied > y.occupied) {
-    TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(x);
+    TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(&x);
     UnionOne(&result, y);
     return result;
   }
-  TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(y);
+  TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(&y);
   UnionOne(&result, x);
   return result;
 }
