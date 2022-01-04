@@ -235,6 +235,11 @@ struct FrozenTaffyCuckoo {
   static_assert(sizeof(Bucket) == detail::kBuckets * detail::kHeadSize / CHAR_BIT,
                 "packed");
 
+  detail::Feistel hash_[2];
+  int log_side_size_;
+  Bucket* data_[2];
+  std::vector<uint64_t> stash_[2];
+
 #define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL)
 #define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
 
@@ -267,16 +272,25 @@ struct FrozenTaffyCuckoo {
     delete[] data_[1];
   }
 
+  FrozenTaffyCuckoo() {}
+
   FrozenTaffyCuckoo(const uint64_t entropy[8], int log_side_size)
       : hash_{entropy, &entropy[4]},
         log_side_size_(log_side_size),
         data_{new Bucket[1ul << log_side_size](), new Bucket[1ul << log_side_size]()},
         stash_{std::vector<uint64_t>(), std::vector<uint64_t>()} {}
-  detail::Feistel hash_[2];
-  int log_side_size_;
-  Bucket* data_[2];
-  std::vector<uint64_t> stash_[2];
 };
+
+FrozenTaffyCuckoo FrozenTaffyCuckooCreate(const uint64_t entropy[8], int log_side_size) {
+  FrozenTaffyCuckoo here;
+  here.hash_[0] = entropy;
+  here.hash_[1] = &entropy[4];
+  here.log_side_size_ = log_side_size;
+  here.data_[0] = new FrozenTaffyCuckoo::Bucket[1ul << log_side_size]();
+  here.data_[1] = new FrozenTaffyCuckoo::Bucket[1ul << log_side_size]();
+  here.stash_[0] = here.stash_[1] = std::vector<uint64_t>();
+  return here;
+}
 
 struct TaffyCuckooFilterBase {
   detail::Side sides[2];
@@ -621,6 +635,7 @@ INLINE void swap(TaffyCuckooFilterBase& x, TaffyCuckooFilterBase& y) {
 struct TaffyCuckooFilter {
   TaffyCuckooFilterBase b;
 
+  // TODO: change to int64_t and prevent negatives
   static TaffyCuckooFilter CreateWithBytes(size_t bytes) {
     return TaffyCuckooFilter{filter::CreateWithBytes(bytes)};
   }

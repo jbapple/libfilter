@@ -43,7 +43,6 @@ TYPED_TEST_SUITE(UnionTest, UnionTypes);
 
 // TODO: test more methods, including copy
 
-
 TYPED_TEST(UnionTest, UnionDoes) {
   for (unsigned xndv = 1; xndv < 200; ++xndv) {
     for (unsigned yndv = 1; yndv < 1024; yndv += xndv) {
@@ -231,5 +230,19 @@ TYPED_TEST(BlockTest, EqualStayEqual) {
     EXPECT_TRUE(x == y);
     EXPECT_TRUE(y == z);
     EXPECT_TRUE(z == x);
+  }
+}
+
+TEST(FreezeTest, FreezeTest) {
+  Rand r;
+  vector<uint64_t> keys;
+  TaffyCuckooFilter tcf = TaffyCuckooFilter::CreateWithBytes(0);
+  for (size_t i = 0; i < 5000000; ++i) {
+    keys.push_back(r());
+    tcf.InsertHash(keys.back());
+  }
+  auto ftcf = tcf.Freeze();
+  for (size_t i = 0; i < keys.size(); ++i) {
+    EXPECT_TRUE(ftcf.FindHash(keys[i]));
   }
 }

@@ -22,10 +22,10 @@ struct Feistel {
   // multiply-shift.
   uint64_t keys[2][2];
 
-  INLINE constexpr uint64_t Lo(int, int, int w, uint64_t x) const { return Mask(w, x); }
+  static INLINE constexpr uint64_t Lo(int w, uint64_t x) { return Mask(w, x); }
   // Returns the high bits of x. if w is s, returns the t high bits. If W is t, returns
   // the s high bits
-  INLINE constexpr uint64_t Hi(int s, int t, int w, uint64_t x) const {
+  static INLINE constexpr uint64_t Hi(int s, int t, int w, uint64_t x) {
     return Mask(w, x >> (s + t - w));
   }
 
@@ -35,8 +35,8 @@ struct Feistel {
       : keys{{entropy[0], entropy[1]}, {entropy[2], entropy[3]}} {}
 
   // Applies strong multiply-shift to the w low bits of x, returning the high w bits
-  INLINE constexpr uint64_t ApplyOnce(int s, int t, int w, uint64_t x,
-                                      const uint64_t k[2]) const {
+  static INLINE constexpr uint64_t ApplyOnce(int s, int t, int w, uint64_t x,
+                                             const uint64_t k[2]) {
     return Hi(s, t, s + t - w, Mask(w, x) * Mask(s + t, k[0]) + Mask(s + t, k[1]));
   }
 
@@ -47,7 +47,7 @@ struct Feistel {
     auto t = w - s;
 
     // break up x into the low s bits and the high t bits
-    auto l0 = Lo(s, t, s, x);
+    auto l0 = Lo(s, x);
     auto r0 = Hi(s, t, t, x);
 
     // First feistel application: switch the halves. l1 has t bits, while r1 has s bits,
@@ -70,7 +70,7 @@ struct Feistel {
     auto s = w / 2;
     auto t = w - s;
 
-    auto l2 = Lo(s, t, s, x);
+    auto l2 = Lo(s, x);
     auto r2 = Hi(s, t, t, x);
 
     auto r1 = l2;                                    // s
