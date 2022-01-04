@@ -296,6 +296,7 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& th
   here.entropy = that.entropy;
   here.occupied = that.occupied;
   for (int i = 0; i < 2; ++i) {
+    delete[] here.sides[i].stash;
     here.sides[i].stash = new detail::Path[that.sides[i].stash_capacity]();
     here.sides[i].stash_capacity = that.sides[i].stash_capacity;
     here.sides[i].stash_size = that.sides[i].stash_size;
