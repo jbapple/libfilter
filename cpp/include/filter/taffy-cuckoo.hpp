@@ -60,22 +60,28 @@ struct Slot {
 static_assert(sizeof(Slot) == 2, "sizeof(Slot)");
 
 // A path encodes the slot number, as well as the slot itself.
-struct Path : public Slot {
+struct Path {
+  Slot slot;
   uint64_t bucket;
 
-  INLINE void Print() const {
-    std::cout << "{" << std::dec << bucket << ", {" << std::hex << fingerprint << ", "
-              << tail << "}}";
-  }
+  // INLINE void Print() const {
+  //   std::cout << "{" << std::dec << bucket << ", {" << std::hex << fingerprint << ", "
+  //             << tail << "}}";
+  // }
 
   // INLINE bool operator==(const Path& that) const {
   //   return bucket == that.bucket && fingerprint == that.fingerprint && tail == that.tail;
   // }
 };
 
+INLINE void PrintPath(const Path* here) {
+  std::cout << "{" << std::dec << here->bucket << ", {" << std::hex << here->slot.fingerprint << ", "
+            << here->slot.tail << "}}";
+}
+
 INLINE bool EqualPath(const Path& here, const Path& there) {
-  return here.bucket == there.bucket && here.fingerprint == there.fingerprint &&
-         here.tail == there.tail;
+  return here.bucket == there.bucket && here.slot.fingerprint == there.slot.fingerprint &&
+         here.slot.tail == there.slot.tail;
 }
 
 // Converts a hash value to a path. The bucket and the fingerprint are acquired via
@@ -93,14 +99,14 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, uint64_t log_side_size) {
   Path p;
   p.bucket = index;
   // Helpfully gets cut off by being a bitfield
-  p.fingerprint = hashed_index_and_fp;
+  p.slot.fingerprint = hashed_index_and_fp;
   uint64_t pre_hash_index_fp_and_tail =
       raw >> (64 - log_side_size - kHeadSize - kTailSize);
   uint64_t raw_tail = Mask(kTailSize, pre_hash_index_fp_and_tail);
   // encode the tail using the encoding described above, in which the length of the tail i
   // the complement of the tzcnt plus one.
   uint64_t encoded_tail = raw_tail * 2 + 1;
-  p.tail = encoded_tail;
+  p.slot.tail = encoded_tail;
   return p;
 }
 
@@ -108,7 +114,7 @@ INLINE Path ToPath(uint64_t raw, const Feistel& f, uint64_t log_side_size) {
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
 INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t log_side_size) {
-  uint64_t hashed_index_and_fp = (p.bucket << kHeadSize) | p.fingerprint;
+  uint64_t hashed_index_and_fp = (p.bucket << kHeadSize) | p.slot.fingerprint;
   uint64_t pre_hashed_index_and_fp =
       f.ReversePermute(log_side_size + kHeadSize, hashed_index_and_fp);
   uint64_t shifted_up = pre_hashed_index_and_fp << (64 - log_side_size - kHeadSize);
@@ -161,13 +167,13 @@ INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
   for (int i = 0; i < kBuckets; ++i) {
     if (b[i].tail == 0) {
       // empty slot
-      b[i] = static_cast<Slot>(p);
-      p.tail = 0;
+      b[i] = p.slot;
+      p.slot.tail = 0;
       return p;
     }
-    if (b[i].fingerprint == p.fingerprint) {
+    if (b[i].fingerprint == p.slot.fingerprint) {
       // already present in the table
-      if (IsPrefixOf(b[i].tail, p.tail)) {
+      if (IsPrefixOf(b[i].tail, p.slot.tail)) {
         return p;
       }
       /*
@@ -183,24 +189,24 @@ INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
   // Kick something random and return it
   int i = rng.Get();
   Path result = p;
-  static_cast<Slot&>(result) = b[i];
-  b[i] = p;
+  result.slot = b[i];
+  b[i] = p.slot;
   return result;
 }
 
 INLINE bool Find(const Side* here, Path p) {
   assert(p.tail != 0);
   for(unsigned i = 0; i < here->stash_size; ++i) {
-    if (here->stash[i].tail != 0 && p.bucket == here->stash[i].bucket &&
-        p.fingerprint == here->stash[i].fingerprint &&
-        IsPrefixOf(here->stash[i].tail, p.tail)) {
+    if (here->stash[i].slot.tail != 0 && p.bucket == here->stash[i].bucket &&
+        p.slot.fingerprint == here->stash[i].slot.fingerprint &&
+        IsPrefixOf(here->stash[i].slot.tail, p.slot.tail)) {
       return true;
     }
   }
   Bucket& b = here->data[p.bucket];
   for (int i = 0; i < kBuckets; ++i) {
     if (b[i].tail == 0) continue;
-    if (b[i].fingerprint == p.fingerprint && IsPrefixOf(b[i].tail, p.tail)) {
+    if (b[i].fingerprint == p.slot.fingerprint && IsPrefixOf(b[i].tail, p.slot.tail)) {
       return true;
     }
   }
@@ -365,7 +371,7 @@ uint64_t Count(const TaffyCuckooFilterBase* here) {
 void Print(const TaffyCuckooFilterBase* here) {
   for (int s = 0; s < 2; ++s) {
     for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
-      here->sides[s].stash[i].Print();
+      PrintPath(&here->sides[s].stash[i]);
       std::cout << std::endl;
     }
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
@@ -423,7 +429,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
     for (int i = 0; i < 2; ++i) {
       detail::Path q = p;
       p = Insert(both[i], p, here->rng);
-      if (p.tail == 0) {
+      if (p.slot.tail == 0) {
         // Found an empty slot
         ++here->occupied;
         return true;
@@ -433,7 +439,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
         // filter size
         return true;
       }
-      auto tail = p.tail;
+      auto tail = p.slot.tail;
       if (ttl <= 0) {
         // we've run out of room. If there's room in this stash, stash it here. If there
         // is not room in this stash, there must be room in the other, based on the
@@ -456,7 +462,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
                          both[1 - i]->f, here->log_side_size);
       // P's tail is now artificiall 0, but it should stay the same as we move from side
       // to side
-      p.tail = tail;
+      p.slot.tail = tail;
     }
   }
 }
@@ -475,7 +481,7 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, detail::Slot sl, uint64_t 
                          TaffyCuckooFilterBase& t) {
   if (sl.tail == 0) return;
   detail::Path p;
-  static_cast<detail::Slot&>(p) = sl;
+  p.slot = sl;
   p.bucket = i;
   uint64_t q = detail::FromPathNoTail(p, here->sides[s].f, here->log_side_size);
   if (sl.tail == 1ul << detail::kTailSize) {
@@ -483,19 +489,19 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, detail::Slot sl, uint64_t 
     // First, hash to the left side of the larger table.
     p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
     // Still no tail! :-)
-    p.tail = sl.tail;
+    p.slot.tail = sl.tail;
     Insert(&t, 0, p);
     // change the raw value by just one bit: its last
     q |= (1ul << (64 - here->log_side_size - detail::kHeadSize - 1));
     p = detail::ToPath(q, t.sides[0].f, t.log_side_size);
-    p.tail = sl.tail;
+    p.slot.tail = sl.tail;
     Insert(&t, 0, p);
   } else {
     // steal a bit from the tail
     q |= static_cast<uint64_t>(sl.tail >> detail::kTailSize)
          << (64 - here->log_side_size - detail::kHeadSize - 1);
     detail::Path r = detail::ToPath(q, t.sides[0].f, t.log_side_size);
-    r.tail = (sl.tail << 1);
+    r.slot.tail = (sl.tail << 1);
     Insert(&t, 0, r);
   }
 }
@@ -507,7 +513,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
 
   for (int s : {0, 1}) {
     for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
-      UpsizeHelper(here, here->sides[s].stash[i], here->sides[s].stash[i].bucket, s, t);
+      UpsizeHelper(here, here->sides[s].stash[i].slot, here->sides[s].stash[i].bucket, s, t);
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
@@ -528,27 +534,27 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that, i
                detail::Path p) {
   uint64_t hashed = detail::FromPathNoTail(p, that.sides[side].f, that.log_side_size);
   // hashed is high that.log_side_size + detail::kHeadSize, in high bits of 64-bit word
-  int tail_size = detail::kTailSize - __builtin_ctz(p.tail);
+  int tail_size = detail::kTailSize - __builtin_ctz(p.slot.tail);
   if (that.log_side_size == here->log_side_size) {
     detail::Path q = detail::ToPath(hashed, here->sides[0].f, here->log_side_size);
-    q.tail = p.tail;
+    q.slot.tail = p.slot.tail;
     Insert(here, 0, q);
-    q.tail = 0;  // dummy line just to break on
+    q.slot.tail = 0;  // dummy line just to break on
   } else if (that.log_side_size + tail_size >= here->log_side_size) {
     uint64_t orin3 =
-        (static_cast<uint64_t>(p.tail & (p.tail - 1))
+        (static_cast<uint64_t>(p.slot.tail & (p.slot.tail - 1))
          << (64 - that.log_side_size - detail::kHeadSize - detail::kTailSize - 1));
     assert((hashed & orin3) == 0);
     hashed |= orin3;
     detail::Path q = ToPath(hashed, here->sides[0].f, here->log_side_size);
-    q.tail = (p.tail << (here->log_side_size - that.log_side_size));
+    q.slot.tail = (p.slot.tail << (here->log_side_size - that.log_side_size));
     Insert(here, 0, q);
   } else {
     // p.tail & (p.tail - 1) removes the final 1 marker. The resulting length is
     // 0, 1, 2, 3, 4, or 5. It is also tail_size, but is packed in high bits of a
     // section with size kTailSize + 1.
     uint64_t orin2 =
-        (static_cast<uint64_t>(p.tail & (p.tail - 1))
+        (static_cast<uint64_t>(p.slot.tail & (p.slot.tail - 1))
          << (64 - that.log_side_size - detail::kHeadSize - detail::kTailSize - 1));
     assert(0 == (orin2 & hashed));
     hashed |= orin2;
@@ -565,7 +571,7 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that, i
       assert(0 == (orin & hashed));
       uint64_t tmphashed = (hashed | orin);
       detail::Path q = ToPath(tmphashed, here->sides[0].f, here->log_side_size);
-      q.tail = (1u << detail::kTailSize);
+      q.slot.tail = (1u << detail::kTailSize);
       Insert(here, 0, q);
     }
   }
@@ -582,8 +588,8 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
       p.bucket = bucket;
       for (int slot = 0; slot < detail::kBuckets; ++slot) {
         if (that.sides[side].data[bucket][slot].tail == 0) continue;
-        p.fingerprint = that.sides[side].data[bucket][slot].fingerprint;
-        p.tail = that.sides[side].data[bucket][slot].tail;
+        p.slot.fingerprint = that.sides[side].data[bucket][slot].fingerprint;
+        p.slot.tail = that.sides[side].data[bucket][slot].tail;
         UnionHelp(here, that, side, p);
         continue;
       }
