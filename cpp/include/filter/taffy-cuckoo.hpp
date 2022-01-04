@@ -240,34 +240,30 @@ struct FrozenTaffyCuckooBase {
   Bucket* data_[2];
   std::vector<uint64_t> stash_[2];
 
+
+  size_t SizeInBytes() const { return sizeof(Bucket) * 2ul << log_side_size_; }
+};
+
 #define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL)
 #define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
 
-  bool FindHash(uint64_t x) const {
-    for (int i = 0; i < 2; ++i) {
-      uint64_t y = x >> (64 - log_side_size_ - detail::kHeadSize);
-      uint64_t permuted = hash_[i].Permute(log_side_size_ + detail::kHeadSize, y);
-      for (auto v : stash_[i]) if (v == permuted) return true;
-      Bucket& b = data_[i][permuted >> detail::kHeadSize];
-      uint64_t fingerprint = permuted & ((1 << detail::kHeadSize) - 1);
-      if (0 == fingerprint) return true;
-      // TODO: SWAR
-      uint64_t z = 0;
-      memcpy(&z, &b, sizeof(b));
-      if (hasvalue10(z, fingerprint)) return true;
-    }
-    return false;
+bool FindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
+  for (int i = 0; i < 2; ++i) {
+    uint64_t y = x >> (64 - here->log_side_size_ - detail::kHeadSize);
+    uint64_t permuted =
+        here->hash_[i].Permute(here->log_side_size_ + detail::kHeadSize, y);
+    for (auto v : here->stash_[i])
+      if (v == permuted) return true;
+    FrozenTaffyCuckooBase::Bucket& b = here->data_[i][permuted >> detail::kHeadSize];
+    uint64_t fingerprint = permuted & ((1 << detail::kHeadSize) - 1);
+    if (0 == fingerprint) return true;
+    // TODO: SWAR
+    uint64_t z = 0;
+    memcpy(&z, &b, sizeof(b));
+    if (hasvalue10(z, fingerprint)) return true;
   }
-
-  size_t SizeInBytes() const { return sizeof(Bucket) * 2ul << log_side_size_; }
-  // bool InsertHash(uint64_t hash);
-
-  // ~FrozenTaffyCuckooBase() {
-  //   delete[] data_[0];
-  //   delete[] data_[1];
-  // }
-
-};
+  return false;
+}
 
 void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
   delete[] here->data_[0];
@@ -287,7 +283,7 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int
 
 struct FrozenTaffyCuckoo {
   FrozenTaffyCuckooBase b;
-  bool FindHash(uint64_t x) const { return b.FindHash(x); }
+  bool FindHash(uint64_t x) const { return filter::FindHash(&b, x); }
 
   size_t SizeInBytes() const { return b.SizeInBytes(); }
   // bool InsertHash(uint64_t hash);
