@@ -135,7 +135,7 @@ struct Side {
   //~Side() { delete[] data; }
 
   INLINE Bucket& operator[](unsigned i) { return data[i]; }
-  INLINE const Bucket& operator[](unsigned i) const { return data[i]; }
+  // INLINE const Bucket& operator[](unsigned i) const { return data[i]; }
 };
 
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
@@ -333,7 +333,7 @@ uint64_t Count(const TaffyCuckooFilterBase* here) {
     result += here->sides[s].stash.size();
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
-        if (here->sides[s][i][j].tail != 0) ++result;
+        if (here->sides[s].data[i][j].tail != 0) ++result;
       }
     }
   }
@@ -348,7 +348,7 @@ void Print(const TaffyCuckooFilterBase* here) {
     }
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
-        here->sides[s][i][j].Print();
+        here->sides[s].data[i][j].Print();
         std::cout << std::endl;
       }
     }
@@ -558,9 +558,9 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
     for (uint64_t bucket = 0; bucket < (1ul << that.log_side_size); ++bucket) {
       p.bucket = bucket;
       for (int slot = 0; slot < detail::kBuckets; ++slot) {
-        if (that.sides[side][bucket][slot].tail == 0) continue;
-        p.fingerprint = that.sides[side][bucket][slot].fingerprint;
-        p.tail = that.sides[side][bucket][slot].tail;
+        if (that.sides[side].data[bucket][slot].tail == 0) continue;
+        p.fingerprint = that.sides[side].data[bucket][slot].fingerprint;
+        p.tail = that.sides[side].data[bucket][slot].tail;
         UnionHelp(here, that, side, p);
         continue;
       }
