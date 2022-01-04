@@ -68,10 +68,15 @@ struct Path : public Slot {
               << tail << "}}";
   }
 
-  INLINE bool operator==(const Path& that) const {
-    return bucket == that.bucket && fingerprint == that.fingerprint && tail == that.tail;
-  }
+  // INLINE bool operator==(const Path& that) const {
+  //   return bucket == that.bucket && fingerprint == that.fingerprint && tail == that.tail;
+  // }
 };
+
+INLINE bool EqualPath(const Path& here, const Path& there) {
+  return here.bucket == there.bucket && here.fingerprint == there.fingerprint &&
+         here.tail == there.tail;
+}
 
 // Converts a hash value to a path. The bucket and the fingerprint are acquired via
 // hashing, while the tail is a selection of un-hashed bits from raw. Later, when moving
@@ -423,7 +428,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
         ++here->occupied;
         return true;
       }
-      if (p == q) {
+      if (EqualPath(p, q)) {
         // Combined with or already present in a slot. Success, but no increase in
         // filter size
         return true;
