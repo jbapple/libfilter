@@ -272,13 +272,6 @@ struct FrozenTaffyCuckoo {
     delete[] data_[1];
   }
 
-  FrozenTaffyCuckoo() {}
-
-  FrozenTaffyCuckoo(const uint64_t entropy[8], int log_side_size)
-      : hash_{entropy, &entropy[4]},
-        log_side_size_(log_side_size),
-        data_{new Bucket[1ul << log_side_size](), new Bucket[1ul << log_side_size]()},
-        stash_{std::vector<uint64_t>(), std::vector<uint64_t>()} {}
 };
 
 FrozenTaffyCuckoo FrozenTaffyCuckooCreate(const uint64_t entropy[8], int log_side_size) {
@@ -344,7 +337,7 @@ TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
 }
 
 FrozenTaffyCuckoo Freeze(const TaffyCuckooFilterBase* here) {
-  FrozenTaffyCuckoo result(here->entropy, here->log_side_size);
+  FrozenTaffyCuckoo result = FrozenTaffyCuckooCreate(here->entropy, here->log_side_size);
   for (int i : {0, 1}) {
     for (size_t j = 0; j < here->sides[i].stash_size; ++j) {
       result.stash_[i].push_back(
