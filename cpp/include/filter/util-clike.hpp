@@ -8,12 +8,27 @@
 #include <immintrin.h>
 #endif
 
-namespace filter {
+
 
 #define INLINE __attribute__((always_inline)) inline
 
 // Returns the lowest k bits of x
 INLINE constexpr uint64_t detail_Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
+
+static INLINE constexpr uint64_t detail_Lo(int w, uint64_t x) { return detail_Mask(w, x); }
+// Returns the high bits of x. if w is s, returns the t high bits. If W is t, returns
+// the s high bits
+static INLINE constexpr uint64_t detail_Hi(int s, int t, int w, uint64_t x) {
+  return detail_Mask(w, x >> (s + t - w));
+}
+
+// Applies strong multiply-shift to the w low bits of x, returning the high w bits
+static INLINE constexpr uint64_t detail_ApplyOnce(int s, int t, int w, uint64_t x,
+                                           const uint64_t k[2]) {
+  return detail_Hi(
+      s, t, s + t - w,
+      detail_Mask(w, x) * detail_Mask(s + t, k[0]) + detail_Mask(s + t, k[1]));
+}
 
 // Feistel is a permutation that is also a hash function, based on a Feistel permutation.
 struct detail_Feistel {
@@ -21,84 +36,73 @@ struct detail_Feistel {
   // multiply-shift.
   uint64_t keys[2][2];
 
-  static INLINE constexpr uint64_t Lo(int w, uint64_t x) { return detail_Mask(w, x); }
-  // Returns the high bits of x. if w is s, returns the t high bits. If W is t, returns
-  // the s high bits
-  static INLINE constexpr uint64_t Hi(int s, int t, int w, uint64_t x) {
-    return detail_Mask(w, x >> (s + t - w));
-  }
 
   detail_Feistel() : keys{{0, 0}, {0, 0}} {}
 
   INLINE constexpr detail_Feistel(const uint64_t entropy[4])
       : keys{{entropy[0], entropy[1]}, {entropy[2], entropy[3]}} {}
-
-  // Applies strong multiply-shift to the w low bits of x, returning the high w bits
-  static INLINE constexpr uint64_t ApplyOnce(int s, int t, int w, uint64_t x,
-                                             const uint64_t k[2]) {
-    return Hi(s, t, s + t - w, detail_Mask(w, x) * detail_Mask(s + t, k[0]) + detail_Mask(s + t, k[1]));
-  }
-
-  // Performs the hash function "forwards". w is the width of x. This is ASYMMETRIC Feistel.
-  INLINE constexpr uint64_t Permute(int w, uint64_t x) const {
-    // s is floor(w/2), t is ceil(w/2).
-    auto s = w >> 1;
-    auto t = w - s;
-
-    // break up x into the low s bits and the high t bits
-    auto l0 = Lo(s, x);
-    auto r0 = Hi(s, t, t, x);
-
-    // First feistel application: switch the halves. l1 has t bits, while r1 has s bits,
-    // xored with the t-bit hash of r0.
-    auto l1 = r0;                                    // t
-    auto r1 = l0 ^ ApplyOnce(s, t, t, r0, keys[0]);  // s
-
-    // l2 has t bits. r2 has t-bits, xored with the s-bit hash of r1, which really has t
-    // bits. This is permitted because strong-multiply shift is still strong if you mask
-    // it.
-    auto l2 = r1;                                    // s
-    auto r2 = l1 ^ ApplyOnce(s, t, s, r1, keys[1]);  // t
-
-    // The validity of this is really only seen when understanding the reverse permutation
-    auto result = (r2 << s) | l2;
-    return result;
-  }
-
-  INLINE constexpr uint64_t ReversePermute(int w, uint64_t x) const {
-    auto s = w / 2;
-    auto t = w - s;
-
-    auto l2 = Lo(s, x);
-    auto r2 = Hi(s, t, t, x);
-
-    auto r1 = l2;                                    // s
-    auto l1 = r2 ^ ApplyOnce(s, t, s, r1, keys[1]);  // t
-
-    auto r0 = l1;                                    // t
-    auto l0 = r1 ^ ApplyOnce(s, t, t, r0, keys[0]);  // s
-
-    auto result = (r0 << s) | l0;
-    return result;
-  }
-
-  friend void swap(detail_Feistel&, detail_Feistel&);
-
-  std::size_t Summary() const {
-    return keys[0][0] ^ keys[0][1] ^ keys[1][0] ^ keys[1][1];
-  }
-  //Feistel(const Feistel&) = delete;
-  //Feistel& operator=(const Feistel&) = delete;
 };
 
-INLINE void swap(detail_Feistel& x, detail_Feistel& y) {
-  for (int i = 0; i < 2; ++i) {
-    for (int j = 0; j < 2; ++j) {
-      using std::swap;
-      swap(x.keys[i][j], y.keys[i][j]);
-    }
-  }
+// Performs the hash function "forwards". w is the width of x. This is ASYMMETRIC Feistel.
+INLINE constexpr uint64_t Permute(const detail_Feistel *here, int w, uint64_t x) {
+  // s is floor(w/2), t is ceil(w/2).
+  auto s = w >> 1;
+  auto t = w - s;
+
+  // break up x into the low s bits and the high t bits
+  auto l0 = detail_Lo(s, x);
+  auto r0 = detail_Hi(s, t, t, x);
+
+  // First feistel application: switch the halves. l1 has t bits, while r1 has s bits,
+  // xored with the t-bit hash of r0.
+  auto l1 = r0;                                                 // t
+  auto r1 = l0 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
+
+  // l2 has t bits. r2 has t-bits, xored with the s-bit hash of r1, which really has t
+  // bits. This is permitted because strong-multiply shift is still strong if you mask
+  // it.
+  auto l2 = r1;                                                 // s
+  auto r2 = l1 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
+
+  // The validity of this is really only seen when understanding the reverse permutation
+  auto result = (r2 << s) | l2;
+  return result;
 }
+
+INLINE constexpr uint64_t ReversePermute(const detail_Feistel *here, int w, uint64_t x) {
+  auto s = w / 2;
+  auto t = w - s;
+
+  auto l2 = detail_Lo(s, x);
+  auto r2 = detail_Hi(s, t, t, x);
+
+  auto r1 = l2;                                                 // s
+  auto l1 = r2 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
+
+  auto r0 = l1;                                                 // t
+  auto l0 = r1 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
+
+  auto result = (r0 << s) | l0;
+  return result;
+}
+
+  //  friend void swap(detail_Feistel&, detail_Feistel&);
+
+  // std::size_t Summary() const {
+  //   return keys[0][0] ^ keys[0][1] ^ keys[1][0] ^ keys[1][1];
+  // }
+  //Feistel(const Feistel&) = delete;
+  //Feistel& operator=(const Feistel&) = delete;
+
+
+// INLINE void swap(detail_Feistel& x, detail_Feistel& y) {
+//   for (int i = 0; i < 2; ++i) {
+//     for (int j = 0; j < 2; ++j) {
+//       using std::swap;
+//       swap(x.keys[i][j], y.keys[i][j]);
+//     }
+//   }
+// }
 
 struct detail_PcgRandom {
   // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
@@ -216,6 +220,3 @@ INLINE constexpr uint16_t detail_Combinable(uint16_t x, uint16_t y) {
 // static_assert(Combinable(2, 6) == 4, "Combinable(2, 6)");
 // static_assert(Combinable(1, 5) == 0, "Combinable(1, 5)");
 // static_assert(Combinable(1, 6) == 0, "Combinable(1, 6)");
-
-
-}  // namespace filter
