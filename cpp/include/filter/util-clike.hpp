@@ -36,9 +36,6 @@ struct detail_Feistel {
   // multiply-shift.
   uint64_t keys[2][2];
 
-
-  detail_Feistel() : keys{{0, 0}, {0, 0}} {}
-
 };
 
 detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
