@@ -125,9 +125,11 @@ static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
 struct Side {
   Feistel f;
   Bucket* data;
-  std::vector<Path> stash;
 
-  Side() {}
+  size_t stash_capacity;
+  size_t stash_size;
+  Path * stash;
+  //Side() {}
 
   // INLINE Side(int log_side_size, const uint64_t* keys)
   //     : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
@@ -138,7 +140,10 @@ Side SideCreate(int log_side_size, const uint64_t* keys) {
   Side here;
   here.f = &keys[0];
   here.data = new Bucket[1ul << log_side_size]();
-  here.stash = std::vector<Path>();
+  here.stash_capacity = 4;
+  here.stash_size = 0;
+  here.stash = new Path[here.stash_capacity]();
+
   return here;
 }
 
@@ -180,9 +185,10 @@ INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
 
 INLINE bool Find(const Side* here, Path p) {
   assert(p.tail != 0);
-  for (auto& path : here->stash) {
-    if (path.tail != 0 && p.bucket == path.bucket && p.fingerprint == path.fingerprint &&
-        IsPrefixOf(path.tail, p.tail)) {
+  for(unsigned i = 0; i < here->stash_size; ++i) {
+    if (here->stash[i].tail != 0 && p.bucket == here->stash[i].bucket &&
+        p.fingerprint == here->stash[i].fingerprint &&
+        IsPrefixOf(here->stash[i].tail, p.tail)) {
       return true;
     }
   }
@@ -201,6 +207,8 @@ INLINE void swap(Side& x, Side& y) {
   swap(x.f, y.f);
   swap(x.data, y.data);
   swap(x.stash, y.stash);
+  swap(x.stash_size, y.stash_size);
+  swap(x.stash_capacity, y.stash_capacity);
 }
 
 }  // namespace detail
@@ -288,7 +296,11 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& th
   here.entropy = that.entropy;
   here.occupied = that.occupied;
   for (int i = 0; i < 2; ++i) {
-    here.sides[i].stash = that.sides[i].stash;
+    here.sides[i].stash = new detail::Path[that.sides[i].stash_capacity]();
+    here.sides[i].stash_capacity = that.sides[i].stash_capacity;
+    here.sides[i].stash_size = that.sides[i].stash_size;
+    memcpy(&here.sides[i].stash[0], &that.sides[i].stash[0],
+           that.sides[i].stash_size * sizeof(detail::Path));
     memcpy(&here.sides[i].data[0], &that.sides[i].data[0],
            sizeof(detail::Bucket) << that.log_side_size);
   }
@@ -308,9 +320,9 @@ TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
 FrozenTaffyCuckoo Freeze(const TaffyCuckooFilterBase* here) {
   FrozenTaffyCuckoo result(here->entropy, here->log_side_size);
   for (int i : {0, 1}) {
-    for (auto v : here->sides[i].stash) {
+    for (size_t j = 0; j < here->sides[i].stash_size; ++j) {
       result.stash_[i].push_back(
-          FromPathNoTail(v, here->sides[i].f, here->log_side_size));
+          FromPathNoTail(here->sides[i].stash[j], here->sides[i].f, here->log_side_size));
     }
     for (size_t j = 0; j < (1ul << here->log_side_size); ++j) {
       auto& out = result.data_[i][j];
@@ -326,7 +338,7 @@ FrozenTaffyCuckoo Freeze(const TaffyCuckooFilterBase* here) {
 
 uint64_t SizeInBytes(const TaffyCuckooFilterBase* here) {
   return sizeof(detail::Path) *
-             (here->sides[0].stash.size() + here->sides[1].stash.size()) +
+             (here->sides[0].stash_size + here->sides[1].stash_size) +
          2 * sizeof(detail::Slot) * (1 << here->log_side_size) * detail::kBuckets;
 }
 
@@ -334,7 +346,7 @@ uint64_t SizeInBytes(const TaffyCuckooFilterBase* here) {
 uint64_t Count(const TaffyCuckooFilterBase* here) {
   uint64_t result = 0;
   for (int s = 0; s < 2; ++s) {
-    result += here->sides[s].stash.size();
+    result += here->sides[s].stash_size;
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
         if (here->sides[s].data[i][j].tail != 0) ++result;
@@ -346,8 +358,8 @@ uint64_t Count(const TaffyCuckooFilterBase* here) {
 
 void Print(const TaffyCuckooFilterBase* here) {
   for (int s = 0; s < 2; ++s) {
-    for (auto& p : here->sides[s].stash) {
-      p.Print();
+    for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
+      here->sides[s].stash[i].Print();
       std::cout << std::endl;
     }
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
@@ -382,7 +394,7 @@ void Upsize(TaffyCuckooFilterBase* here);
 INLINE bool InsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
   // 95% is achievable, generally,but give it some room
   while (here->occupied > 0.90 * Capacity(here) || here->occupied + 4 >= Capacity(here) ||
-         here->sides[0].stash.size() + here->sides[1].stash.size() > 8) {
+         here->sides[0].stash_size + here->sides[1].stash_size > 8) {
     Upsize(here);
   }
   Insert(here, 0, detail::ToPath(k, here->sides[0].f, here->log_side_size));
@@ -420,7 +432,15 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
         // we've run out of room. If there's room in this stash, stash it here. If there
         // is not room in this stash, there must be room in the other, based on the
         // pre-condition for this method.
-        both[i]->stash.push_back(p);
+        if (both[i]->stash_size == both[i]->stash_capacity) {
+          both[i]->stash_capacity *= 2;
+          //std::cerr << both[i]->stash_capacity << std::endl;
+          detail::Path * new_stash = new detail::Path[both[i]->stash_capacity]();
+          memcpy(new_stash, both[i]->stash, both[i]->stash_size * sizeof(detail::Path));
+          delete[] both[i]->stash;
+          both[i]->stash = new_stash;
+        }
+        both[i]->stash[both[i]->stash_size++] = p;
         ++here->occupied;
         return false;
       }
@@ -479,18 +499,25 @@ void Upsize(TaffyCuckooFilterBase* here) {
   TaffyCuckooFilterBase t =
       TaffyCuckooFilterBaseCreate(1 + here->log_side_size, here->entropy);
 
-  std::vector<detail::Path> stashes[2] = {std::vector<detail::Path>(),
-                                          std::vector<detail::Path>()};
+  size_t stash_sizes[2] = {0, 0};
+  detail::Path* stashes[2] = {new detail::Path[4](), new detail::Path[4]()};
+
   using std::swap;
+
+  swap(stash_sizes[0], here->sides[0].stash_size);
   swap(stashes[0], here->sides[0].stash);
+  here->sides[0].stash_capacity = 4;
+
+  swap(stash_sizes[1], here->sides[1].stash_size);
   swap(stashes[1], here->sides[1].stash);
-  here->occupied = here->occupied - stashes[0].size();
-  here->occupied = here->occupied - stashes[1].size();
-  here->sides[0].stash.clear();
-  here->sides[1].stash.clear();
+  here->sides[1].stash_capacity = 4;
+
+  here->occupied = here->occupied - stash_sizes[0];
+  here->occupied = here->occupied - stash_sizes[1];
+
   for (int s : {0, 1}) {
-    for (auto stash : stashes[s]) {
-      UpsizeHelper(here, stash, stash.bucket, s, t);
+    for (size_t i = 0; i < stash_sizes[s]; ++i) {
+      UpsizeHelper(here, stashes[s][i], stashes[s][i].bucket, s, t);
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
@@ -502,7 +529,11 @@ void Upsize(TaffyCuckooFilterBase* here) {
   using std::swap;
   swap(*here, t);
   delete[] t.sides[0].data;
+  delete[] t.sides[0].stash;
   delete[] t.sides[1].data;
+  delete[] t.sides[1].stash;
+  delete[] stashes[0];
+  delete[] stashes[1];
 }
 
 void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that, int side,
@@ -556,8 +587,8 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
   assert(that.log_side_size <= log_side_size);
   detail::Path p;
   for (int side : {0, 1}) {
-    for (const auto& v : that.sides[side].stash) {
-      UnionHelp(here, that, side, v);
+    for (size_t i = 0; i < that.sides[side].stash_size; ++i) {
+      UnionHelp(here, that, side, that.sides[side].stash[i]);
     }
     for (uint64_t bucket = 0; bucket < (1ul << that.log_side_size); ++bucket) {
       p.bucket = bucket;
@@ -611,7 +642,9 @@ struct TaffyCuckooFilter {
   FrozenTaffyCuckoo Freeze() const { return filter::Freeze(&b); }
   ~TaffyCuckooFilter() {
     delete[] b.sides[0].data;
+    delete[] b.sides[0].stash;
     delete[] b.sides[1].data;
+    delete[] b.sides[1].stash;
   }
 };
 
