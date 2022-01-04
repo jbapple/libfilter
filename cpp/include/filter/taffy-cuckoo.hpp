@@ -189,7 +189,7 @@ INLINE Path Insert(Side* here, Path p, detail_PcgRandom* rng) {
     }
   }
   // Kick something random and return it
-  int i = rng->Get();
+  int i = PcgGet(rng);
   Path result = p;
   result.slot = b->data[i];
   b->data[i] = p.slot;

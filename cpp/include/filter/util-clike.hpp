@@ -122,29 +122,30 @@ struct detail_PcgRandom {
   uint32_t current = 0;
   int remaining_bits = 0;
 
-  INLINE uint32_t Get() {
-    // Save some bits for next time
-    if (remaining_bits >= bit_width) {
-      auto result = detail_Mask(bit_width, current);
-      current = current >> bit_width;
-      remaining_bits = remaining_bits - bit_width;
-      return result;
-    }
+};
 
-    uint64_t oldstate = state;
-    // Advance internal state
-    state = oldstate * 6364136223846793005ULL + (inc | 1);
-    // Calculate output function (XSH RR), uses old state for max ILP
-    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
-    uint32_t rot = oldstate >> 59u;
-    current = (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
-
-    remaining_bits = 32 - bit_width;
-    auto result = detail_Mask(bit_width, current);
-    current = current >> bit_width;
+INLINE uint32_t PcgGet(detail_PcgRandom *here) {
+  // Save some bits for next time
+  if (here->remaining_bits >= here->bit_width) {
+    auto result = detail_Mask(here->bit_width, here->current);
+    here->current = here->current >> here->bit_width;
+    here->remaining_bits = here->remaining_bits - here->bit_width;
     return result;
   }
-};
+
+  uint64_t oldstate = here->state;
+  // Advance internal state
+  here->state = oldstate * 6364136223846793005ULL + (here->inc | 1);
+  // Calculate output function (XSH RR), uses old state for max ILP
+  uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
+  uint32_t rot = oldstate >> 59u;
+  here->current = (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+
+  here->remaining_bits = 32 - here->bit_width;
+  auto result = detail_Mask(here->bit_width, here->current);
+  here->current = here->current >> here->bit_width;
+  return result;
+}
 
 // Given non-zero x and y, consider eash as a sequence of up to 15 [sic] bits. The length
 // of the sequence is encoded in the lower order bits. specifically, if the lowest n bits
