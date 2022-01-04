@@ -129,14 +129,18 @@ struct Side {
 
   Side() {}
 
-  INLINE Side(int log_side_size, const uint64_t* keys)
-      : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
+  // INLINE Side(int log_side_size, const uint64_t* keys)
+  //     : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
 
-  //~Side() { delete[] data; }
-
-  //INLINE Bucket& operator[](unsigned i) { return data[i]; }
-  // INLINE const Bucket& operator[](unsigned i) const { return data[i]; }
 };
+
+Side SideCreate(int log_side_size, const uint64_t* keys) {
+  Side here;
+  here.f = &keys[0];
+  here.data = new Bucket[1ul << log_side_size]();
+  here.stash = std::vector<Path>();
+  return here;
+}
 
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
 // succeded without anning anything new. Returns something else if that something else
@@ -266,8 +270,8 @@ struct TaffyCuckooFilterBase {
 TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
                                                   const uint64_t* entropy) {
   TaffyCuckooFilterBase here;
-  here.sides[0] = detail::Side(log_side_size, entropy);
-  here.sides[1] = detail::Side(log_side_size, entropy + 4);
+  here.sides[0] = detail::SideCreate(log_side_size, entropy);
+  here.sides[1] = detail::SideCreate(log_side_size, entropy + 4);
   here.log_side_size = log_side_size;
   here.rng.bit_width = detail::kLogBuckets;
   here.entropy = entropy;
@@ -277,8 +281,8 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
 
 TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& that) {
   TaffyCuckooFilterBase here;
-  here.sides[0] = detail::Side(that.log_side_size, that.entropy);
-  here.sides[1] = detail::Side(that.log_side_size, that.entropy + 4);
+  here.sides[0] = detail::SideCreate(that.log_side_size, that.entropy);
+  here.sides[1] = detail::SideCreate(that.log_side_size, that.entropy + 4);
   here.log_side_size = that.log_side_size;
   here.rng = that.rng;
   here.entropy = that.entropy;
