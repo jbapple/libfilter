@@ -134,7 +134,7 @@ struct Side {
 
   //~Side() { delete[] data; }
 
-  INLINE Bucket& operator[](unsigned i) { return data[i]; }
+  //INLINE Bucket& operator[](unsigned i) { return data[i]; }
   // INLINE const Bucket& operator[](unsigned i) const { return data[i]; }
 };
 
@@ -490,7 +490,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
-        detail::Slot sl = here->sides[s][i][j];
+        detail::Slot sl = here->sides[s].data[i][j];
         UpsizeHelper(here, sl, i, s, t);
       }
     }
