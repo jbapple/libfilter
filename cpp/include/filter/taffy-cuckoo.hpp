@@ -224,7 +224,7 @@ INLINE void swap(Side& x, Side& y) {
 
 }  // namespace detail
 
-struct FrozenTaffyCuckoo {
+struct FrozenTaffyCuckooBase {
   struct Bucket {
     uint64_t zero : detail::kHeadSize;
     uint64_t one : detail::kHeadSize;
@@ -243,7 +243,7 @@ struct FrozenTaffyCuckoo {
 #define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL)
 #define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
 
-  bool FindHash(uint64_t x) {
+  bool FindHash(uint64_t x) const {
     for (int i = 0; i < 2; ++i) {
       uint64_t y = x >> (64 - log_side_size_ - detail::kHeadSize);
       uint64_t permuted = hash_[i].Permute(log_side_size_ + detail::kHeadSize, y);
@@ -267,23 +267,37 @@ struct FrozenTaffyCuckoo {
     return result;
   }
 
-  ~FrozenTaffyCuckoo() {
+  ~FrozenTaffyCuckooBase() {
     delete[] data_[0];
     delete[] data_[1];
   }
 
 };
 
-FrozenTaffyCuckoo FrozenTaffyCuckooCreate(const uint64_t entropy[8], int log_side_size) {
-  FrozenTaffyCuckoo here;
+FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
+  FrozenTaffyCuckooBase here;
   here.hash_[0] = entropy;
   here.hash_[1] = &entropy[4];
   here.log_side_size_ = log_side_size;
-  here.data_[0] = new FrozenTaffyCuckoo::Bucket[1ul << log_side_size]();
-  here.data_[1] = new FrozenTaffyCuckoo::Bucket[1ul << log_side_size]();
+  here.data_[0] = new FrozenTaffyCuckooBase::Bucket[1ul << log_side_size]();
+  here.data_[1] = new FrozenTaffyCuckooBase::Bucket[1ul << log_side_size]();
   here.stash_[0] = here.stash_[1] = std::vector<uint64_t>();
   return here;
 }
+
+struct FrozenTaffyCuckoo {
+  FrozenTaffyCuckooBase b;
+  bool FindHash(uint64_t x) const { return b.FindHash(x); }
+
+  size_t SizeInBytes() const { return b.SizeInBytes(); }
+  // bool InsertHash(uint64_t hash);
+
+  INLINE static const char* Name() {
+    thread_local const constexpr char result[] = "FrozenTaffyCuckoo";
+    return result;
+  }
+
+};
 
 struct TaffyCuckooFilterBase {
   detail::Side sides[2];
@@ -336,8 +350,9 @@ TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
       kEntropy);
 }
 
-FrozenTaffyCuckoo Freeze(const TaffyCuckooFilterBase* here) {
-  FrozenTaffyCuckoo result = FrozenTaffyCuckooCreate(here->entropy, here->log_side_size);
+FrozenTaffyCuckooBase Freeze(const TaffyCuckooFilterBase* here) {
+  FrozenTaffyCuckooBase result =
+      FrozenTaffyCuckooBaseCreate(here->entropy, here->log_side_size);
   for (int i : {0, 1}) {
     for (size_t j = 0; j < here->sides[i].stash_size; ++j) {
       result.stash_[i].push_back(
@@ -641,7 +656,7 @@ struct TaffyCuckooFilter {
   bool InsertHash(uint64_t h) { return filter::InsertHash(&b, h); }
   bool FindHash(uint64_t h) const { return filter::FindHash(&b, h); }
   size_t SizeInBytes() const { return filter::SizeInBytes(&b); }
-  FrozenTaffyCuckoo Freeze() const { return filter::Freeze(&b); }
+  FrozenTaffyCuckoo Freeze() const { return {filter::Freeze(&b)}; }
   ~TaffyCuckooFilter() {
     delete[] b.sides[0].data;
     delete[] b.sides[0].stash;
