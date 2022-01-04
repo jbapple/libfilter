@@ -123,8 +123,8 @@ INLINE uint64_t FromPathNoTail(Path p, const Feistel& f, uint64_t log_side_size)
 
 struct Bucket {
   Slot data[kBuckets] = {};
-  INLINE Slot& operator[](uint64_t x) { return data[x]; }
-  INLINE const Slot& operator[](uint64_t x) const { return data[x]; }
+  //INLINE Slot& operator[](uint64_t x) { return data[x]; }
+  //INLINE const Slot& operator[](uint64_t x) const { return data[x]; }
 };
 
 static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
@@ -165,15 +165,15 @@ INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
   assert(p.tail != 0);
   Bucket& b = here->data[p.bucket];
   for (int i = 0; i < kBuckets; ++i) {
-    if (b[i].tail == 0) {
+    if (b.data[i].tail == 0) {
       // empty slot
-      b[i] = p.slot;
+      b.data[i] = p.slot;
       p.slot.tail = 0;
       return p;
     }
-    if (b[i].fingerprint == p.slot.fingerprint) {
+    if (b.data[i].fingerprint == p.slot.fingerprint) {
       // already present in the table
-      if (IsPrefixOf(b[i].tail, p.slot.tail)) {
+      if (IsPrefixOf(b.data[i].tail, p.slot.tail)) {
         return p;
       }
       /*
@@ -189,8 +189,8 @@ INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
   // Kick something random and return it
   int i = rng.Get();
   Path result = p;
-  result.slot = b[i];
-  b[i] = p.slot;
+  result.slot = b.data[i];
+  b.data[i] = p.slot;
   return result;
 }
 
@@ -205,8 +205,8 @@ INLINE bool Find(const Side* here, Path p) {
   }
   Bucket& b = here->data[p.bucket];
   for (int i = 0; i < kBuckets; ++i) {
-    if (b[i].tail == 0) continue;
-    if (b[i].fingerprint == p.slot.fingerprint && IsPrefixOf(b[i].tail, p.slot.tail)) {
+    if (b.data[i].tail == 0) continue;
+    if (b.data[i].fingerprint == p.slot.fingerprint && IsPrefixOf(b.data[i].tail, p.slot.tail)) {
       return true;
     }
   }
@@ -376,10 +376,10 @@ FrozenTaffyCuckooBase Freeze(const TaffyCuckooFilterBase* here) {
     for (size_t j = 0; j < (1ul << here->log_side_size); ++j) {
       auto& out = result.data_[i][j];
       const auto& in = here->sides[i].data[j];
-      out.zero = in[0].fingerprint;
-      out.one = in[1].fingerprint;
-      out.two = in[2].fingerprint;
-      out.three = in[3].fingerprint;
+      out.zero = in.data[0].fingerprint;
+      out.one = in.data[1].fingerprint;
+      out.two = in.data[2].fingerprint;
+      out.three = in.data[3].fingerprint;
     }
   }
   return result;
@@ -398,7 +398,7 @@ uint64_t Count(const TaffyCuckooFilterBase* here) {
     result += here->sides[s].stash_size;
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
-        if (here->sides[s].data[i][j].tail != 0) ++result;
+        if (here->sides[s].data[i].data[j].tail != 0) ++result;
       }
     }
   }
@@ -413,7 +413,7 @@ void Print(const TaffyCuckooFilterBase* here) {
     }
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
-        here->sides[s].data[i][j].Print();
+        here->sides[s].data[i].data[j].Print();
         std::cout << std::endl;
       }
     }
@@ -554,7 +554,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
-        detail::Slot sl = here->sides[s].data[i][j];
+        detail::Slot sl = here->sides[s].data[i].data[j];
         UpsizeHelper(here, sl, i, s, t);
       }
     }
@@ -624,9 +624,9 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
     for (uint64_t bucket = 0; bucket < (1ul << that.log_side_size); ++bucket) {
       p.bucket = bucket;
       for (int slot = 0; slot < detail::kBuckets; ++slot) {
-        if (that.sides[side].data[bucket][slot].tail == 0) continue;
-        p.slot.fingerprint = that.sides[side].data[bucket][slot].fingerprint;
-        p.slot.tail = that.sides[side].data[bucket][slot].tail;
+        if (that.sides[side].data[bucket].data[slot].tail == 0) continue;
+        p.slot.fingerprint = that.sides[side].data[bucket].data[slot].fingerprint;
+        p.slot.tail = that.sides[side].data[bucket].data[slot].tail;
         UnionHelp(here, that, side, p);
         continue;
       }
