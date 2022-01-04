@@ -30,7 +30,8 @@ template <typename F>
 class NdvFppTest : public ::testing::Test {};
 
 using BlockTypes = ::testing::Types<BlockFilter, ScalarBlockFilter>;
-using CreatedWithBytes = ::testing::Types<MinimalTaffyCuckooFilter, BlockFilter, ScalarBlockFilter, TaffyCuckooFilter>;
+using CreatedWithBytes = ::testing::Types<TaffyCuckooFilter, MinimalTaffyCuckooFilter,
+                                          BlockFilter, ScalarBlockFilter>;
 using CreatedWithNdvFpp = ::testing::Types<TaffyBlockFilter>;
 using UnionTypes = ::testing::Types<TaffyCuckooFilter>;
 

@@ -124,7 +124,7 @@ static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
 // to be stored so it doesn't invalidate old inserts.
 struct Side {
   Feistel f;
-  std::unique_ptr<Bucket[]> data;
+  Bucket* data;
   std::vector<Path> stash;
 
   Side() {}
@@ -132,7 +132,7 @@ struct Side {
   INLINE Side(int log_side_size, const uint64_t* keys)
       : f(&keys[0]), data(new Bucket[1ul << log_side_size]()), stash() {}
 
-  //INLINE ~Side() { delete[] data; }
+  //~Side() { delete[] data; }
 
   INLINE Bucket& operator[](unsigned i) { return data[i]; }
   INLINE const Bucket& operator[](unsigned i) const { return data[i]; }
@@ -260,17 +260,9 @@ struct FrozenTaffyCuckoo {
 struct TaffyCuckooFilterBase {
   detail::Side sides[2];
   uint64_t log_side_size;
-  detail::PcgRandom rng = {detail::kLogBuckets};
+  detail::PcgRandom rng;
   const uint64_t* entropy;
-  uint64_t occupied = 0;
-
-  TaffyCuckooFilterBase() {}
-
-  // TaffyCuckooFilterBase(int log_side_size, const uint64_t* entropy)
-  //     : sides{{log_side_size, entropy}, {log_side_size, entropy + 4}},
-  //       log_side_size(log_side_size),
-  //       entropy(entropy) {}
-
+  uint64_t occupied;
 };
 
 TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
@@ -299,14 +291,12 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase& th
            sizeof(detail::Bucket) << that.log_side_size);
   }
   return here;
-  }
+}
 
 TaffyCuckooFilterBase CreateWithBytes(uint64_t bytes) {
-  thread_local constexpr const uint64_t kEntropy[13] = {
+  thread_local constexpr const uint64_t kEntropy[8] = {
       0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
-      0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f,
-      0x28a31cec9f6d4484, 0x688f3fe9de7245f6, 0x1dc17831966b41a2, 0xf227166e425e4b0c,
-      0x15ab11b1a6bf4ea8};
+      0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f};
   return TaffyCuckooFilterBaseCreate(
       std::max(1.0,
                log(1.0 * bytes / 2 / detail::kBuckets / sizeof(detail::Slot)) / log(2)),
@@ -509,6 +499,8 @@ void Upsize(TaffyCuckooFilterBase* here) {
   }
   using std::swap;
   swap(*here, t);
+  delete[] t.sides[0].data;
+  delete[] t.sides[1].data;
 }
 
 void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that, int side,
@@ -615,6 +607,10 @@ struct TaffyCuckooFilter {
   bool FindHash(uint64_t h) const { return filter::FindHash(&b, h); }
   size_t SizeInBytes() const { return filter::SizeInBytes(&b); }
   FrozenTaffyCuckoo Freeze() const { return filter::Freeze(&b); }
+  ~TaffyCuckooFilter() {
+    delete[] b.sides[0].data;
+    delete[] b.sides[1].data;
+  }
 };
 
 TaffyCuckooFilter Union(const TaffyCuckooFilter& x, const TaffyCuckooFilter& y) {
