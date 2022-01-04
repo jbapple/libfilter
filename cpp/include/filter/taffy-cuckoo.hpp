@@ -136,65 +136,63 @@ struct Side {
 
   INLINE Bucket& operator[](unsigned i) { return data[i]; }
   INLINE const Bucket& operator[](unsigned i) const { return data[i]; }
-
-  // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
-  // succeded without anning anything new. Returns something else if that something else
-  // was displaced by the insert. That item must be inserted then
-  INLINE Path Insert(Path p, PcgRandom& rng) {
-    assert(p.tail != 0);
-    Bucket& b = data[p.bucket];
-    for (int i = 0; i < kBuckets; ++i) {
-      if (b[i].tail == 0) {
-        // empty slot
-        b[i] = static_cast<Slot>(p);
-        p.tail = 0;
-        return p;
-      }
-      if (b[i].fingerprint == p.fingerprint) {
-        // already present in the table
-        if (IsPrefixOf(b[i].tail, p.tail)) {
-          return p;
-        }
-        /*
-        // This has a negligible effect on fpp
-        auto c = Combinable(b[i].tail, p.tail);
-        if (c > 0) {
-          b[i].tail = c;
-          return p;
-        }
-        */
-      }
-    }
-    // Kick something random and return it
-    int i = rng.Get();
-    Path result = p;
-    static_cast<Slot&>(result) = b[i];
-    b[i] = p;
-    return result;
-  }
-
-  INLINE bool Find(Path p) const {
-    assert(p.tail != 0);
-    for (auto& path : stash) {
-      if (path.tail != 0 && p.bucket == path.bucket &&
-          p.fingerprint == path.fingerprint && IsPrefixOf(path.tail, p.tail)) {
-        return true;
-      }
-    }
-    Bucket& b = data[p.bucket];
-    for (int i = 0; i < kBuckets; ++i) {
-      if (b[i].tail == 0) continue;
-      if (b[i].fingerprint == p.fingerprint && IsPrefixOf(b[i].tail, p.tail)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  friend void swap(Side&, Side&);
 };
 
- INLINE void swap(Side& x, Side& y) {
+// Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
+// succeded without anning anything new. Returns something else if that something else
+// was displaced by the insert. That item must be inserted then
+INLINE Path Insert(Side* here, Path p, PcgRandom& rng) {
+  assert(p.tail != 0);
+  Bucket& b = here->data[p.bucket];
+  for (int i = 0; i < kBuckets; ++i) {
+    if (b[i].tail == 0) {
+      // empty slot
+      b[i] = static_cast<Slot>(p);
+      p.tail = 0;
+      return p;
+    }
+    if (b[i].fingerprint == p.fingerprint) {
+      // already present in the table
+      if (IsPrefixOf(b[i].tail, p.tail)) {
+        return p;
+      }
+      /*
+      // This has a negligible effect on fpp
+      auto c = Combinable(b[i].tail, p.tail);
+      if (c > 0) {
+        b[i].tail = c;
+        return p;
+      }
+      */
+    }
+  }
+  // Kick something random and return it
+  int i = rng.Get();
+  Path result = p;
+  static_cast<Slot&>(result) = b[i];
+  b[i] = p;
+  return result;
+}
+
+INLINE bool Find(const Side* here, Path p) {
+  assert(p.tail != 0);
+  for (auto& path : here->stash) {
+    if (path.tail != 0 && p.bucket == path.bucket && p.fingerprint == path.fingerprint &&
+        IsPrefixOf(path.tail, p.tail)) {
+      return true;
+    }
+  }
+  Bucket& b = here->data[p.bucket];
+  for (int i = 0; i < kBuckets; ++i) {
+    if (b[i].tail == 0) continue;
+    if (b[i].fingerprint == p.fingerprint && IsPrefixOf(b[i].tail, p.tail)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+INLINE void swap(Side& x, Side& y) {
   using std::swap;
   swap(x.f, y.f);
   swap(x.data, y.data);
@@ -364,7 +362,7 @@ INLINE bool FindHash(const TaffyCuckooFilterBase* here, uint64_t k) {
 #pragma GCC unroll 2
 #endif
     for (int s = 0; s < 2; ++s) {
-      if (here->sides[s].Find(detail::ToPath(k, here->sides[s].f, here->log_side_size)))
+      if (Find(&here->sides[s], detail::ToPath(k, here->sides[s].f, here->log_side_size)))
         return true;
     }
     return false;
@@ -402,7 +400,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, detail::Path p, int tt
 #endif
     for (int i = 0; i < 2; ++i) {
       detail::Path q = p;
-      p = both[i]->Insert(p, here->rng);
+      p = Insert(both[i], p, here->rng);
       if (p.tail == 0) {
         // Found an empty slot
         ++here->occupied;
