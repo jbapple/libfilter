@@ -219,15 +219,16 @@ INLINE bool Find(const Side* here, Path p) {
   return false;
 }
 
-INLINE void swap(Side& x, Side& y) {
+/*
+INLINE void swap(Side* x, Side* y) {
   using std::swap;
-  swap(x.f, y.f);
-  swap(x.data, y.data);
-  swap(x.stash, y.stash);
-  swap(x.stash_size, y.stash_size);
-  swap(x.stash_capacity, y.stash_capacity);
+  swap(x->f, y->f);
+  swap(x->data, y->data);
+  swap(x->stash, y->stash);
+  swap(x->stash_size, y->stash_size);
+  swap(x->stash_capacity, y->stash_capacity);
 }
-
+*/
 }  // namespace detail
 
 struct FrozenTaffyCuckooBaseBucket {
@@ -606,33 +607,33 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, i
   }
 }
 
-void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase& that) {
+void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that) {
   assert(that.log_side_size <= log_side_size);
   detail::Path p;
   for (int side : {0, 1}) {
-    for (size_t i = 0; i < that.sides[side].stash_size; ++i) {
-      UnionHelp(here, &that, side, that.sides[side].stash[i]);
+    for (size_t i = 0; i < that->sides[side].stash_size; ++i) {
+      UnionHelp(here, that, side, that->sides[side].stash[i]);
     }
-    for (uint64_t bucket = 0; bucket < (1ul << that.log_side_size); ++bucket) {
+    for (uint64_t bucket = 0; bucket < (1ul << that->log_side_size); ++bucket) {
       p.bucket = bucket;
       for (int slot = 0; slot < kBuckets; ++slot) {
-        if (that.sides[side].data[bucket].data[slot].tail == 0) continue;
-        p.slot.fingerprint = that.sides[side].data[bucket].data[slot].fingerprint;
-        p.slot.tail = that.sides[side].data[bucket].data[slot].tail;
-        UnionHelp(here, &that, side, p);
+        if (that->sides[side].data[bucket].data[slot].tail == 0) continue;
+        p.slot.fingerprint = that->sides[side].data[bucket].data[slot].fingerprint;
+        p.slot.tail = that->sides[side].data[bucket].data[slot].tail;
+        UnionHelp(here, that, side, p);
         continue;
       }
     }
   }
 }
 
-TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase& x, const TaffyCuckooFilterBase& y) {
-  if (x.occupied > y.occupied) {
-    TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(&x);
+TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase* x, const TaffyCuckooFilterBase* y) {
+  if (x->occupied > y->occupied) {
+    TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(x);
     UnionOne(&result, y);
     return result;
   }
-  TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(&y);
+  TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(y);
   UnionOne(&result, x);
   return result;
 }
@@ -690,7 +691,7 @@ struct TaffyCuckooFilter {
 };
 
 TaffyCuckooFilter Union(const TaffyCuckooFilter& x, const TaffyCuckooFilter& y) {
-  return {UnionTwo(x.b, y.b)};
+  return {UnionTwo(&x.b, &y.b)};
 }
 
 }  // namespace filter
