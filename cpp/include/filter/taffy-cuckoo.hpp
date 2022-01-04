@@ -224,25 +224,29 @@ INLINE void swap(Side& x, Side& y) {
 
 }  // namespace detail
 
+struct FrozenTaffyCuckooBaseBucket {
+  uint64_t zero : detail::kHeadSize;
+  uint64_t one : detail::kHeadSize;
+  uint64_t two : detail::kHeadSize;
+  uint64_t three : detail::kHeadSize;
+} __attribute__((packed));
+
+static_assert(sizeof(FrozenTaffyCuckooBaseBucket) ==
+                  detail::kBuckets * detail::kHeadSize / CHAR_BIT,
+              "packed");
+
 struct FrozenTaffyCuckooBase {
-  struct Bucket {
-    uint64_t zero : detail::kHeadSize;
-    uint64_t one : detail::kHeadSize;
-    uint64_t two : detail::kHeadSize;
-    uint64_t three : detail::kHeadSize;
-  } __attribute__((packed));
-
-  static_assert(sizeof(Bucket) == detail::kBuckets * detail::kHeadSize / CHAR_BIT,
-                "packed");
-
   detail::Feistel hash_[2];
   int log_side_size_;
-  Bucket* data_[2];
-  std::vector<uint64_t> stash_[2];
-
-
-  size_t SizeInBytes() const { return sizeof(Bucket) * 2ul << log_side_size_; }
+  FrozenTaffyCuckooBaseBucket* data_[2];
+  uint64_t* stash_[2];
+  size_t stash_capacity_[2];
+  size_t stash_size_[2];
 };
+
+size_t SizeInBytes(const FrozenTaffyCuckooBase* b) {
+  return sizeof(FrozenTaffyCuckooBaseBucket) * 2ul << b->log_side_size_;
+}
 
 #define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL)
 #define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
@@ -252,9 +256,10 @@ bool FindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
     uint64_t y = x >> (64 - here->log_side_size_ - detail::kHeadSize);
     uint64_t permuted =
         here->hash_[i].Permute(here->log_side_size_ + detail::kHeadSize, y);
-    for (auto v : here->stash_[i])
-      if (v == permuted) return true;
-    FrozenTaffyCuckooBase::Bucket& b = here->data_[i][permuted >> detail::kHeadSize];
+    for (size_t j = 0; j < here->stash_size_[i]; ++j) {
+      if (here->stash_[i][j] == permuted) return true;
+    }
+    FrozenTaffyCuckooBaseBucket& b = here->data_[i][permuted >> detail::kHeadSize];
     uint64_t fingerprint = permuted & ((1 << detail::kHeadSize) - 1);
     if (0 == fingerprint) return true;
     // TODO: SWAR
@@ -268,6 +273,8 @@ bool FindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
 void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
   delete[] here->data_[0];
   delete[] here->data_[1];
+  delete[] here->stash_[0];
+  delete[] here->stash_[1];
 }
 
 FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
@@ -275,9 +282,12 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int
   here.hash_[0] = entropy;
   here.hash_[1] = &entropy[4];
   here.log_side_size_ = log_side_size;
-  here.data_[0] = new FrozenTaffyCuckooBase::Bucket[1ul << log_side_size]();
-  here.data_[1] = new FrozenTaffyCuckooBase::Bucket[1ul << log_side_size]();
-  here.stash_[0] = here.stash_[1] = std::vector<uint64_t>();
+  for (int i = 0; i < 2; ++i) {
+    here.data_[i] = new FrozenTaffyCuckooBaseBucket[1ul << log_side_size]();
+    here.stash_capacity_[i] = 4;
+    here.stash_size_[i] = 0;
+    here.stash_[i] = new uint64_t[here.stash_capacity_[i]];
+  }
   return here;
 }
 
@@ -285,7 +295,7 @@ struct FrozenTaffyCuckoo {
   FrozenTaffyCuckooBase b;
   bool FindHash(uint64_t x) const { return filter::FindHash(&b, x); }
 
-  size_t SizeInBytes() const { return b.SizeInBytes(); }
+  size_t SizeInBytes() const { return filter::SizeInBytes(&b); }
   // bool InsertHash(uint64_t hash);
 
   INLINE static const char* Name() {
@@ -352,8 +362,16 @@ FrozenTaffyCuckooBase Freeze(const TaffyCuckooFilterBase* here) {
       FrozenTaffyCuckooBaseCreate(here->entropy, here->log_side_size);
   for (int i : {0, 1}) {
     for (size_t j = 0; j < here->sides[i].stash_size; ++j) {
-      result.stash_[i].push_back(
-          FromPathNoTail(here->sides[i].stash[j], here->sides[i].f, here->log_side_size));
+      auto topush = FromPathNoTail(here->sides[i].stash[j], here->sides[i].f,
+                                   here->log_side_size);
+      if (result.stash_size_[i] == result.stash_capacity_[i]) {
+        result.stash_capacity_[i] *= 2;
+        uint64_t* new_stash = new uint64_t[result.stash_capacity_[i]];
+        memcpy(new_stash, result.stash_[i], result.stash_size_[i]);
+        delete[] result.stash_[i];
+        result.stash_[i] = new_stash;
+      }
+      result.stash_[i][result.stash_size_[i]++] = topush;
     }
     for (size_t j = 0; j < (1ul << here->log_side_size); ++j) {
       auto& out = result.data_[i][j];
