@@ -8,35 +8,32 @@
 #include <immintrin.h>
 #endif
 
-
-
 #define INLINE __attribute__((always_inline)) inline
 
 // Returns the lowest k bits of x
-INLINE constexpr uint64_t detail_Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
+INLINE uint64_t detail_Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
 
-static INLINE constexpr uint64_t detail_Lo(int w, uint64_t x) { return detail_Mask(w, x); }
+static INLINE uint64_t detail_Lo(int w, uint64_t x) { return detail_Mask(w, x); }
 // Returns the high bits of x. if w is s, returns the t high bits. If W is t, returns
 // the s high bits
-static INLINE constexpr uint64_t detail_Hi(int s, int t, int w, uint64_t x) {
+static INLINE uint64_t detail_Hi(int s, int t, int w, uint64_t x) {
   return detail_Mask(w, x >> (s + t - w));
 }
 
 // Applies strong multiply-shift to the w low bits of x, returning the high w bits
-static INLINE constexpr uint64_t detail_ApplyOnce(int s, int t, int w, uint64_t x,
-                                           const uint64_t k[2]) {
+static INLINE uint64_t detail_ApplyOnce(int s, int t, int w, uint64_t x,
+                                        const uint64_t k[2]) {
   return detail_Hi(
       s, t, s + t - w,
       detail_Mask(w, x) * detail_Mask(s + t, k[0]) + detail_Mask(s + t, k[1]));
 }
 
 // Feistel is a permutation that is also a hash function, based on a Feistel permutation.
-struct detail_Feistel {
+typedef struct {
   // The salt for the hash functions. The component hash function is strong
   // multiply-shift.
   uint64_t keys[2][2];
-
-};
+} detail_Feistel;
 
 detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
   detail_Feistel result;
@@ -47,9 +44,8 @@ detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
   return result;
 }
 
-
 // Performs the hash function "forwards". w is the width of x. This is ASYMMETRIC Feistel.
-INLINE constexpr uint64_t Permute(const detail_Feistel *here, int w, uint64_t x) {
+INLINE uint64_t Permute(const detail_Feistel *here, int w, uint64_t x) {
   // s is floor(w/2), t is ceil(w/2).
   auto s = w >> 1;
   auto t = w - s;
@@ -74,7 +70,7 @@ INLINE constexpr uint64_t Permute(const detail_Feistel *here, int w, uint64_t x)
   return result;
 }
 
-INLINE constexpr uint64_t ReversePermute(const detail_Feistel *here, int w, uint64_t x) {
+INLINE uint64_t ReversePermute(const detail_Feistel *here, int w, uint64_t x) {
   auto s = w / 2;
   auto t = w - s;
 
@@ -91,14 +87,13 @@ INLINE constexpr uint64_t ReversePermute(const detail_Feistel *here, int w, uint
   return result;
 }
 
-  //  friend void swap(detail_Feistel&, detail_Feistel&);
+//  friend void swap(detail_Feistel&, detail_Feistel&);
 
-  // std::size_t Summary() const {
-  //   return keys[0][0] ^ keys[0][1] ^ keys[1][0] ^ keys[1][1];
-  // }
-  //Feistel(const Feistel&) = delete;
-  //Feistel& operator=(const Feistel&) = delete;
-
+// std::size_t Summary() const {
+//   return keys[0][0] ^ keys[0][1] ^ keys[1][0] ^ keys[1][1];
+// }
+// Feistel(const Feistel&) = delete;
+// Feistel& operator=(const Feistel&) = delete;
 
 // INLINE void swap(detail_Feistel& x, detail_Feistel& y) {
 //   for (int i = 0; i < 2; ++i) {
@@ -109,20 +104,29 @@ INLINE constexpr uint64_t ReversePermute(const detail_Feistel *here, int w, uint
 //   }
 // }
 
-struct detail_PcgRandom {
+typedef struct {
   // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
   // Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
 
   int bit_width;  // The only construction parameter - how many bits to slice off the rng
                   // each time. IOW, this will give you up to 32 bits at a time. How many
                   // do you need? We can save RNG calls by caching the remainder
-  uint64_t state = 0x13d26df6f74044b3;
-  uint64_t inc = 0x0d09b2d3025545a0;
+  uint64_t state;
+  uint64_t inc;
 
-  uint32_t current = 0;
-  int remaining_bits = 0;
+  uint32_t current;
+  int remaining_bits;
+} detail_PcgRandom;
 
-};
+detail_PcgRandom detail_PcgRandomCreate(int bit_width) {
+  detail_PcgRandom result;
+  result.bit_width = bit_width;
+  result.state = 0x13d26df6f74044b3;
+  result.inc = 0x0d09b2d3025545a0;
+  result.current = 0;
+  result.remaining_bits = 0;
+  return result;
+}
 
 INLINE uint32_t PcgGet(detail_PcgRandom *here) {
   // Save some bits for next time
@@ -160,9 +164,6 @@ INLINE uint32_t PcgGet(detail_PcgRandom *here) {
 // Given all that, consider non-zero x and y as valid sequences. IsPrefixOf returns true
 // if an only if the sequence represented by x can be extended to the sequence represented
 // by y.
-#if not defined(__LZCNT__)
-constexpr
-#endif
 INLINE bool detail_IsPrefixOf(uint16_t x, uint16_t y) {
   assert(x != 0);
   assert(y != 0);
@@ -207,14 +208,14 @@ INLINE bool detail_IsPrefixOf(uint16_t x, uint16_t y) {
 // match some small percent of the time.
 //
 // Returns 0 if no match
-INLINE constexpr uint16_t detail_Combinable(uint16_t x, uint16_t y) {
+INLINE uint16_t detail_Combinable(uint16_t x, uint16_t y) {
   // assert x != y, x != 0, y != 0, x >> 15 == 0, y >> 15 == 0
   uint32_t xy = x ^ y;
   uint32_t low = __builtin_ctz(xy);
   uint32_t high = __builtin_clz(xy);
   uint32_t xlow = __builtin_ctz(x);
   uint32_t ylow = __builtin_ctz(y);
-  if (low + high == 31 && xlow == ylow && xlow  + 1 == low) {
+  if (low + high == 31 && xlow == ylow && xlow + 1 == low) {
     // This depends on the width of x and y to be 15 bits or less.
     return (x + y) / 2;
   }

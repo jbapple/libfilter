@@ -308,7 +308,7 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
   here.sides[0] = SideCreate(log_side_size, entropy);
   here.sides[1] = SideCreate(log_side_size, entropy + 4);
   here.log_side_size = log_side_size;
-  here.rng.bit_width = kLogBuckets;
+  here.rng = detail_PcgRandomCreate(kLogBuckets);
   here.entropy = entropy;
   here.occupied = 0;
   return here;
