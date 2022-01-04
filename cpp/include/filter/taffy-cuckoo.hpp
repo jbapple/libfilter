@@ -52,12 +52,13 @@ struct Slot {
   uint64_t tail : kTailSize +
                   1;  // +1 for the encoding of sequences above. tail == 0 indicates
                       // an empty slot, no matter what's in fingerprint
-  INLINE void Print() const {
-    std::cout << "{" << std::hex << fingerprint << ", " << tail << "}";
-  }
 } __attribute__((packed));
 
 static_assert(sizeof(Slot) == 2, "sizeof(Slot)");
+
+INLINE void PrintSlot(Slot s) {
+  std::cout << "{" << std::hex << s.fingerprint << ", " << s.tail << "}";
+}
 
 // A path encodes the slot number, as well as the slot itself.
 struct Path {
@@ -291,21 +292,6 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int
   return here;
 }
 
-struct FrozenTaffyCuckoo {
-  FrozenTaffyCuckooBase b;
-  bool FindHash(uint64_t x) const { return filter::FindHash(&b, x); }
-
-  size_t SizeInBytes() const { return filter::SizeInBytes(&b); }
-  // bool InsertHash(uint64_t hash);
-
-  INLINE static const char* Name() {
-    thread_local const constexpr char result[] = "FrozenTaffyCuckoo";
-    return result;
-  }
-
-  ~FrozenTaffyCuckoo() { FrozenTaffyCuckooBaseDestroy(&b); }
-};
-
 struct TaffyCuckooFilterBase {
   detail::Side sides[2];
   uint64_t log_side_size;
@@ -413,7 +399,7 @@ void Print(const TaffyCuckooFilterBase* here) {
     }
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
       for (int j = 0; j < detail::kBuckets; ++j) {
-        here->sides[s].data[i].data[j].Print();
+        PrintSlot(here->sides[s].data[i].data[j]);
         std::cout << std::endl;
       }
     }
@@ -654,6 +640,23 @@ INLINE void swap(TaffyCuckooFilterBase& x, TaffyCuckooFilterBase& y) {
   swap(x.entropy, y.entropy);
   swap(x.occupied, y.occupied);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct FrozenTaffyCuckoo {
+  FrozenTaffyCuckooBase b;
+  bool FindHash(uint64_t x) const { return filter::FindHash(&b, x); }
+
+  size_t SizeInBytes() const { return filter::SizeInBytes(&b); }
+  // bool InsertHash(uint64_t hash);
+
+  INLINE static const char* Name() {
+    thread_local const constexpr char result[] = "FrozenTaffyCuckoo";
+    return result;
+  }
+
+  ~FrozenTaffyCuckoo() { FrozenTaffyCuckooBaseDestroy(&b); }
+};
 
 struct TaffyCuckooFilter {
   TaffyCuckooFilterBase b;
