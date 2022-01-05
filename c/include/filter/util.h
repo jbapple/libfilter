@@ -1,8 +1,9 @@
 #pragma once
 
-#include <cassert>
-#include <cstdint>
-#include <cstring>
+#include <assert.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdint.h>
 
 #if defined(__LZCNT__)
 #include <immintrin.h>
@@ -47,43 +48,43 @@ detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
 // Performs the hash function "forwards". w is the width of x. This is ASYMMETRIC Feistel.
 INLINE uint64_t Permute(const detail_Feistel *here, int w, uint64_t x) {
   // s is floor(w/2), t is ceil(w/2).
-  auto s = w >> 1;
-  auto t = w - s;
+  int s = w >> 1;
+  int t = w - s;
 
   // break up x into the low s bits and the high t bits
-  auto l0 = detail_Lo(s, x);
-  auto r0 = detail_Hi(s, t, t, x);
+  uint64_t l0 = detail_Lo(s, x);
+  uint64_t r0 = detail_Hi(s, t, t, x);
 
   // First feistel application: switch the halves. l1 has t bits, while r1 has s bits,
   // xored with the t-bit hash of r0.
-  auto l1 = r0;                                                 // t
-  auto r1 = l0 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
+  uint64_t l1 = r0;                                                 // t
+  uint64_t r1 = l0 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
 
   // l2 has t bits. r2 has t-bits, xored with the s-bit hash of r1, which really has t
   // bits. This is permitted because strong-multiply shift is still strong if you mask
   // it.
-  auto l2 = r1;                                                 // s
-  auto r2 = l1 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
+  uint64_t l2 = r1;                                                 // s
+  uint64_t r2 = l1 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
 
   // The validity of this is really only seen when understanding the reverse permutation
-  auto result = (r2 << s) | l2;
+  uint64_t result = (r2 << s) | l2;
   return result;
 }
 
 INLINE uint64_t ReversePermute(const detail_Feistel *here, int w, uint64_t x) {
-  auto s = w / 2;
-  auto t = w - s;
+  int s = w / 2;
+  int t = w - s;
 
-  auto l2 = detail_Lo(s, x);
-  auto r2 = detail_Hi(s, t, t, x);
+  uint64_t l2 = detail_Lo(s, x);
+  uint64_t r2 = detail_Hi(s, t, t, x);
 
-  auto r1 = l2;                                                 // s
-  auto l1 = r2 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
+  uint64_t r1 = l2;                                                 // s
+  uint64_t l1 = r2 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
 
-  auto r0 = l1;                                                 // t
-  auto l0 = r1 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
+  uint64_t r0 = l1;                                                 // t
+  uint64_t l0 = r1 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
 
-  auto result = (r0 << s) | l0;
+  uint64_t result = (r0 << s) | l0;
   return result;
 }
 
@@ -146,7 +147,7 @@ INLINE uint32_t PcgGet(detail_PcgRandom *here) {
   here->current = (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 
   here->remaining_bits = 32 - here->bit_width;
-  auto result = detail_Mask(here->bit_width, here->current);
+  uint32_t result = detail_Mask(here->bit_width, here->current);
   here->current = here->current >> here->bit_width;
   return result;
 }
@@ -167,13 +168,13 @@ INLINE uint32_t PcgGet(detail_PcgRandom *here) {
 INLINE bool detail_IsPrefixOf(uint16_t x, uint16_t y) {
   assert(x != 0);
   assert(y != 0);
-  auto a = x ^ y;
-  auto c = __builtin_ctz(x);
-  auto h = __builtin_ctz(y);
+  uint16_t a = x ^ y;
+  int c = __builtin_ctz(x);
+  int h = __builtin_ctz(y);
 #if defined(__LZCNT__)
   int i = _lzcnt_u32(a);
 #else
-  auto i = (a == 0) ? 32 : __builtin_clz(a);
+  int i = (a == 0) ? 32 : __builtin_clz(a);
 #endif
   return (c >= h) && (i >= 31 - c);
 }
