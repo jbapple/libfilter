@@ -1,5 +1,46 @@
 #include "filter/taffy-cuckoo.h"
 
+
+ Side SideCreate(int log_side_size, const uint64_t* keys) {
+  Side here;
+  here.f = detail_FeistelCreate(&keys[0]);
+  here.data = (Bucket *)calloc(1ul << log_side_size, sizeof(Bucket));
+  here.stash_capacity = 4;
+  here.stash_size = 0;
+  here.stash = (Path *)calloc(here.stash_capacity, sizeof(Path));
+
+  return here;
+}
+
+ size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b) {
+  return (sizeof(FrozenTaffyCuckooBaseBucket) * 2ul << b->log_side_size_) +
+         sizeof(uint64_t) * (b->stash_capacity_[0] + b->stash_capacity_[1]);
+}
+
+
+void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
+  free(here->data_[0]);
+  free(here->data_[1]);
+  free(here->stash_[0]);
+  free(here->stash_[1]);
+}
+
+FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8],
+                                                  int log_side_size) {
+  FrozenTaffyCuckooBase here;
+  here.hash_[0] = detail_FeistelCreate(entropy);
+  here.hash_[1] = detail_FeistelCreate(&entropy[4]);
+  here.log_side_size_ = log_side_size;
+  for (int i = 0; i < 2; ++i) {
+    here.data_[i] = (FrozenTaffyCuckooBaseBucket*)calloc(
+        1ul << log_side_size, sizeof(FrozenTaffyCuckooBaseBucket));
+    here.stash_capacity_[i] = 4;
+    here.stash_size_[i] = 0;
+    here.stash_[i] = (uint64_t*)calloc(here.stash_capacity_[i], sizeof(uint64_t));
+  }
+  return here;
+}
+
 void TaffyCuckooFilterBaseSwap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
   // SideSwap(&x->sides[0], &y->sides[0]);
   // SideSwap(&x->sides[1], &y->sides[1]);
@@ -82,6 +123,42 @@ FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
   }
   return result;
 }
+
+uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here) {
+  return sizeof(Path) *
+             (here->sides[0].stash_capacity + here->sides[1].stash_capacity) +
+         2 * sizeof(Slot) * (1 << here->log_side_size) * libfilter_slots;
+}
+
+// // Verifies the occupied field:
+// INLINE uint64_t Count(const TaffyCuckooFilterBase* here) {
+//   uint64_t result = 0;
+//   for (int s = 0; s < 2; ++s) {
+//     result += here->sides[s].stash_size;
+//     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
+//       for (int j = 0; j < libfilter_slots; ++j) {
+//         if (here->sides[s].data[i].data[j].tail != 0) ++result;
+//       }
+//     }
+//   }
+//   return result;
+// }
+
+// void Print(const TaffyCuckooFilterBase* here) {
+//   for (int s = 0; s < 2; ++s) {
+//     for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
+//       PrintPath(&here->sides[s].stash[i]);
+//       std::cout << std::endl;
+//     }
+//     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
+//       for (int j = 0; j < libfilter_slots; ++j) {
+//         PrintSlot(here->sides[s].data[i].data[j]);
+//         std::cout << std::endl;
+//       }
+//     }
+//   }
+// }
+
 
 void TaffyCuckooFilterBaseDestroy(TaffyCuckooFilterBase* t) {
   free(t->sides[0].data);

@@ -98,17 +98,20 @@ INLINE bool EqualPath(Path here, Path there) {
 // Operates on the high bits, since bits must be moved from the tail into the fingerprint
 // and then bucket.
 INLINE Path ToPath(uint64_t raw, const detail_Feistel* f, uint64_t log_side_size) {
-  uint64_t pre_hash_index_and_fp = raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
+  uint64_t pre_hash_index_and_fp =
+      raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
   uint64_t hashed_index_and_fp =
-    Permute(f, log_side_size + libfilter_taffy_cuckoo_head_size, pre_hash_index_and_fp);
+      Permute(f, log_side_size + libfilter_taffy_cuckoo_head_size, pre_hash_index_and_fp);
   uint64_t index = hashed_index_and_fp >> libfilter_taffy_cuckoo_head_size;
   Path p;
   p.bucket = index;
   // Helpfully gets cut off by being a bitfield
   p.slot.fingerprint = hashed_index_and_fp;
   uint64_t pre_hash_index_fp_and_tail =
-      raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size - libfilter_taffy_cuckoo_tail_size);
-  uint64_t raw_tail = detail_Mask(libfilter_taffy_cuckoo_tail_size, pre_hash_index_fp_and_tail);
+      raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size -
+              libfilter_taffy_cuckoo_tail_size);
+  uint64_t raw_tail =
+      detail_Mask(libfilter_taffy_cuckoo_tail_size, pre_hash_index_fp_and_tail);
   // encode the tail using the encoding described above, in which the length of the tail i
   // the complement of the tzcnt plus one.
   uint64_t encoded_tail = raw_tail * 2 + 1;
@@ -120,10 +123,12 @@ INLINE Path ToPath(uint64_t raw, const detail_Feistel* f, uint64_t log_side_size
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
 INLINE uint64_t FromPathNoTail(Path p, const detail_Feistel * f, uint64_t log_side_size) {
-  uint64_t hashed_index_and_fp = (p.bucket << libfilter_taffy_cuckoo_head_size) | p.slot.fingerprint;
-  uint64_t pre_hashed_index_and_fp =
-    ReversePermute(f, log_side_size + libfilter_taffy_cuckoo_head_size, hashed_index_and_fp);
-  uint64_t shifted_up = pre_hashed_index_and_fp << (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
+  uint64_t hashed_index_and_fp =
+      (p.bucket << libfilter_taffy_cuckoo_head_size) | p.slot.fingerprint;
+  uint64_t pre_hashed_index_and_fp = ReversePermute(
+      f, log_side_size + libfilter_taffy_cuckoo_head_size, hashed_index_and_fp);
+  uint64_t shifted_up = pre_hashed_index_and_fp
+                        << (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
   return shifted_up;
 }
 
@@ -146,16 +151,7 @@ typedef struct  {
   Path * stash;
 } Side;
 
-INLINE Side SideCreate(int log_side_size, const uint64_t* keys) {
-  Side here;
-  here.f = detail_FeistelCreate(&keys[0]);
-  here.data = (Bucket *)calloc(1ul << log_side_size, sizeof(Bucket));
-  here.stash_capacity = 4;
-  here.stash_size = 0;
-  here.stash = (Path *)calloc(here.stash_capacity, sizeof(Path));
-
-  return here;
-}
+Side SideCreate(int log_side_size, const uint64_t* keys);
 
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
 // succeded without anning anything new. Returns something else if that something else
@@ -244,10 +240,7 @@ typedef struct  {
   size_t stash_size_[2];
 } FrozenTaffyCuckooBase;
 
-INLINE size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b) {
-  return (sizeof(FrozenTaffyCuckooBaseBucket) * 2ul << b->log_side_size_) +
-         sizeof(uint64_t) * (b->stash_capacity_[0] + b->stash_capacity_[1]);
-}
+size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b);
 
 #define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL)
 #define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
@@ -270,27 +263,9 @@ INLINE bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
   return false;
 }
 
-INLINE void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
-  free(here->data_[0]);
-  free(here->data_[1]);
-  free(here->stash_[0]);
-  free(here->stash_[1]);
-}
-
-INLINE FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
-  FrozenTaffyCuckooBase here;
-  here.hash_[0] = detail_FeistelCreate(entropy);
-  here.hash_[1] = detail_FeistelCreate(&entropy[4]);
-  here.log_side_size_ = log_side_size;
-  for (int i = 0; i < 2; ++i) {
-    here.data_[i] = (FrozenTaffyCuckooBaseBucket*)calloc(
-        1ul << log_side_size, sizeof(FrozenTaffyCuckooBaseBucket));
-    here.stash_capacity_[i] = 4;
-    here.stash_size_[i] = 0;
-    here.stash_[i] = (uint64_t*)calloc(here.stash_capacity_[i], sizeof(uint64_t));
-  }
-  return here;
-}
+void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here);
+FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8],
+                                                  int log_side_size);
 
 typedef struct  {
   Side sides[2];
@@ -307,40 +282,8 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase* th
 TaffyCuckooFilterBase BaseCreateWithBytes(uint64_t bytes);
 FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here);
 
-INLINE uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here) {
-  return sizeof(Path) *
-             (here->sides[0].stash_capacity + here->sides[1].stash_capacity) +
-         2 * sizeof(Slot) * (1 << here->log_side_size) * libfilter_slots;
-}
+uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here);
 
-// // Verifies the occupied field:
-// INLINE uint64_t Count(const TaffyCuckooFilterBase* here) {
-//   uint64_t result = 0;
-//   for (int s = 0; s < 2; ++s) {
-//     result += here->sides[s].stash_size;
-//     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
-//       for (int j = 0; j < libfilter_slots; ++j) {
-//         if (here->sides[s].data[i].data[j].tail != 0) ++result;
-//       }
-//     }
-//   }
-//   return result;
-// }
-
-// void Print(const TaffyCuckooFilterBase* here) {
-//   for (int s = 0; s < 2; ++s) {
-//     for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
-//       PrintPath(&here->sides[s].stash[i]);
-//       std::cout << std::endl;
-//     }
-//     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
-//       for (int j = 0; j < libfilter_slots; ++j) {
-//         PrintSlot(here->sides[s].data[i].data[j]);
-//         std::cout << std::endl;
-//       }
-//     }
-//   }
-// }
 
 INLINE bool BaseFindHash(const TaffyCuckooFilterBase* here, uint64_t k) {
 #if defined(__clang) || defined(__clang__)
@@ -358,11 +301,6 @@ INLINE bool BaseFindHash(const TaffyCuckooFilterBase* here, uint64_t k) {
 INLINE uint64_t Capacity(const TaffyCuckooFilterBase* here) {
   return 2 * libfilter_slots * (1ul << here->log_side_size);
 }
-
-  //INLINE
-// bool Insert(TaffyCuckooFilterBase* here, int s, Path q);
-// void Upsize(TaffyCuckooFilterBase* here);
-
 
 // After Stashed result, HT is close to full and should be upsized
 // After ttl, stash the input and return Stashed. Pre-condition: at least one stash is
