@@ -12,21 +12,19 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <cstdint>
-#include <cstring>
-#include <iostream>
-#include <memory>
-#include <utility>
-#include <vector>
 
 extern "C" {
 #include "util-clike.hpp"
 }
 
 extern "C" {
+
+#include <assert.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
 // From the paper, kTailSize is the log of the number of times the size will
 // double, while kHead size is two more than ceil(log(1/epsilon)) + i, bit i is only used
 // up  by 1 (for the sides) plus kLogBuckets. For instance, with kTailSize = 5 and
@@ -76,9 +74,9 @@ typedef struct  {
 
 // static_assert(sizeof(Slot) == 2, "sizeof(Slot)");
 
-INLINE void PrintSlot(Slot s) {
-  std::cout << "{" << std::hex << s.fingerprint << ", " << s.tail << "}";
-}
+// INLINE void PrintSlot(Slot s) {
+//   std::cout << "{" << std::hex << s.fingerprint << ", " << s.tail << "}";
+// }
 
 // A path encodes the slot number, as well as the slot itself.
 typedef struct  {
@@ -86,10 +84,10 @@ typedef struct  {
   uint64_t bucket;
 } Path;
 
-INLINE void PrintPath(const Path* here) {
-  std::cout << "{" << std::dec << here->bucket << ", {" << std::hex << here->slot.fingerprint << ", "
-            << here->slot.tail << "}}";
-}
+// INLINE void PrintPath(const Path* here) {
+//   std::cout << "{" << std::dec << here->bucket << ", {" << std::hex << here->slot.fingerprint << ", "
+//             << here->slot.tail << "}}";
+// }
 
 INLINE bool EqualPath(Path here, Path there) {
   return here.bucket == there.bucket && here.slot.fingerprint == there.slot.fingerprint &&
@@ -342,16 +340,15 @@ TaffyCuckooFilterBase BaseCreateWithBytes(uint64_t bytes) {
   thread_local constexpr const uint64_t kEntropy[8] = {
       0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
       0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f};
-  return TaffyCuckooFilterBaseCreate(
-      std::max(1.0,
-               log(1.0 * bytes / 2 / kBuckets / sizeof(Slot)) / log(2)),
-      kEntropy);
+  double f = log(1.0 * bytes / 2 / kBuckets / sizeof(Slot)) / log(2);
+  f = (f > 1.0) ? f : 1.0;
+  return TaffyCuckooFilterBaseCreate(f, kEntropy);
 }
 
 FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
   FrozenTaffyCuckooBase result =
       FrozenTaffyCuckooBaseCreate(here->entropy, here->log_side_size);
-  for (int i : {0, 1}) {
+  for (int i = 0; i < 2; ++i) {
     for (size_t j = 0; j < here->sides[i].stash_size; ++j) {
       uint64_t topush =
           FromPathNoTail(here->sides[i].stash[j], &here->sides[i].f, here->log_side_size);
@@ -396,20 +393,20 @@ uint64_t Count(const TaffyCuckooFilterBase* here) {
   return result;
 }
 
-void Print(const TaffyCuckooFilterBase* here) {
-  for (int s = 0; s < 2; ++s) {
-    for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
-      PrintPath(&here->sides[s].stash[i]);
-      std::cout << std::endl;
-    }
-    for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
-      for (int j = 0; j < kBuckets; ++j) {
-        PrintSlot(here->sides[s].data[i].data[j]);
-        std::cout << std::endl;
-      }
-    }
-  }
-}
+// void Print(const TaffyCuckooFilterBase* here) {
+//   for (int s = 0; s < 2; ++s) {
+//     for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
+//       PrintPath(&here->sides[s].stash[i]);
+//       std::cout << std::endl;
+//     }
+//     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
+//       for (int j = 0; j < kBuckets; ++j) {
+//         PrintSlot(here->sides[s].data[i].data[j]);
+//         std::cout << std::endl;
+//       }
+//     }
+//   }
+// }
 
 INLINE bool BaseFindHash(const TaffyCuckooFilterBase* here, uint64_t k) {
 #if defined(__clang) || defined(__clang__)
@@ -531,7 +528,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
   TaffyCuckooFilterBase t =
       TaffyCuckooFilterBaseCreate(1 + here->log_side_size, here->entropy);
 
-  for (int s : {0, 1}) {
+  for (int s = 0; s < 2; ++s) {
     for (size_t i = 0; i < here->sides[s].stash_size; ++i) {
       UpsizeHelper(here, here->sides[s].stash[i].slot, here->sides[s].stash[i].bucket, s,
                    &t);
@@ -611,7 +608,7 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, i
 void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that) {
   assert(that.log_side_size <= log_side_size);
   Path p;
-  for (int side : {0, 1}) {
+  for (int side = 0; side < 2; ++side) {
     for (size_t i = 0; i < that->sides[side].stash_size; ++i) {
       UnionHelp(here, that, side, that->sides[side].stash[i]);
     }
@@ -653,6 +650,17 @@ INLINE void swap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
 } // extern "C"
   
 ////////////////////////////////////////////////////////////////////////////////
+
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <iostream>
+#include <memory>
+#include <utility>
+#include <vector>
+
 
 namespace filter {
 

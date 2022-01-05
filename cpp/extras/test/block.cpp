@@ -1,3 +1,5 @@
+#include "filter/taffy-cuckoo.hpp"
+
 #include <cstdint>  // for uint64_t
 #include <unordered_set>
 #include <vector>  // for allocator, vector
@@ -9,7 +11,6 @@
 #include "filter/block.hpp"
 #include "filter/minimal-taffy-cuckoo.hpp"
 #include "filter/taffy-block.hpp"
-#include "filter/taffy-cuckoo.hpp"
 #if defined(__x86_64)
 #include "filter/taffy-vector-quotient.hpp"
 #endif
