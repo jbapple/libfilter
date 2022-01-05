@@ -22,8 +22,11 @@
 #include <utility>
 #include <vector>
 
+extern "C" {
 #include "util-clike.hpp"
+}
 
+extern "C" {
 // From the paper, kTailSize is the log of the number of times the size will
 // double, while kHead size is two more than ceil(log(1/epsilon)) + i, bit i is only used
 // up  by 1 (for the sides) plus kLogBuckets. For instance, with kTailSize = 5 and
@@ -64,12 +67,12 @@
 
 #define kBuckets (1 << kLogBuckets)
 
-struct Slot {
+typedef struct  {
   uint64_t fingerprint : kHeadSize;
   uint64_t tail : kTailSize +
                   1;  // +1 for the encoding of sequences above. tail == 0 indicates
                       // an empty slot, no matter what's in fingerprint
-} __attribute__((packed));
+} __attribute__((packed)) Slot;
 
 // static_assert(sizeof(Slot) == 2, "sizeof(Slot)");
 
@@ -78,10 +81,10 @@ INLINE void PrintSlot(Slot s) {
 }
 
 // A path encodes the slot number, as well as the slot itself.
-struct Path {
+typedef struct  {
   Slot slot;
   uint64_t bucket;
-};
+} Path;
 
 INLINE void PrintPath(const Path* here) {
   std::cout << "{" << std::dec << here->bucket << ", {" << std::hex << here->slot.fingerprint << ", "
@@ -130,9 +133,9 @@ INLINE uint64_t FromPathNoTail(Path p, const detail_Feistel * f, uint64_t log_si
   return shifted_up;
 }
 
-struct Bucket {
+typedef struct {
   Slot data[kBuckets];
-} __attribute__((packed));
+} __attribute__((packed)) Bucket;
 
 // static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
 
@@ -140,14 +143,14 @@ struct Bucket {
 // buckets from one array. Each side has a stash that holds any paths that couldn't fit.
 // This is useful for random-walk cuckoo hashing, in which the leftover path needs  place
 // to be stored so it doesn't invalidate old inserts.
-struct Side {
+typedef struct  {
   detail_Feistel f;
   Bucket* data;
 
   size_t stash_capacity;
   size_t stash_size;
   Path * stash;
-};
+} Side;
 
 Side SideCreate(int log_side_size, const uint64_t* keys) {
   Side here;
@@ -163,7 +166,7 @@ Side SideCreate(int log_side_size, const uint64_t* keys) {
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
 // succeded without anning anything new. Returns something else if that something else
 // was displaced by the insert. That item must be inserted then
-INLINE Path Insert(Side* here, Path p, detail_PcgRandom* rng) {
+INLINE Path InsertSide(Side* here, Path p, detail_PcgRandom* rng) {
   assert(p.tail != 0);
   Bucket* b = &here->data[p.bucket];
   for (int i = 0; i < kBuckets; ++i) {
@@ -227,25 +230,25 @@ INLINE void swap(Side* x, Side* y) {
 }
 */
 
-struct FrozenTaffyCuckooBaseBucket {
+typedef struct {
   uint64_t zero : kHeadSize;
   uint64_t one : kHeadSize;
   uint64_t two : kHeadSize;
   uint64_t three : kHeadSize;
-} __attribute__((packed));
+} __attribute__((packed)) FrozenTaffyCuckooBaseBucket;
 
 // static_assert(sizeof(FrozenTaffyCuckooBaseBucket) ==
 //                   kBuckets * kHeadSize / CHAR_BIT,
 //               "packed");
 
-struct FrozenTaffyCuckooBase {
+typedef struct  {
   detail_Feistel hash_[2];
   int log_side_size_;
   FrozenTaffyCuckooBaseBucket* data_[2];
   uint64_t* stash_[2];
   size_t stash_capacity_[2];
   size_t stash_size_[2];
-};
+} FrozenTaffyCuckooBase;
 
 size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b) {
   return (sizeof(FrozenTaffyCuckooBaseBucket) * 2ul << b->log_side_size_) +
@@ -294,13 +297,13 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int
   return here;
 }
 
-struct TaffyCuckooFilterBase {
+typedef struct  {
   Side sides[2];
   uint64_t log_side_size;
   detail_PcgRandom rng;
   const uint64_t* entropy;
   uint64_t occupied;
-};
+} TaffyCuckooFilterBase;
 
 TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
                                                   const uint64_t* entropy) {
@@ -425,18 +428,10 @@ INLINE uint64_t Capacity(const TaffyCuckooFilterBase* here) {
   return 2 * kBuckets * (1ul << here->log_side_size);
 }
 
-INLINE bool Insert(TaffyCuckooFilterBase* here, int s, Path q);
-void Upsize(TaffyCuckooFilterBase* here);
+  //INLINE
+// bool Insert(TaffyCuckooFilterBase* here, int s, Path q);
+// void Upsize(TaffyCuckooFilterBase* here);
 
-INLINE bool BaseInsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
-  // 95% is achievable, generally,but give it some room
-  while (here->occupied > 0.90 * Capacity(here) || here->occupied + 4 >= Capacity(here) ||
-         here->sides[0].stash_size + here->sides[1].stash_size > 8) {
-    Upsize(here);
-  }
-  Insert(here, 0, ToPath(k, &here->sides[0].f, here->log_side_size));
-  return true;
-}
 
 // After Stashed result, HT is close to full and should be upsized
 // After ttl, stash the input and return Stashed. Pre-condition: at least one stash is
@@ -453,7 +448,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, Path p, int ttl) {
 #endif
     for (int i = 0; i < 2; ++i) {
       Path q = p;
-      p = Insert(both[i], p, &here->rng);
+      p = InsertSide(both[i], p, &here->rng);
       if (p.slot.tail == 0) {
         // Found an empty slot
         ++here->occupied;
@@ -494,7 +489,7 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, Path p, int ttl) {
 
   // This method just increases ttl until insert succeeds.
   // TODO: upsize when insert fails with high enough ttl?
-INLINE bool Insert(TaffyCuckooFilterBase* here, int s, Path q) {
+INLINE bool InsertTCFB(TaffyCuckooFilterBase* here, int s, Path q) {
   int ttl = 32;
   return InsertTTL(here, s, q, ttl);
 }
@@ -515,19 +510,19 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, Slot sl, uint64_t i, int s
     p = ToPath(q, &t->sides[0].f, t->log_side_size);
     // Still no tail! :-)
     p.slot.tail = sl.tail;
-    Insert(t, 0, p);
+    InsertTCFB(t, 0, p);
     // change the raw value by just one bit: its last
     q |= (1ul << (64 - here->log_side_size - kHeadSize - 1));
     p = ToPath(q, &t->sides[0].f, t->log_side_size);
     p.slot.tail = sl.tail;
-    Insert(t, 0, p);
+    InsertTCFB(t, 0, p);
   } else {
     // steal a bit from the tail
     q |= static_cast<uint64_t>(sl.tail >> kTailSize)
          << (64 - here->log_side_size - kHeadSize - 1);
     Path r = ToPath(q, &t->sides[0].f, t->log_side_size);
     r.slot.tail = (sl.tail << 1);
-    Insert(t, 0, r);
+    InsertTCFB(t, 0, r);
   }
 }
 
@@ -556,6 +551,16 @@ void Upsize(TaffyCuckooFilterBase* here) {
   delete[] t.sides[1].stash;
 }
 
+  INLINE bool BaseInsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
+  // 95% is achievable, generally,but give it some room
+  while (here->occupied > 0.90 * Capacity(here) || here->occupied + 4 >= Capacity(here) ||
+         here->sides[0].stash_size + here->sides[1].stash_size > 8) {
+    Upsize(here);
+  }
+  InsertTCFB(here, 0, ToPath(k, &here->sides[0].f, here->log_side_size));
+  return true;
+}
+
 void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, int side,
                Path p) {
   uint64_t hashed = FromPathNoTail(p, &that->sides[side].f, that->log_side_size);
@@ -564,7 +569,7 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, i
   if (that->log_side_size == here->log_side_size) {
     Path q = ToPath(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = p.slot.tail;
-    Insert(here, 0, q);
+    InsertTCFB(here, 0, q);
     q.slot.tail = 0;  // dummy line just to break on
   } else if (that->log_side_size + tail_size >= here->log_side_size) {
     uint64_t orin3 =
@@ -574,7 +579,7 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, i
     hashed |= orin3;
     Path q = ToPath(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = (p.slot.tail << (here->log_side_size - that->log_side_size));
-    Insert(here, 0, q);
+    InsertTCFB(here, 0, q);
   } else {
     // p.tail & (p.tail - 1) removes the final 1 marker. The resulting length is
     // 0, 1, 2, 3, 4, or 5. It is also tail_size, but is packed in high bits of a
@@ -598,7 +603,7 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, i
       uint64_t tmphashed = (hashed | orin);
       Path q = ToPath(tmphashed, &here->sides[0].f, here->log_side_size);
       q.slot.tail = (1u << kTailSize);
-      Insert(here, 0, q);
+      InsertTCFB(here, 0, q);
     }
   }
 }
@@ -645,7 +650,8 @@ INLINE void swap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
   swap(x->occupied, y->occupied);
 }
 */
-
+} // extern "C"
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace filter {
