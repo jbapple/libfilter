@@ -21,49 +21,49 @@
 
 #include "filter/util.h"
 
-// From the paper, kTailSize is the log of the number of times the size will
+// From the paper, libfilter_taffy_cuckoo_tail_size is the log of the number of times the size will
 // double, while kHead size is two more than ceil(log(1/epsilon)) + i, bit i is only used
-// up  by 1 (for the sides) plus kLogBuckets. For instance, with kTailSize = 5 and
-// kHeadSize = 10, log(1/epsilon) is 10 - 2 - kLogBuckets - 1, which is an fpp of about
+// up  by 1 (for the sides) plus libfilter_log_slots. For instance, with libfilter_taffy_cuckoo_tail_size = 5 and
+// libfilter_taffy_cuckoo_head_size = 10, log(1/epsilon) is 10 - 2 - libfilter_log_slots - 1, which is an fpp of about
 // 3%. Yikes! The good news is that checking against the tails and in the early stages of
 // growth, epsilon is lower. TODO: how much lower, in theory?
 //
-// Note that kHeadSize must be large enough for quotient cuckoo hashing to work sensibly:
+// Note that libfilter_taffy_cuckoo_head_size must be large enough for quotient cuckoo hashing to work sensibly:
 // it needs some randomness in the fingerprint to ensure each item hashes to sufficiently
 // different buckets kHead is just the rest of the uint16_t, and is log2(1/epsilon)
-#if defined(kHeadSize)
-#error "kHeadSize"
+#if defined(libfilter_taffy_cuckoo_head_size)
+#error "libfilter_taffy_cuckoo_head_size"
 #endif
 
-#define kHeadSize 10
+#define libfilter_taffy_cuckoo_head_size 10
 
-#if defined (kTailSize)
-#error "kTailSize"
+#if defined (libfilter_taffy_cuckoo_tail_size)
+#error "libfilter_taffy_cuckoo_tail_size"
 #endif
 
-#define kTailSize 5
+#define libfilter_taffy_cuckoo_tail_size 5
 
-#if kHeadSize + kTailSize != 15
-#error "kHeadSize + kTailSize != 15"
+#if libfilter_taffy_cuckoo_head_size + libfilter_taffy_cuckoo_tail_size != 15
+#error "libfilter_taffy_cuckoo_head_size + libfilter_taffy_cuckoo_tail_size != 15"
 #endif
 
 // The number of slots in each cuckoo table bucket. The higher this is, the easier it is
 // to do an insert but the higher the fpp.
-#if defined(kLogBuckets)
-#error "kLogBuckets"
+#if defined(libfilter_log_slots)
+#error "libfilter_log_slots"
 #endif
 
-#define kLogBuckets 2
+#define libfilter_log_slots 2
 
-#if defined(kBuckets)
-#error "kBuckets"
+#if defined(libfilter_slots)
+#error "libfilter_slots"
 #endif
 
-#define kBuckets (1 << kLogBuckets)
+#define libfilter_slots (1 << libfilter_log_slots)
 
 typedef struct  {
-  uint64_t fingerprint : kHeadSize;
-  uint64_t tail : kTailSize +
+  uint64_t fingerprint : libfilter_taffy_cuckoo_head_size;
+  uint64_t tail : libfilter_taffy_cuckoo_tail_size +
                   1;  // +1 for the encoding of sequences above. tail == 0 indicates
                       // an empty slot, no matter what's in fingerprint
 } __attribute__((packed)) Slot;
@@ -98,17 +98,17 @@ INLINE bool EqualPath(Path here, Path there) {
 // Operates on the high bits, since bits must be moved from the tail into the fingerprint
 // and then bucket.
 INLINE Path ToPath(uint64_t raw, const detail_Feistel* f, uint64_t log_side_size) {
-  uint64_t pre_hash_index_and_fp = raw >> (64 - log_side_size - kHeadSize);
+  uint64_t pre_hash_index_and_fp = raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
   uint64_t hashed_index_and_fp =
-    Permute(f, log_side_size + kHeadSize, pre_hash_index_and_fp);
-  uint64_t index = hashed_index_and_fp >> kHeadSize;
+    Permute(f, log_side_size + libfilter_taffy_cuckoo_head_size, pre_hash_index_and_fp);
+  uint64_t index = hashed_index_and_fp >> libfilter_taffy_cuckoo_head_size;
   Path p;
   p.bucket = index;
   // Helpfully gets cut off by being a bitfield
   p.slot.fingerprint = hashed_index_and_fp;
   uint64_t pre_hash_index_fp_and_tail =
-      raw >> (64 - log_side_size - kHeadSize - kTailSize);
-  uint64_t raw_tail = detail_Mask(kTailSize, pre_hash_index_fp_and_tail);
+      raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size - libfilter_taffy_cuckoo_tail_size);
+  uint64_t raw_tail = detail_Mask(libfilter_taffy_cuckoo_tail_size, pre_hash_index_fp_and_tail);
   // encode the tail using the encoding described above, in which the length of the tail i
   // the complement of the tzcnt plus one.
   uint64_t encoded_tail = raw_tail * 2 + 1;
@@ -120,18 +120,18 @@ INLINE Path ToPath(uint64_t raw, const detail_Feistel* f, uint64_t log_side_size
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
 INLINE uint64_t FromPathNoTail(Path p, const detail_Feistel * f, uint64_t log_side_size) {
-  uint64_t hashed_index_and_fp = (p.bucket << kHeadSize) | p.slot.fingerprint;
+  uint64_t hashed_index_and_fp = (p.bucket << libfilter_taffy_cuckoo_head_size) | p.slot.fingerprint;
   uint64_t pre_hashed_index_and_fp =
-    ReversePermute(f, log_side_size + kHeadSize, hashed_index_and_fp);
-  uint64_t shifted_up = pre_hashed_index_and_fp << (64 - log_side_size - kHeadSize);
+    ReversePermute(f, log_side_size + libfilter_taffy_cuckoo_head_size, hashed_index_and_fp);
+  uint64_t shifted_up = pre_hashed_index_and_fp << (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
   return shifted_up;
 }
 
 typedef struct {
-  Slot data[kBuckets];
+  Slot data[libfilter_slots];
 } __attribute__((packed)) Bucket;
 
-// static_assert(sizeof(Bucket) == sizeof(Slot) * kBuckets, "sizeof(Bucket)");
+// static_assert(sizeof(Bucket) == sizeof(Slot) * libfilter_slots, "sizeof(Bucket)");
 
 // A cuckoo hash table is made up of sides (in some incarnations), rather than jut two
 // buckets from one array. Each side has a stash that holds any paths that couldn't fit.
@@ -163,7 +163,7 @@ INLINE Side SideCreate(int log_side_size, const uint64_t* keys) {
 INLINE Path InsertSide(Side* here, Path p, detail_PcgRandom* rng) {
   assert(p.slot.tail != 0);
   Bucket* b = &here->data[p.bucket];
-  for (int i = 0; i < kBuckets; ++i) {
+  for (int i = 0; i < libfilter_slots; ++i) {
     if (b->data[i].tail == 0) {
       // empty slot
       b->data[i] = p.slot;
@@ -203,7 +203,7 @@ INLINE bool Find(const Side* here, Path p) {
     }
   }
   Bucket* b = &here->data[p.bucket];
-  for (int i = 0; i < kBuckets; ++i) {
+  for (int i = 0; i < libfilter_slots; ++i) {
     if (b->data[i].tail == 0) continue;
     if (b->data[i].fingerprint == p.slot.fingerprint &&
         detail_IsPrefixOf(b->data[i].tail, p.slot.tail)) {
@@ -225,14 +225,14 @@ INLINE void swap(Side* x, Side* y) {
 */
 
 typedef struct {
-  uint64_t zero : kHeadSize;
-  uint64_t one : kHeadSize;
-  uint64_t two : kHeadSize;
-  uint64_t three : kHeadSize;
+  uint64_t zero : libfilter_taffy_cuckoo_head_size;
+  uint64_t one : libfilter_taffy_cuckoo_head_size;
+  uint64_t two : libfilter_taffy_cuckoo_head_size;
+  uint64_t three : libfilter_taffy_cuckoo_head_size;
 } __attribute__((packed)) FrozenTaffyCuckooBaseBucket;
 
 // static_assert(sizeof(FrozenTaffyCuckooBaseBucket) ==
-//                   kBuckets * kHeadSize / CHAR_BIT,
+//                   libfilter_slots * libfilter_taffy_cuckoo_head_size / CHAR_BIT,
 //               "packed");
 
 typedef struct  {
@@ -254,13 +254,13 @@ INLINE size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b) {
 
 INLINE bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
   for (int i = 0; i < 2; ++i) {
-    uint64_t y = x >> (64 - here->log_side_size_ - kHeadSize);
-    uint64_t permuted = Permute(&here->hash_[i], here->log_side_size_ + kHeadSize, y);
+    uint64_t y = x >> (64 - here->log_side_size_ - libfilter_taffy_cuckoo_head_size);
+    uint64_t permuted = Permute(&here->hash_[i], here->log_side_size_ + libfilter_taffy_cuckoo_head_size, y);
     for (size_t j = 0; j < here->stash_size_[i]; ++j) {
       if (here->stash_[i][j] == permuted) return true;
     }
-    FrozenTaffyCuckooBaseBucket* b = &here->data_[i][permuted >> kHeadSize];
-    uint64_t fingerprint = permuted & ((1 << kHeadSize) - 1);
+    FrozenTaffyCuckooBaseBucket* b = &here->data_[i][permuted >> libfilter_taffy_cuckoo_head_size];
+    uint64_t fingerprint = permuted & ((1 << libfilter_taffy_cuckoo_head_size) - 1);
     if (0 == fingerprint) return true;
     // TODO: SWAR
     uint64_t z = 0;
@@ -319,7 +319,7 @@ INLINE TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
   here.sides[0] = SideCreate(log_side_size, entropy);
   here.sides[1] = SideCreate(log_side_size, entropy + 4);
   here.log_side_size = log_side_size;
-  here.rng = detail_PcgRandomCreate(kLogBuckets);
+  here.rng = detail_PcgRandomCreate(libfilter_log_slots);
   here.entropy = entropy;
   here.occupied = 0;
   return here;
@@ -350,7 +350,7 @@ INLINE TaffyCuckooFilterBase BaseCreateWithBytes(uint64_t bytes) {
   static const uint64_t kEntropy[8] = {
       0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
       0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f};
-  double f = log(1.0 * bytes / 2 / kBuckets / sizeof(Slot)) / log(2);
+  double f = log(1.0 * bytes / 2 / libfilter_slots / sizeof(Slot)) / log(2);
   f = (f > 1.0) ? f : 1.0;
   return TaffyCuckooFilterBaseCreate(f, kEntropy);
 }
@@ -386,7 +386,7 @@ INLINE FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
 INLINE uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here) {
   return sizeof(Path) *
              (here->sides[0].stash_capacity + here->sides[1].stash_capacity) +
-         2 * sizeof(Slot) * (1 << here->log_side_size) * kBuckets;
+         2 * sizeof(Slot) * (1 << here->log_side_size) * libfilter_slots;
 }
 
 // Verifies the occupied field:
@@ -395,7 +395,7 @@ INLINE uint64_t Count(const TaffyCuckooFilterBase* here) {
   for (int s = 0; s < 2; ++s) {
     result += here->sides[s].stash_size;
     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
-      for (int j = 0; j < kBuckets; ++j) {
+      for (int j = 0; j < libfilter_slots; ++j) {
         if (here->sides[s].data[i].data[j].tail != 0) ++result;
       }
     }
@@ -410,7 +410,7 @@ INLINE uint64_t Count(const TaffyCuckooFilterBase* here) {
 //       std::cout << std::endl;
 //     }
 //     for (uint64_t i = 0; i < 1ull << here->log_side_size; ++i) {
-//       for (int j = 0; j < kBuckets; ++j) {
+//       for (int j = 0; j < libfilter_slots; ++j) {
 //         PrintSlot(here->sides[s].data[i].data[j]);
 //         std::cout << std::endl;
 //       }
@@ -432,7 +432,7 @@ INLINE bool BaseFindHash(const TaffyCuckooFilterBase* here, uint64_t k) {
 }
 
 INLINE uint64_t Capacity(const TaffyCuckooFilterBase* here) {
-  return 2 * kBuckets * (1ul << here->log_side_size);
+  return 2 * libfilter_slots * (1ul << here->log_side_size);
 }
 
   //INLINE
@@ -511,7 +511,7 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, Slot sl, uint64_t i, int s
   p.slot = sl;
   p.bucket = i;
   uint64_t q = FromPathNoTail(p, &here->sides[s].f, here->log_side_size);
-  if (sl.tail == 1ul << kTailSize) {
+  if (sl.tail == 1ul << libfilter_taffy_cuckoo_tail_size) {
     // There are no tail bits left! Insert two values.
     // First, hash to the left side of the larger table.
     p = ToPath(q, &t->sides[0].f, t->log_side_size);
@@ -519,14 +519,14 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, Slot sl, uint64_t i, int s
     p.slot.tail = sl.tail;
     InsertTCFB(t, 0, p);
     // change the raw value by just one bit: its last
-    q |= (1ul << (64 - here->log_side_size - kHeadSize - 1));
+    q |= (1ul << (64 - here->log_side_size - libfilter_taffy_cuckoo_head_size - 1));
     p = ToPath(q, &t->sides[0].f, t->log_side_size);
     p.slot.tail = sl.tail;
     InsertTCFB(t, 0, p);
   } else {
     // steal a bit from the tail
-    q |= ((uint64_t)(sl.tail >> kTailSize))
-         << (64 - here->log_side_size - kHeadSize - 1);
+    q |= ((uint64_t)(sl.tail >> libfilter_taffy_cuckoo_tail_size))
+         << (64 - here->log_side_size - libfilter_taffy_cuckoo_head_size - 1);
     Path r = ToPath(q, &t->sides[0].f, t->log_side_size);
     r.slot.tail = (sl.tail << 1);
     InsertTCFB(t, 0, r);
@@ -551,7 +551,7 @@ INLINE void Upsize(TaffyCuckooFilterBase* here) {
                    &t);
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
-      for (int j = 0; j < kBuckets; ++j) {
+      for (int j = 0; j < libfilter_slots; ++j) {
         Slot sl = here->sides[s].data[i].data[j];
         UpsizeHelper(here, sl, i, s, &t);
       }
@@ -575,8 +575,8 @@ INLINE bool BaseInsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
 INLINE void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, int side,
                Path p) {
   uint64_t hashed = FromPathNoTail(p, &that->sides[side].f, that->log_side_size);
-  // hashed is high that->log_side_size + kHeadSize, in high bits of 64-bit word
-  int tail_size = kTailSize - __builtin_ctz(p.slot.tail);
+  // hashed is high that->log_side_size + libfilter_taffy_cuckoo_head_size, in high bits of 64-bit word
+  int tail_size = libfilter_taffy_cuckoo_tail_size - __builtin_ctz(p.slot.tail);
   if (that->log_side_size == here->log_side_size) {
     Path q = ToPath(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = p.slot.tail;
@@ -584,7 +584,7 @@ INLINE void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* 
     q.slot.tail = 0;  // dummy line just to break on
   } else if (that->log_side_size + tail_size >= here->log_side_size) {
     uint64_t orin3 = (((uint64_t)(p.slot.tail & (p.slot.tail - 1)))
-                      << (64 - that->log_side_size - kHeadSize - kTailSize - 1));
+                      << (64 - that->log_side_size - libfilter_taffy_cuckoo_head_size - libfilter_taffy_cuckoo_tail_size - 1));
     assert((hashed & orin3) == 0);
     hashed |= orin3;
     Path q = ToPath(hashed, &here->sides[0].f, here->log_side_size);
@@ -593,54 +593,29 @@ INLINE void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* 
   } else {
     // p.tail & (p.tail - 1) removes the final 1 marker. The resulting length is
     // 0, 1, 2, 3, 4, or 5. It is also tail_size, but is packed in high bits of a
-    // section with size kTailSize + 1.
+    // section with size libfilter_taffy_cuckoo_tail_size + 1.
     uint64_t orin2 =
       (((uint64_t)(p.slot.tail & (p.slot.tail - 1)))
-         << (64 - that->log_side_size - kHeadSize - kTailSize - 1));
+         << (64 - that->log_side_size - libfilter_taffy_cuckoo_head_size - libfilter_taffy_cuckoo_tail_size - 1));
     assert(0 == (orin2 & hashed));
     hashed |= orin2;
-    // The total size is now that->log_side_size + kHeadSize + tail_size
+    // The total size is now that->log_side_size + libfilter_taffy_cuckoo_head_size + tail_size
     //
-    // To fill up the required log_size_size + kHeadSize, we need values of width up to
-    // log_size_size + kHeadSize - (that->log_side_size + kHeadSize +
+    // To fill up the required log_size_size + libfilter_taffy_cuckoo_head_size, we need values of width up to
+    // log_size_size + libfilter_taffy_cuckoo_head_size - (that->log_side_size + libfilter_taffy_cuckoo_head_size +
     // tail_size)
     for (uint64_t i = 0;
          i < (1u << (here->log_side_size - that->log_side_size - tail_size)); ++i) {
-      // To append these, need to shift up to that->log_side_size + kHeadSize +
+      // To append these, need to shift up to that->log_side_size + libfilter_taffy_cuckoo_head_size +
       // tail_size
-      uint64_t orin = (i << (64 - here->log_side_size - kHeadSize));
+      uint64_t orin = (i << (64 - here->log_side_size - libfilter_taffy_cuckoo_head_size));
       assert(0 == (orin & hashed));
       uint64_t tmphashed = (hashed | orin);
       Path q = ToPath(tmphashed, &here->sides[0].f, here->log_side_size);
-      q.slot.tail = (1u << kTailSize);
+      q.slot.tail = (1u << libfilter_taffy_cuckoo_tail_size);
       InsertTCFB(here, 0, q);
     }
   }
 }
 
-INLINE void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that) {
-  assert(that->log_side_size <= here->log_side_size);
-  Path p;
-  for (int side = 0; side < 2; ++side) {
-    for (size_t i = 0; i < that->sides[side].stash_size; ++i) {
-      UnionHelp(here, that, side, that->sides[side].stash[i]);
-    }
-    for (uint64_t bucket = 0; bucket < (1ul << that->log_side_size); ++bucket) {
-      p.bucket = bucket;
-      for (int slot = 0; slot < kBuckets; ++slot) {
-        if (that->sides[side].data[bucket].data[slot].tail == 0) continue;
-        p.slot.fingerprint = that->sides[side].data[bucket].data[slot].fingerprint;
-        p.slot.tail = that->sides[side].data[bucket].data[slot].tail;
-        UnionHelp(here, that, side, p);
-        continue;
-      }
-    }
-  }
-}
-
 TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase* x, const TaffyCuckooFilterBase* y);
-
-#undef kHeadSize
-#undef kTailSize
-#undef kLogBuckets
-#undef kBuckets
