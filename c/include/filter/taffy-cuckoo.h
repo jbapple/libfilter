@@ -146,7 +146,7 @@ typedef struct  {
   Path * stash;
 } Side;
 
-Side SideCreate(int log_side_size, const uint64_t* keys) {
+INLINE Side SideCreate(int log_side_size, const uint64_t* keys) {
   Side here;
   here.f = detail_FeistelCreate(&keys[0]);
   here.data = (Bucket *)calloc(1ul << log_side_size, sizeof(Bucket));
@@ -244,7 +244,7 @@ typedef struct  {
   size_t stash_size_[2];
 } FrozenTaffyCuckooBase;
 
-size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b) {
+INLINE size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b) {
   return (sizeof(FrozenTaffyCuckooBaseBucket) * 2ul << b->log_side_size_) +
          sizeof(uint64_t) * (b->stash_capacity_[0] + b->stash_capacity_[1]);
 }
@@ -252,7 +252,7 @@ size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b) {
 #define haszero10(x) (((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL)
 #define hasvalue10(x, n) (haszero10((x) ^ (0x40100401ULL * (n))))
 
-bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
+INLINE bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
   for (int i = 0; i < 2; ++i) {
     uint64_t y = x >> (64 - here->log_side_size_ - kHeadSize);
     uint64_t permuted = Permute(&here->hash_[i], here->log_side_size_ + kHeadSize, y);
@@ -270,14 +270,14 @@ bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
   return false;
 }
 
-void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
+INLINE void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
   free(here->data_[0]);
   free(here->data_[1]);
   free(here->stash_[0]);
   free(here->stash_[1]);
 }
 
-FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
+INLINE FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
   FrozenTaffyCuckooBase here;
   here.hash_[0] = detail_FeistelCreate(entropy);
   here.hash_[1] = detail_FeistelCreate(&entropy[4]);
@@ -300,7 +300,7 @@ typedef struct  {
   uint64_t occupied;
 } TaffyCuckooFilterBase;
 
-void TaffyCuckooFilterBaseSwap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
+INLINE void TaffyCuckooFilterBaseSwap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
   // SideSwap(&x->sides[0], &y->sides[0]);
   // SideSwap(&x->sides[1], &y->sides[1]);
 
@@ -313,7 +313,7 @@ void TaffyCuckooFilterBaseSwap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* 
   *y = tmp;
 }
 
-TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
+INLINE TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
                                                   const uint64_t* entropy) {
   TaffyCuckooFilterBase here;
   here.sides[0] = SideCreate(log_side_size, entropy);
@@ -325,7 +325,7 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
   return here;
 }
 
-TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase* that) {
+INLINE TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase* that) {
   TaffyCuckooFilterBase here;
   here.sides[0] = SideCreate(that->log_side_size, that->entropy);
   here.sides[1] = SideCreate(that->log_side_size, that->entropy + 4);
@@ -346,7 +346,7 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase* th
   return here;
 }
 
-TaffyCuckooFilterBase BaseCreateWithBytes(uint64_t bytes) {
+INLINE TaffyCuckooFilterBase BaseCreateWithBytes(uint64_t bytes) {
   static const uint64_t kEntropy[8] = {
       0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
       0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f};
@@ -355,7 +355,7 @@ TaffyCuckooFilterBase BaseCreateWithBytes(uint64_t bytes) {
   return TaffyCuckooFilterBaseCreate(f, kEntropy);
 }
 
-FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
+INLINE FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
   FrozenTaffyCuckooBase result =
       FrozenTaffyCuckooBaseCreate(here->entropy, here->log_side_size);
   for (int i = 0; i < 2; ++i) {
@@ -383,14 +383,14 @@ FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
   return result;
 }
 
-uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here) {
+INLINE uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here) {
   return sizeof(Path) *
              (here->sides[0].stash_capacity + here->sides[1].stash_capacity) +
          2 * sizeof(Slot) * (1 << here->log_side_size) * kBuckets;
 }
 
 // Verifies the occupied field:
-uint64_t Count(const TaffyCuckooFilterBase* here) {
+INLINE uint64_t Count(const TaffyCuckooFilterBase* here) {
   uint64_t result = 0;
   for (int s = 0; s < 2; ++s) {
     result += here->sides[s].stash_size;
@@ -533,7 +533,7 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, Slot sl, uint64_t i, int s
   }
 }
 
-void TaffyCuckooFilterBaseDestroy(TaffyCuckooFilterBase* t) {
+INLINE void TaffyCuckooFilterBaseDestroy(TaffyCuckooFilterBase* t) {
   free(t->sides[0].data);
   free(t->sides[0].stash);
   free(t->sides[1].data);
@@ -541,7 +541,7 @@ void TaffyCuckooFilterBaseDestroy(TaffyCuckooFilterBase* t) {
 }
 
 // Double the size of the filter
-void Upsize(TaffyCuckooFilterBase* here) {
+INLINE void Upsize(TaffyCuckooFilterBase* here) {
   TaffyCuckooFilterBase t =
       TaffyCuckooFilterBaseCreate(1 + here->log_side_size, here->entropy);
 
@@ -562,7 +562,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
   TaffyCuckooFilterBaseDestroy(&t);
 }
 
-  INLINE bool BaseInsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
+INLINE bool BaseInsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
   // 95% is achievable, generally,but give it some room
   while (here->occupied > 0.90 * Capacity(here) || here->occupied + 4 >= Capacity(here) ||
          here->sides[0].stash_size + here->sides[1].stash_size > 8) {
@@ -572,7 +572,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
   return true;
 }
 
-void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, int side,
+INLINE void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, int side,
                Path p) {
   uint64_t hashed = FromPathNoTail(p, &that->sides[side].f, that->log_side_size);
   // hashed is high that->log_side_size + kHeadSize, in high bits of 64-bit word
@@ -618,7 +618,7 @@ void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that, i
   }
 }
 
-void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that) {
+INLINE void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that) {
   assert(that->log_side_size <= here->log_side_size);
   Path p;
   for (int side = 0; side < 2; ++side) {
@@ -638,28 +638,7 @@ void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that) {
   }
 }
 
-TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase* x, const TaffyCuckooFilterBase* y) {
-  if (x->occupied > y->occupied) {
-    TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(x);
-    UnionOne(&result, y);
-    return result;
-  }
-  TaffyCuckooFilterBase result = TaffyCuckooFilterBaseClone(y);
-  UnionOne(&result, x);
-  return result;
-}
-
-/*
-INLINE void swap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
-  using std::swap;
-  swap(x->sides[0], y->sides[0]);
-  swap(x->sides[1], y->sides[1]);
-  swap(x->log_side_size, y->log_side_size);
-  swap(x->rng, y->rng);
-  swap(x->entropy, y->entropy);
-  swap(x->occupied, y->occupied);
-}
-*/
+TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase* x, const TaffyCuckooFilterBase* y);
 
 #undef kHeadSize
 #undef kTailSize

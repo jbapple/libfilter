@@ -36,7 +36,7 @@ typedef struct {
   uint64_t keys[2][2];
 } detail_Feistel;
 
-detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
+INLINE detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
   detail_Feistel result;
   result.keys[0][0] = entropy[0];
   result.keys[0][1] = entropy[1];
@@ -119,7 +119,7 @@ typedef struct {
   int remaining_bits;
 } detail_PcgRandom;
 
-detail_PcgRandom detail_PcgRandomCreate(int bit_width) {
+INLINE detail_PcgRandom detail_PcgRandomCreate(int bit_width) {
   detail_PcgRandom result;
   result.bit_width = bit_width;
   result.state = 0x13d26df6f74044b3;
@@ -132,7 +132,7 @@ detail_PcgRandom detail_PcgRandomCreate(int bit_width) {
 INLINE uint32_t PcgGet(detail_PcgRandom *here) {
   // Save some bits for next time
   if (here->remaining_bits >= here->bit_width) {
-    auto result = detail_Mask(here->bit_width, here->current);
+    uint32_t result = detail_Mask(here->bit_width, here->current);
     here->current = here->current >> here->bit_width;
     here->remaining_bits = here->remaining_bits - here->bit_width;
     return result;
