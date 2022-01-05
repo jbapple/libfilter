@@ -299,11 +299,24 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int
 
 typedef struct  {
   Side sides[2];
-  uint64_t log_side_size;
+  int log_side_size;
   detail_PcgRandom rng;
   const uint64_t* entropy;
   uint64_t occupied;
 } TaffyCuckooFilterBase;
+
+void TaffyCuckooFilterBaseSwap(TaffyCuckooFilterBase* x, TaffyCuckooFilterBase* y) {
+  // SideSwap(&x->sides[0], &y->sides[0]);
+  // SideSwap(&x->sides[1], &y->sides[1]);
+
+  // int tmp_int = x->log_side_size;
+  // x->log_side_size = y->log_side_size;
+  // y->log_side_size = tmp_int;
+
+  TaffyCuckooFilterBase tmp = *x;
+  *x = *y;
+  *y = tmp;
+}
 
 TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
                                                   const uint64_t* entropy) {
@@ -549,8 +562,8 @@ void Upsize(TaffyCuckooFilterBase* here) {
       }
     }
   }
-  using std::swap;
-  swap(*here, t);
+  //using std::swap;
+  TaffyCuckooFilterBaseSwap(here, &t);
   TaffyCuckooFilterBaseDestroy(&t);
 }
 
