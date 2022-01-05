@@ -13,6 +13,7 @@
 #pragma once
 
 
+#include <cstdlib>
 extern "C" {
 #include "util-clike.hpp"
 }
@@ -153,10 +154,10 @@ typedef struct  {
 Side SideCreate(int log_side_size, const uint64_t* keys) {
   Side here;
   here.f = detail_FeistelCreate(&keys[0]);
-  here.data = new Bucket[1ul << log_side_size]();
+  here.data = (Bucket *)calloc(1ul << log_side_size, sizeof(Bucket));
   here.stash_capacity = 4;
   here.stash_size = 0;
-  here.stash = new Path[here.stash_capacity]();
+  here.stash = (Path *)calloc(here.stash_capacity, sizeof(Path));
 
   return here;
 }
@@ -275,10 +276,10 @@ bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
 }
 
 void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
-  delete[] here->data_[0];
-  delete[] here->data_[1];
-  delete[] here->stash_[0];
-  delete[] here->stash_[1];
+  free(here->data_[0]);
+  free(here->data_[1]);
+  free(here->stash_[0]);
+  free(here->stash_[1]);
 }
 
 FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int log_side_size) {
@@ -287,10 +288,11 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8], int
   here.hash_[1] = detail_FeistelCreate(&entropy[4]);
   here.log_side_size_ = log_side_size;
   for (int i = 0; i < 2; ++i) {
-    here.data_[i] = new FrozenTaffyCuckooBaseBucket[1ul << log_side_size]();
+    here.data_[i] = (FrozenTaffyCuckooBaseBucket*)calloc(
+        1ul << log_side_size, sizeof(FrozenTaffyCuckooBaseBucket));
     here.stash_capacity_[i] = 4;
     here.stash_size_[i] = 0;
-    here.stash_[i] = new uint64_t[here.stash_capacity_[i]];
+    here.stash_[i] = (uint64_t*)calloc(here.stash_capacity_[i], sizeof(uint64_t));
   }
   return here;
 }
@@ -324,8 +326,8 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase* th
   here.entropy = that->entropy;
   here.occupied = that->occupied;
   for (int i = 0; i < 2; ++i) {
-    delete[] here.sides[i].stash;
-    here.sides[i].stash = new Path[that->sides[i].stash_capacity]();
+    free( here.sides[i].stash);
+    here.sides[i].stash = (Path *)calloc(that->sides[i].stash_capacity, sizeof(Path));
     here.sides[i].stash_capacity = that->sides[i].stash_capacity;
     here.sides[i].stash_size = that->sides[i].stash_size;
     memcpy(&here.sides[i].stash[0], &that->sides[i].stash[0],
@@ -354,9 +356,9 @@ FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
           FromPathNoTail(here->sides[i].stash[j], &here->sides[i].f, here->log_side_size);
       if (result.stash_size_[i] == result.stash_capacity_[i]) {
         result.stash_capacity_[i] *= 2;
-        uint64_t* new_stash = new uint64_t[result.stash_capacity_[i]];
+        uint64_t* new_stash = (uint64_t*)calloc(result.stash_capacity_[i], sizeof(uint64_t));
         memcpy(new_stash, result.stash_[i], result.stash_size_[i]);
-        delete[] result.stash_[i];
+        free( result.stash_[i]);
         result.stash_[i] = new_stash;
       }
       result.stash_[i][result.stash_size_[i]++] = topush;
@@ -464,9 +466,9 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, Path p, int ttl) {
         if (both[i]->stash_size == both[i]->stash_capacity) {
           both[i]->stash_capacity *= 2;
           //std::cerr << both[i]->stash_capacity << std::endl;
-          Path * new_stash = new Path[both[i]->stash_capacity]();
+          Path * new_stash = (Path*)calloc(both[i]->stash_capacity, sizeof(Path));
           memcpy(new_stash, both[i]->stash, both[i]->stash_size * sizeof(Path));
-          delete[] both[i]->stash;
+          free( both[i]->stash);
           both[i]->stash = new_stash;
         }
         both[i]->stash[both[i]->stash_size++] = p;
@@ -523,6 +525,13 @@ INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, Slot sl, uint64_t i, int s
   }
 }
 
+void TaffyCuckooFilterBaseDestroy(TaffyCuckooFilterBase* t) {
+  free(t->sides[0].data);
+  free(t->sides[0].stash);
+  free(t->sides[1].data);
+  free(t->sides[1].stash);
+}
+
 // Double the size of the filter
 void Upsize(TaffyCuckooFilterBase* here) {
   TaffyCuckooFilterBase t =
@@ -542,10 +551,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
   }
   using std::swap;
   swap(*here, t);
-  delete[] t.sides[0].data;
-  delete[] t.sides[0].stash;
-  delete[] t.sides[1].data;
-  delete[] t.sides[1].stash;
+  TaffyCuckooFilterBaseDestroy(&t);
 }
 
   INLINE bool BaseInsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
@@ -696,12 +702,7 @@ struct TaffyCuckooFilter {
   bool FindHash(uint64_t h) const { return BaseFindHash(&b, h); }
   size_t SizeInBytes() const { return TaffyCuckooSizeInBytes(&b); }
   FrozenTaffyCuckoo Freeze() const { return {BaseFreeze(&b)}; }
-  ~TaffyCuckooFilter() {
-    delete[] b.sides[0].data;
-    delete[] b.sides[0].stash;
-    delete[] b.sides[1].data;
-    delete[] b.sides[1].stash;
-  }
+  ~TaffyCuckooFilter() { TaffyCuckooFilterBaseDestroy(&b); }
 };
 
 TaffyCuckooFilter Union(const TaffyCuckooFilter& x, const TaffyCuckooFilter& y) {
