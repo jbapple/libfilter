@@ -3,10 +3,10 @@
 Side SideCreate(int log_side_size, const uint64_t* keys) {
   Side here;
   here.f = libfilter_feistel_create(&keys[0]);
-  here.data = (Bucket*)calloc(1ul << log_side_size, sizeof(Bucket));
+  here.data = (libfilter_taffy_cuckoo_bucket*)calloc(1ul << log_side_size, sizeof(libfilter_taffy_cuckoo_bucket));
   here.stash_capacity = 4;
   here.stash_size = 0;
-  here.stash = (Path*)calloc(here.stash_capacity, sizeof(Path));
+  here.stash = (libfilter_taffy_cuckoo_path*)calloc(here.stash_capacity, sizeof(libfilter_taffy_cuckoo_path));
 
   return here;
 }
@@ -74,13 +74,13 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseClone(const TaffyCuckooFilterBase* th
   here.occupied = that->occupied;
   for (int i = 0; i < 2; ++i) {
     free(here.sides[i].stash);
-    here.sides[i].stash = (Path*)calloc(that->sides[i].stash_capacity, sizeof(Path));
+    here.sides[i].stash = (libfilter_taffy_cuckoo_path*)calloc(that->sides[i].stash_capacity, sizeof(libfilter_taffy_cuckoo_path));
     here.sides[i].stash_capacity = that->sides[i].stash_capacity;
     here.sides[i].stash_size = that->sides[i].stash_size;
     memcpy(&here.sides[i].stash[0], &that->sides[i].stash[0],
-           that->sides[i].stash_size * sizeof(Path));
+           that->sides[i].stash_size * sizeof(libfilter_taffy_cuckoo_path));
     memcpy(&here.sides[i].data[0], &that->sides[i].data[0],
-           sizeof(Bucket) << that->log_side_size);
+           sizeof(libfilter_taffy_cuckoo_bucket) << that->log_side_size);
   }
   return here;
 }
@@ -89,7 +89,7 @@ TaffyCuckooFilterBase BaseCreateWithBytes(uint64_t bytes) {
   static const uint64_t kEntropy[8] = {
       0x2ba7538ee1234073, 0xfcc3777539b147d6, 0x6086c563576347e7, 0x52eff34ee1764465,
       0x8639cbf57f264867, 0x5a31ee34f0224ccb, 0x07a1cb8140744ee6, 0xf2296cf6a6524e9f};
-  double f = log(1.0 * bytes / 2 / libfilter_slots / sizeof(Slot)) / log(2);
+  double f = log(1.0 * bytes / 2 / libfilter_slots / sizeof(libfilter_taffy_cuckoo_slot)) / log(2);
   f = (f > 1.0) ? f : 1.0;
   return TaffyCuckooFilterBaseCreate(f, kEntropy);
 }
@@ -100,7 +100,7 @@ FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
   for (int i = 0; i < 2; ++i) {
     for (size_t j = 0; j < here->sides[i].stash_size; ++j) {
       uint64_t topush =
-          FromPathNoTail(here->sides[i].stash[j], &here->sides[i].f, here->log_side_size);
+          libfilter_taffy_cuckoo_from_path_no_tail(here->sides[i].stash[j], &here->sides[i].f, here->log_side_size);
       if (result.stash_size_[i] == result.stash_capacity_[i]) {
         result.stash_capacity_[i] *= 2;
         uint64_t* new_stash =
@@ -113,7 +113,7 @@ FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
     }
     for (size_t j = 0; j < (1ul << here->log_side_size); ++j) {
       FrozenTaffyCuckooBaseBucket* out = &result.data_[i][j];
-      const Bucket* in = &here->sides[i].data[j];
+      const libfilter_taffy_cuckoo_bucket* in = &here->sides[i].data[j];
       out->zero = in->data[0].fingerprint;
       out->one = in->data[1].fingerprint;
       out->two = in->data[2].fingerprint;
@@ -124,8 +124,8 @@ FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here) {
 }
 
 uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here) {
-  return sizeof(Path) * (here->sides[0].stash_capacity + here->sides[1].stash_capacity) +
-         2 * sizeof(Slot) * (1 << here->log_side_size) * libfilter_slots;
+  return sizeof(libfilter_taffy_cuckoo_path) * (here->sides[0].stash_capacity + here->sides[1].stash_capacity) +
+         2 * sizeof(libfilter_taffy_cuckoo_slot) * (1 << here->log_side_size) * libfilter_slots;
 }
 
 // // Verifies the occupied field:
@@ -167,30 +167,30 @@ void TaffyCuckooFilterBaseDestroy(TaffyCuckooFilterBase* t) {
 // Take an item from slot sl with bucket index i, a filter u that sl is in, a side that
 // sl is in, and a filter to move sl to, does so, potentially inserting TWO items in t,
 // as described in the paper.
-INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, Slot sl, uint64_t i, int s,
+INLINE void UpsizeHelper(TaffyCuckooFilterBase* here, libfilter_taffy_cuckoo_slot sl, uint64_t i, int s,
                          TaffyCuckooFilterBase* t) {
   if (sl.tail == 0) return;
-  Path p;
+  libfilter_taffy_cuckoo_path p;
   p.slot = sl;
   p.bucket = i;
-  uint64_t q = FromPathNoTail(p, &here->sides[s].f, here->log_side_size);
+  uint64_t q = libfilter_taffy_cuckoo_from_path_no_tail(p, &here->sides[s].f, here->log_side_size);
   if (sl.tail == 1ul << libfilter_taffy_cuckoo_tail_size) {
     // There are no tail bits left! Insert two values.
     // First, hash to the left side of the larger table.
-    p = ToPath(q, &t->sides[0].f, t->log_side_size);
+    p = libfilter_taffy_cuckoo_to_path(q, &t->sides[0].f, t->log_side_size);
     // Still no tail! :-)
     p.slot.tail = sl.tail;
     InsertTCFB(t, 0, p);
     // change the raw value by just one bit: its last
     q |= (1ul << (64 - here->log_side_size - libfilter_taffy_cuckoo_head_size - 1));
-    p = ToPath(q, &t->sides[0].f, t->log_side_size);
+    p = libfilter_taffy_cuckoo_to_path(q, &t->sides[0].f, t->log_side_size);
     p.slot.tail = sl.tail;
     InsertTCFB(t, 0, p);
   } else {
     // steal a bit from the tail
     q |= ((uint64_t)(sl.tail >> libfilter_taffy_cuckoo_tail_size))
          << (64 - here->log_side_size - libfilter_taffy_cuckoo_head_size - 1);
-    Path r = ToPath(q, &t->sides[0].f, t->log_side_size);
+    libfilter_taffy_cuckoo_path r = libfilter_taffy_cuckoo_to_path(q, &t->sides[0].f, t->log_side_size);
     r.slot.tail = (sl.tail << 1);
     InsertTCFB(t, 0, r);
   }
@@ -207,7 +207,7 @@ void Upsize(TaffyCuckooFilterBase* here) {
     }
     for (unsigned i = 0; i < (1u << here->log_side_size); ++i) {
       for (int j = 0; j < libfilter_slots; ++j) {
-        Slot sl = here->sides[s].data[i].data[j];
+        libfilter_taffy_cuckoo_slot sl = here->sides[s].data[i].data[j];
         UpsizeHelper(here, sl, i, s, &t);
       }
     }
@@ -218,13 +218,13 @@ void Upsize(TaffyCuckooFilterBase* here) {
 }
 
 static void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that,
-                      int side, Path p) {
-  uint64_t hashed = FromPathNoTail(p, &that->sides[side].f, that->log_side_size);
+                      int side, libfilter_taffy_cuckoo_path p) {
+  uint64_t hashed = libfilter_taffy_cuckoo_from_path_no_tail(p, &that->sides[side].f, that->log_side_size);
   // hashed is high that->log_side_size + libfilter_taffy_cuckoo_head_size, in high bits
   // of 64-bit word
   int tail_size = libfilter_taffy_cuckoo_tail_size - __builtin_ctz(p.slot.tail);
   if (that->log_side_size == here->log_side_size) {
-    Path q = ToPath(hashed, &here->sides[0].f, here->log_side_size);
+    libfilter_taffy_cuckoo_path q = libfilter_taffy_cuckoo_to_path(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = p.slot.tail;
     InsertTCFB(here, 0, q);
     q.slot.tail = 0;  // dummy line just to break on
@@ -234,7 +234,7 @@ static void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* 
                           libfilter_taffy_cuckoo_tail_size - 1));
     assert((hashed & orin3) == 0);
     hashed |= orin3;
-    Path q = ToPath(hashed, &here->sides[0].f, here->log_side_size);
+    libfilter_taffy_cuckoo_path q = libfilter_taffy_cuckoo_to_path(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = (p.slot.tail << (here->log_side_size - that->log_side_size));
     InsertTCFB(here, 0, q);
   } else {
@@ -260,7 +260,7 @@ static void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* 
           (i << (64 - here->log_side_size - libfilter_taffy_cuckoo_head_size));
       assert(0 == (orin & hashed));
       uint64_t tmphashed = (hashed | orin);
-      Path q = ToPath(tmphashed, &here->sides[0].f, here->log_side_size);
+      libfilter_taffy_cuckoo_path q = libfilter_taffy_cuckoo_to_path(tmphashed, &here->sides[0].f, here->log_side_size);
       q.slot.tail = (1u << libfilter_taffy_cuckoo_tail_size);
       InsertTCFB(here, 0, q);
     }
@@ -269,7 +269,7 @@ static void UnionHelp(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* 
 
 static void UnionOne(TaffyCuckooFilterBase* here, const TaffyCuckooFilterBase* that) {
   assert(that->log_side_size <= here->log_side_size);
-  Path p;
+  libfilter_taffy_cuckoo_path p;
   for (int side = 0; side < 2; ++side) {
     for (size_t i = 0; i < that->sides[side].stash_size; ++i) {
       UnionHelp(here, that, side, that->sides[side].stash[i]);
