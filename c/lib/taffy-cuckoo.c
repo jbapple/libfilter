@@ -3,7 +3,7 @@
 
  Side SideCreate(int log_side_size, const uint64_t* keys) {
   Side here;
-  here.f = detail_FeistelCreate(&keys[0]);
+  here.f = libfilter_feistel_create(&keys[0]);
   here.data = (Bucket *)calloc(1ul << log_side_size, sizeof(Bucket));
   here.stash_capacity = 4;
   here.stash_size = 0;
@@ -28,8 +28,8 @@ void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here) {
 FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8],
                                                   int log_side_size) {
   FrozenTaffyCuckooBase here;
-  here.hash_[0] = detail_FeistelCreate(entropy);
-  here.hash_[1] = detail_FeistelCreate(&entropy[4]);
+  here.hash_[0] = libfilter_feistel_create(entropy);
+  here.hash_[1] = libfilter_feistel_create(&entropy[4]);
   here.log_side_size_ = log_side_size;
   for (int i = 0; i < 2; ++i) {
     here.data_[i] = (FrozenTaffyCuckooBaseBucket*)calloc(
@@ -60,7 +60,7 @@ TaffyCuckooFilterBase TaffyCuckooFilterBaseCreate(int log_side_size,
   here.sides[0] = SideCreate(log_side_size, entropy);
   here.sides[1] = SideCreate(log_side_size, entropy + 4);
   here.log_side_size = log_side_size;
-  here.rng = detail_PcgRandomCreate(libfilter_log_slots);
+  here.rng = libfilter_pcg_random_create(libfilter_log_slots);
   here.entropy = entropy;
   here.occupied = 0;
   return here;

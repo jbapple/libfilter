@@ -12,32 +12,30 @@
 #define INLINE __attribute__((always_inline)) inline
 
 // Returns the lowest k bits of x
-INLINE uint64_t detail_Mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
+INLINE uint64_t libfilter_mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
 
-static INLINE uint64_t detail_Lo(int w, uint64_t x) { return detail_Mask(w, x); }
-// Returns the high bits of x. if w is s, returns the t high bits. If W is t, returns
-// the s high bits
-static INLINE uint64_t detail_Hi(int s, int t, int w, uint64_t x) {
-  return detail_Mask(w, x >> (s + t - w));
+// Returns the w high bits of x, after s+t-w low bits
+static INLINE uint64_t libfilter_high_bits(int s, int t, int w, uint64_t x) {
+  return libfilter_mask(w, x >> (s + t - w));
 }
 
-// Applies strong multiply-shift to the w low bits of x, returning the high w bits
-static INLINE uint64_t detail_ApplyOnce(int s, int t, int w, uint64_t x,
-                                        const uint64_t k[2]) {
-  return detail_Hi(
+// Applies strong multiply-shift to the w low bits of x, returning the high s+t-w bits
+static INLINE uint64_t libfilter_feistel_subhash(int s, int t, int w, uint64_t x,
+                                                 const uint64_t k[2]) {
+  return libfilter_high_bits(
       s, t, s + t - w,
-      detail_Mask(w, x) * detail_Mask(s + t, k[0]) + detail_Mask(s + t, k[1]));
+      libfilter_mask(w, x) * libfilter_mask(s + t, k[0]) + libfilter_mask(s + t, k[1]));
 }
 
-// Feistel is a permutation that is also a hash function, based on a Feistel permutation.
+// Feistel is a permutation that is also a hash function
 typedef struct {
   // The salt for the hash functions. The component hash function is strong
   // multiply-shift.
   uint64_t keys[2][2];
-} detail_Feistel;
+} libfilter_feistel;
 
-INLINE detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
-  detail_Feistel result;
+INLINE libfilter_feistel libfilter_feistel_create(const uint64_t entropy[4]) {
+  libfilter_feistel result;
   result.keys[0][0] = entropy[0];
   result.keys[0][1] = entropy[1];
   result.keys[1][0] = entropy[2];
@@ -46,43 +44,45 @@ INLINE detail_Feistel detail_FeistelCreate(const uint64_t entropy[4]) {
 }
 
 // Performs the hash function "forwards". w is the width of x. This is ASYMMETRIC Feistel.
-INLINE uint64_t Permute(const detail_Feistel *here, int w, uint64_t x) {
+INLINE uint64_t libfilter_feistel_permute_forward(const libfilter_feistel *here, int w,
+                                                  uint64_t x) {
   // s is floor(w/2), t is ceil(w/2).
   int s = w >> 1;
   int t = w - s;
 
   // break up x into the low s bits and the high t bits
-  uint64_t l0 = detail_Lo(s, x);
-  uint64_t r0 = detail_Hi(s, t, t, x);
+  uint64_t l0 = libfilter_mask(s, x);
+  uint64_t r0 = libfilter_high_bits(s, t, t, x);
 
   // First feistel application: switch the halves. l1 has t bits, while r1 has s bits,
   // xored with the t-bit hash of r0.
-  uint64_t l1 = r0;                                                 // t
-  uint64_t r1 = l0 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
+  uint64_t l1 = r0;                                                          // t
+  uint64_t r1 = l0 ^ libfilter_feistel_subhash(s, t, t, r0, here->keys[0]);  // s
 
   // l2 has t bits. r2 has t-bits, xored with the s-bit hash of r1, which really has t
   // bits. This is permitted because strong-multiply shift is still strong if you mask
   // it.
-  uint64_t l2 = r1;                                                 // s
-  uint64_t r2 = l1 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
+  uint64_t l2 = r1;                                                          // s
+  uint64_t r2 = l1 ^ libfilter_feistel_subhash(s, t, s, r1, here->keys[1]);  // t
 
   // The validity of this is really only seen when understanding the reverse permutation
   uint64_t result = (r2 << s) | l2;
   return result;
 }
 
-INLINE uint64_t ReversePermute(const detail_Feistel *here, int w, uint64_t x) {
+INLINE uint64_t libfilter_feistel_permute_backward(const libfilter_feistel *here, int w,
+                                                   uint64_t x) {
   int s = w / 2;
   int t = w - s;
 
-  uint64_t l2 = detail_Lo(s, x);
-  uint64_t r2 = detail_Hi(s, t, t, x);
+  uint64_t l2 = libfilter_mask(s, x);
+  uint64_t r2 = libfilter_high_bits(s, t, t, x);
 
-  uint64_t r1 = l2;                                                 // s
-  uint64_t l1 = r2 ^ detail_ApplyOnce(s, t, s, r1, here->keys[1]);  // t
+  uint64_t r1 = l2;                                                          // s
+  uint64_t l1 = r2 ^ libfilter_feistel_subhash(s, t, s, r1, here->keys[1]);  // t
 
-  uint64_t r0 = l1;                                                 // t
-  uint64_t l0 = r1 ^ detail_ApplyOnce(s, t, t, r0, here->keys[0]);  // s
+  uint64_t r0 = l1;                                                          // t
+  uint64_t l0 = r1 ^ libfilter_feistel_subhash(s, t, t, r0, here->keys[0]);  // s
 
   uint64_t result = (r0 << s) | l0;
   return result;
@@ -117,10 +117,10 @@ typedef struct {
 
   uint32_t current;
   int remaining_bits;
-} detail_PcgRandom;
+} libfilter_pcg_random;
 
-INLINE detail_PcgRandom detail_PcgRandomCreate(int bit_width) {
-  detail_PcgRandom result;
+INLINE libfilter_pcg_random libfilter_pcg_random_create(int bit_width) {
+  libfilter_pcg_random result;
   result.bit_width = bit_width;
   result.state = 0x13d26df6f74044b3;
   result.inc = 0x0d09b2d3025545a0;
@@ -129,10 +129,10 @@ INLINE detail_PcgRandom detail_PcgRandomCreate(int bit_width) {
   return result;
 }
 
-INLINE uint32_t PcgGet(detail_PcgRandom *here) {
+INLINE uint32_t libfilter_pcg_random_get(libfilter_pcg_random *here) {
   // Save some bits for next time
   if (here->remaining_bits >= here->bit_width) {
-    uint32_t result = detail_Mask(here->bit_width, here->current);
+    uint32_t result = libfilter_mask(here->bit_width, here->current);
     here->current = here->current >> here->bit_width;
     here->remaining_bits = here->remaining_bits - here->bit_width;
     return result;
@@ -147,7 +147,7 @@ INLINE uint32_t PcgGet(detail_PcgRandom *here) {
   here->current = (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 
   here->remaining_bits = 32 - here->bit_width;
-  uint32_t result = detail_Mask(here->bit_width, here->current);
+  uint32_t result = libfilter_mask(here->bit_width, here->current);
   here->current = here->current >> here->bit_width;
   return result;
 }
@@ -165,7 +165,7 @@ INLINE uint32_t PcgGet(detail_PcgRandom *here) {
 // Given all that, consider non-zero x and y as valid sequences. IsPrefixOf returns true
 // if an only if the sequence represented by x can be extended to the sequence represented
 // by y.
-INLINE bool detail_IsPrefixOf(uint16_t x, uint16_t y) {
+INLINE bool libfilter_taffy_is_prefix_of(uint16_t x, uint16_t y) {
   assert(x != 0);
   assert(y != 0);
   uint16_t a = x ^ y;
@@ -209,7 +209,7 @@ INLINE bool detail_IsPrefixOf(uint16_t x, uint16_t y) {
 // match some small percent of the time.
 //
 // Returns 0 if no match
-INLINE uint16_t detail_Combinable(uint16_t x, uint16_t y) {
+INLINE uint16_t libfilter_taffy_tail_pair(uint16_t x, uint16_t y) {
   // assert x != y, x != 0, y != 0, x >> 15 == 0, y >> 15 == 0
   uint32_t xy = x ^ y;
   uint32_t low = __builtin_ctz(xy);

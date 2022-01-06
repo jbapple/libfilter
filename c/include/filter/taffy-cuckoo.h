@@ -97,11 +97,11 @@ INLINE bool EqualPath(Path here, Path there) {
 //
 // Operates on the high bits, since bits must be moved from the tail into the fingerprint
 // and then bucket.
-INLINE Path ToPath(uint64_t raw, const detail_Feistel* f, uint64_t log_side_size) {
+INLINE Path ToPath(uint64_t raw, const libfilter_feistel* f, uint64_t log_side_size) {
   uint64_t pre_hash_index_and_fp =
       raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
-  uint64_t hashed_index_and_fp =
-      Permute(f, log_side_size + libfilter_taffy_cuckoo_head_size, pre_hash_index_and_fp);
+  uint64_t hashed_index_and_fp = libfilter_feistel_permute_forward(
+      f, log_side_size + libfilter_taffy_cuckoo_head_size, pre_hash_index_and_fp);
   uint64_t index = hashed_index_and_fp >> libfilter_taffy_cuckoo_head_size;
   Path p;
   p.bucket = index;
@@ -111,7 +111,7 @@ INLINE Path ToPath(uint64_t raw, const detail_Feistel* f, uint64_t log_side_size
       raw >> (64 - log_side_size - libfilter_taffy_cuckoo_head_size -
               libfilter_taffy_cuckoo_tail_size);
   uint64_t raw_tail =
-      detail_Mask(libfilter_taffy_cuckoo_tail_size, pre_hash_index_fp_and_tail);
+      libfilter_mask(libfilter_taffy_cuckoo_tail_size, pre_hash_index_fp_and_tail);
   // encode the tail using the encoding described above, in which the length of the tail i
   // the complement of the tzcnt plus one.
   uint64_t encoded_tail = raw_tail * 2 + 1;
@@ -122,10 +122,10 @@ INLINE Path ToPath(uint64_t raw, const detail_Feistel* f, uint64_t log_side_size
 // Uses reverse permuting to get back the high bits of the original hashed value. Elides
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
-INLINE uint64_t FromPathNoTail(Path p, const detail_Feistel * f, uint64_t log_side_size) {
+INLINE uint64_t FromPathNoTail(Path p, const libfilter_feistel * f, uint64_t log_side_size) {
   uint64_t hashed_index_and_fp =
       (p.bucket << libfilter_taffy_cuckoo_head_size) | p.slot.fingerprint;
-  uint64_t pre_hashed_index_and_fp = ReversePermute(
+  uint64_t pre_hashed_index_and_fp = libfilter_feistel_permute_backward(
       f, log_side_size + libfilter_taffy_cuckoo_head_size, hashed_index_and_fp);
   uint64_t shifted_up = pre_hashed_index_and_fp
                         << (64 - log_side_size - libfilter_taffy_cuckoo_head_size);
@@ -143,7 +143,7 @@ typedef struct {
 // This is useful for random-walk cuckoo hashing, in which the leftover path needs  place
 // to be stored so it doesn't invalidate old inserts.
 typedef struct  {
-  detail_Feistel f;
+  libfilter_feistel f;
   Bucket* data;
 
   size_t stash_capacity;
@@ -156,7 +156,7 @@ Side SideCreate(int log_side_size, const uint64_t* keys);
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
 // succeded without anning anything new. Returns something else if that something else
 // was displaced by the insert. That item must be inserted then
-INLINE Path InsertSide(Side* here, Path p, detail_PcgRandom* rng) {
+INLINE Path InsertSide(Side* here, Path p, libfilter_pcg_random* rng) {
   assert(p.slot.tail != 0);
   Bucket* b = &here->data[p.bucket];
   for (int i = 0; i < libfilter_slots; ++i) {
@@ -168,7 +168,7 @@ INLINE Path InsertSide(Side* here, Path p, detail_PcgRandom* rng) {
     }
     if (b->data[i].fingerprint == p.slot.fingerprint) {
       // already present in the table
-      if (detail_IsPrefixOf(b->data[i].tail, p.slot.tail)) {
+      if (libfilter_taffy_is_prefix_of(b->data[i].tail, p.slot.tail)) {
         return p;
       }
       /*
@@ -182,7 +182,7 @@ INLINE Path InsertSide(Side* here, Path p, detail_PcgRandom* rng) {
     }
   }
   // Kick something random and return it
-  int i = PcgGet(rng);
+  int i = libfilter_pcg_random_get(rng);
   Path result = p;
   result.slot = b->data[i];
   b->data[i] = p.slot;
@@ -194,7 +194,7 @@ INLINE bool Find(const Side* here, Path p) {
   for(unsigned i = 0; i < here->stash_size; ++i) {
     if (here->stash[i].slot.tail != 0 && p.bucket == here->stash[i].bucket &&
         p.slot.fingerprint == here->stash[i].slot.fingerprint &&
-        detail_IsPrefixOf(here->stash[i].slot.tail, p.slot.tail)) {
+        libfilter_taffy_is_prefix_of(here->stash[i].slot.tail, p.slot.tail)) {
       return true;
     }
   }
@@ -202,7 +202,7 @@ INLINE bool Find(const Side* here, Path p) {
   for (int i = 0; i < libfilter_slots; ++i) {
     if (b->data[i].tail == 0) continue;
     if (b->data[i].fingerprint == p.slot.fingerprint &&
-        detail_IsPrefixOf(b->data[i].tail, p.slot.tail)) {
+        libfilter_taffy_is_prefix_of(b->data[i].tail, p.slot.tail)) {
       return true;
     }
   }
@@ -232,7 +232,7 @@ typedef struct {
 //               "packed");
 
 typedef struct  {
-  detail_Feistel hash_[2];
+  libfilter_feistel hash_[2];
   int log_side_size_;
   FrozenTaffyCuckooBaseBucket* data_[2];
   uint64_t* stash_[2];
@@ -248,7 +248,8 @@ size_t FrozenSizeInBytes(const FrozenTaffyCuckooBase* b);
 INLINE bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
   for (int i = 0; i < 2; ++i) {
     uint64_t y = x >> (64 - here->log_side_size_ - libfilter_taffy_cuckoo_head_size);
-    uint64_t permuted = Permute(&here->hash_[i], here->log_side_size_ + libfilter_taffy_cuckoo_head_size, y);
+    uint64_t permuted = libfilter_feistel_permute_forward(
+        &here->hash_[i], here->log_side_size_ + libfilter_taffy_cuckoo_head_size, y);
     for (size_t j = 0; j < here->stash_size_[i]; ++j) {
       if (here->stash_[i][j] == permuted) return true;
     }
@@ -270,7 +271,7 @@ FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8],
 typedef struct  {
   Side sides[2];
   int log_side_size;
-  detail_PcgRandom rng;
+  libfilter_pcg_random rng;
   const uint64_t* entropy;
   uint64_t occupied;
 } TaffyCuckooFilterBase;
