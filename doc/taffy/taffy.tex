@@ -673,6 +673,23 @@ TCF(U, a) := {Side(a)[2], HashFunction: `$U \to \ints_2^{64}$`}
 \end{lstlisting}
 \fi
 
+Figure~\ref{tcf-key-split} shows how a hashed key is broken down into three parts: the index into the bucket array, the fingerprint, and the tail.
+
+\begin{figure}[b!]
+  \includegraphics[width=3.333in]{tcf-key-split}
+\caption{\label{tcf-key-split}
+\TCF{} key split.
+In this example, $a = 12$, $F=8$, $T=4$, $\varphi_0(${\tt 0x12345}$) = ${\tt 0x89abc}, and $\varphi_1(${\tt 0x12345}$) = ${\tt 0xdef01}.\\
+${}^\S$ hashed key\\
+${}^\ddag$ tail \\
+${}^\dag$ fingerprint \\
+${}^*$ index into bucket array; stored implicitly using quotienting
+%% , so the larger levels have $2^{a+1} = 8$ buckets on each side, while the smaller levels have four.
+%% In this diagram, $b = 4$ and in the first bucket of side 0 of the 32nd level, the last three slots are empty.
+%% If the entry were from one of the larger levels above the cursor, then the fingerprint would have to be from $\ints_2^{F-1}$, rather than from $\ints_2^{F-1} \dotcup \ints_2^F$.
+}
+\end{figure}
+
 A slot is encoded in a bitfield of size $F+T+1$ as follows.
 If the last $T+1$ bits are all zero, the slot is empty.
 Otherwise, there must be a one bit in the last $T+1$ bits.
@@ -844,49 +861,51 @@ See also~\cite{psw}.
 %% }
 %% \end{lstlisting}
 
-\paragraph{Union and Intersection}
-In addition to lookup, insert, and upsize, \TCF{}s also support iterating over all elements.
-Iteration yields all of the recoverable hashed bits by performing the quotienting in reverse (combining element locations with element fingerprints), then appending the tail. %(See Listing~\ref{tcf-iterate})
-Combined with lookup and insert, iterate enables union and intersection operations as follows:
+%% \paragraph{Union and Intersection}
+%% In addition to lookup, insert, and upsize, \TCF{}s also support iterating over all elements.
+%% Iteration yields all of the recoverable hashed bits by performing the quotienting in reverse (combining element locations with element fingerprints), then appending the tail. %(See Listing~\ref{tcf-iterate})
+%% Combined with lookup and insert, iterate enables union and intersection operations as follows:
 
-%% TODO: talk about invertable Bloom filters
+%% %% TODO: talk about invertable Bloom filters
 
-%% TODO: talk more about union in the database application of build/probe side filters
+%% %% TODO: talk more about union in the database application of build/probe side filters
 
-%% \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-iterate,
-%%     caption={Pseudocode for iteration on \TCF{}s; uses coroutines
-%%   }]
-%% Iterate(tcf: \TCF{}(U, k)) {
-%%   result := new \TCF{}(U, k + 1)
-%%   for (side : tcf) {
-%%     for (bucket_index : `$\mathbb{Z}_{2^k}$`)
-%%       for (element : side.Bucket[bucket_index]) {
-%%         permuted := Concat(bucket, element.fingerprint)
-%%         result := side.Permutation`$^\texttt{-1}$`(permuted)
-%%         yield Concat(result, element.tail)
-%%       }
-%%     }
-%%   }
-%% }
-%% \end{lstlisting}
+%% %% \begin{lstlisting}[escapeinside={`}{`},float,label=tcf-iterate,
+%% %%     caption={Pseudocode for iteration on \TCF{}s; uses coroutines
+%% %%   }]
+%% %% Iterate(tcf: \TCF{}(U, k)) {
+%% %%   result := new \TCF{}(U, k + 1)
+%% %%   for (side : tcf) {
+%% %%     for (bucket_index : `$\mathbb{Z}_{2^k}$`)
+%% %%       for (element : side.Bucket[bucket_index]) {
+%% %%         permuted := Concat(bucket, element.fingerprint)
+%% %%         result := side.Permutation`$^\texttt{-1}$`(permuted)
+%% %%         yield Concat(result, element.tail)
+%% %%       }
+%% %%     }
+%% %%   }
+%% %% }
+%% %% \end{lstlisting}
 
-%% TODO: explain what a longer element means!
-For union, \taffy{} cuckoo filers iterate over the smaller filter and insert each element into the larger filter, unless they are already present.
-For intersection, \TCF{}s iterate over the smaller filter and lookup each element in the larger filter.
-If the lookup fails, iteration proceeds to the next element.
-Otherwise, the longer bit string of the two elements is inserted into the intersection.
-(Note that this may sometimes be the element from the smaller \TCF{}, since the tails have variable length.)
+%% %% TODO: explain what a longer element means!
+%% For union, \taffy{} cuckoo filers iterate over the smaller filter and insert each element into the larger filter, unless they are already present.
+%% For intersection, \TCF{}s iterate over the smaller filter and lookup each element in the larger filter.
+%% If the lookup fails, iteration proceeds to the next element.
+%% Otherwise, the longer bit string of the two elements is inserted into the intersection.
+%% (Note that this may sometimes be the element from the smaller \TCF{}, since the tails have variable length.)
 
-%% TODO: pseudocode and an analysis of the fpp.
-%% For union, it should be the sum of the input fpp, minus their product, but need to explain that, since we earlier said all filters have the same low fpp.
-%% For intersection, the situation is tricky.
-%% We can depend on the inserted strings to be at least as long as the shortest strings in the larger dictionary.
+%% %% TODO: pseudocode and an analysis of the fpp.
+%% %% For union, it should be the sum of the input fpp, minus their product, but need to explain that, since we earlier said all filters have the same low fpp.
+%% %% For intersection, the situation is tricky.
+%% %% We can depend on the inserted strings to be at least as long as the shortest strings in the larger dictionary.
 
-This support for union and intersection is in contrast to \TBF{}s, which do not support iteration or intersection.
-\TBF{}s {\em do} support union, but at a cost: while union operations on \TCF{}s produce a filter with the sum of the false positive probabilities of the input filters, unions on \TBF{}s perform like unions on Bloom filters.
-If one Bloom filter has a fraction $\alpha$ of its bits set and another $\beta$, the union has $\alpha + \beta - \alpha \beta$ of its bits set in expectation.
-%This increases the probability of a false positive from $\alpha^k + \beta^k$, where $k$ is the number of hash functions, to $(\alpha + \beta - \alpha \beta)^k$.
-For instance, when $\alpha = \beta = 0.5$ and $k = 8$, the false positive rate goes up by a factor of $0.75^8/0.5^8 \approx 25.63$. %, much more than the factor of $2$ with \TCF{}s.
+%% This support for union and intersection is in contrast to \TBF{}s, which do not support iteration or intersection.
+%% \TBF{}s {\em do} support union, but at a cost: while union operations on \TCF{}s produce a filter with the sum of the false positive probabilities of the input filters, unions on \TBF{}s perform like unions on Bloom filters.
+%% If one Bloom filter has a fraction $\alpha$ of its bits set and another $\beta$, the union has $\alpha + \beta - \alpha \beta$ of its bits set in expectation.
+%% %This increases the probability of a false positive from $\alpha^k + \beta^k$, where $k$ is the number of hash functions, to $(\alpha + \beta - \alpha \beta)^k$.
+%% For instance, when $\alpha = \beta = 0.5$ and $k = 8$, the false positive rate goes up by a factor of $0.75^8/0.5^8 \approx 25.63$. %, much more than the factor of $2$ with \TCF{}s.
+
+
 
 \paragraph{Freeze and Thaw}
 \TCF{}s also support {\em freeze} and {\em thaw} operations.
@@ -1827,7 +1846,8 @@ The code for \taffy{} filters is available \ifanon\else on GitHub\fi under a per
 \label{conclusion}
 
 This work exhibits for the first time practical structures supporting approximate membership queries and filter growth without exceeding $O(\lg (1/\varepsilon) + \lg \lg N)$ bits of space used per distinct key.
-We showed that these data structures can perform well at scale under both synthetic and real-world benchmarks and have potential for multiple applications in databases and security.
+We presented three structures of increasing complexity: the \TBF{}, the \TCF{}, and the \MTCF{}.
+We showed that these data structures can perform well at scale under both synthetic and real-world benchmarks and have potential for multiple applications in databases and security, and we identified decision points for a practitioner to decide when to use which structure.
 
 %% Future work includes:
 
