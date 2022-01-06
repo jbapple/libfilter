@@ -1,9 +1,9 @@
 #pragma once
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdint.h>
 
 #if defined(__LZCNT__)
 #include <immintrin.h>
@@ -15,12 +15,12 @@
 INLINE uint64_t libfilter_mask(int w, uint64_t x) { return x & ((1ul << w) - 1); }
 
 // Returns the w high bits of x, after s+t-w low bits
-static INLINE uint64_t libfilter_high_bits(int s, int t, int w, uint64_t x) {
+INLINE uint64_t libfilter_high_bits(int s, int t, int w, uint64_t x) {
   return libfilter_mask(w, x >> (s + t - w));
 }
 
 // Applies strong multiply-shift to the w low bits of x, returning the high s+t-w bits
-static INLINE uint64_t libfilter_feistel_subhash(int s, int t, int w, uint64_t x,
+INLINE uint64_t libfilter_feistel_subhash(int s, int t, int w, uint64_t x,
                                                  const uint64_t k[2]) {
   return libfilter_high_bits(
       s, t, s + t - w,
