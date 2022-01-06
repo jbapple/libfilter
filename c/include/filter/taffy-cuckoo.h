@@ -21,23 +21,25 @@
 
 #include "filter/util.h"
 
-// From the paper, libfilter_taffy_cuckoo_tail_size is the log of the number of times the size will
-// double, while kHead size is two more than ceil(log(1/epsilon)) + i, bit i is only used
-// up  by 1 (for the sides) plus libfilter_log_slots. For instance, with libfilter_taffy_cuckoo_tail_size = 5 and
-// libfilter_taffy_cuckoo_head_size = 10, log(1/epsilon) is 10 - 2 - libfilter_log_slots - 1, which is an fpp of about
-// 3%. Yikes! The good news is that checking against the tails and in the early stages of
-// growth, epsilon is lower. TODO: how much lower, in theory?
+// From the paper, libfilter_taffy_cuckoo_tail_size is the log of the number of times the
+// size will double, while kHead size is two more than ceil(log(1/epsilon)) + i, bit i is
+// only used up  by 1 (for the sides) plus libfilter_log_slots. For instance, with
+// libfilter_taffy_cuckoo_tail_size = 5 and libfilter_taffy_cuckoo_head_size = 10,
+// log(1/epsilon) is 10 - 2 - libfilter_log_slots - 1, which is an fpp of about 3%. Yikes!
+// The good news is that checking against the tails and in the early stages of growth,
+// epsilon is lower. TODO: how much lower, in theory?
 //
-// Note that libfilter_taffy_cuckoo_head_size must be large enough for quotient cuckoo hashing to work sensibly:
-// it needs some randomness in the fingerprint to ensure each item hashes to sufficiently
-// different buckets kHead is just the rest of the uint16_t, and is log2(1/epsilon)
+// Note that libfilter_taffy_cuckoo_head_size must be large enough for quotient cuckoo
+// hashing to work sensibly: it needs some randomness in the fingerprint to ensure each
+// item hashes to sufficiently different buckets kHead is just the rest of the uint16_t,
+// and is log2(1/epsilon)
 #if defined(libfilter_taffy_cuckoo_head_size)
 #error "libfilter_taffy_cuckoo_head_size"
 #endif
 
 #define libfilter_taffy_cuckoo_head_size 10
 
-#if defined (libfilter_taffy_cuckoo_tail_size)
+#if defined(libfilter_taffy_cuckoo_tail_size)
 #error "libfilter_taffy_cuckoo_tail_size"
 #endif
 
@@ -61,7 +63,7 @@
 
 #define libfilter_slots (1 << libfilter_log_slots)
 
-typedef struct  {
+typedef struct {
   uint64_t fingerprint : libfilter_taffy_cuckoo_head_size;
   uint64_t tail : libfilter_taffy_cuckoo_tail_size +
                   1;  // +1 for the encoding of sequences above. tail == 0 indicates
@@ -75,13 +77,14 @@ typedef struct  {
 // }
 
 // A path encodes the slot number, as well as the slot itself.
-typedef struct  {
+typedef struct {
   Slot slot;
   uint64_t bucket;
 } Path;
 
 // INLINE void PrintPath(const Path* here) {
-//   std::cout << "{" << std::dec << here->bucket << ", {" << std::hex << here->slot.fingerprint << ", "
+//   std::cout << "{" << std::dec << here->bucket << ", {" << std::hex <<
+//   here->slot.fingerprint << ", "
 //             << here->slot.tail << "}}";
 // }
 
@@ -122,7 +125,8 @@ INLINE Path ToPath(uint64_t raw, const libfilter_feistel* f, uint64_t log_side_s
 // Uses reverse permuting to get back the high bits of the original hashed value. Elides
 // the tail, since the tail may have a limited length, and once that's appended to a raw
 // value, one can't tell a short tail from one that just has a lot of zeros at the end.
-INLINE uint64_t FromPathNoTail(Path p, const libfilter_feistel * f, uint64_t log_side_size) {
+INLINE uint64_t FromPathNoTail(Path p, const libfilter_feistel* f,
+                               uint64_t log_side_size) {
   uint64_t hashed_index_and_fp =
       (p.bucket << libfilter_taffy_cuckoo_head_size) | p.slot.fingerprint;
   uint64_t pre_hashed_index_and_fp = libfilter_feistel_permute_backward(
@@ -142,13 +146,13 @@ typedef struct {
 // buckets from one array. Each side has a stash that holds any paths that couldn't fit.
 // This is useful for random-walk cuckoo hashing, in which the leftover path needs  place
 // to be stored so it doesn't invalidate old inserts.
-typedef struct  {
+typedef struct {
   libfilter_feistel f;
   Bucket* data;
 
   size_t stash_capacity;
   size_t stash_size;
-  Path * stash;
+  Path* stash;
 } Side;
 
 Side SideCreate(int log_side_size, const uint64_t* keys);
@@ -191,7 +195,7 @@ INLINE Path InsertSide(Side* here, Path p, libfilter_pcg_random* rng) {
 
 INLINE bool Find(const Side* here, Path p) {
   assert(p.slot.tail != 0);
-  for(unsigned i = 0; i < here->stash_size; ++i) {
+  for (unsigned i = 0; i < here->stash_size; ++i) {
     if (here->stash[i].slot.tail != 0 && p.bucket == here->stash[i].bucket &&
         p.slot.fingerprint == here->stash[i].slot.fingerprint &&
         libfilter_taffy_is_prefix_of(here->stash[i].slot.tail, p.slot.tail)) {
@@ -231,7 +235,7 @@ typedef struct {
 //                   libfilter_slots * libfilter_taffy_cuckoo_head_size / CHAR_BIT,
 //               "packed");
 
-typedef struct  {
+typedef struct {
   libfilter_feistel hash_[2];
   int log_side_size_;
   FrozenTaffyCuckooBaseBucket* data_[2];
@@ -253,7 +257,8 @@ INLINE bool FrozenFindHash(const FrozenTaffyCuckooBase* here, uint64_t x) {
     for (size_t j = 0; j < here->stash_size_[i]; ++j) {
       if (here->stash_[i][j] == permuted) return true;
     }
-    FrozenTaffyCuckooBaseBucket* b = &here->data_[i][permuted >> libfilter_taffy_cuckoo_head_size];
+    FrozenTaffyCuckooBaseBucket* b =
+        &here->data_[i][permuted >> libfilter_taffy_cuckoo_head_size];
     uint64_t fingerprint = permuted & ((1 << libfilter_taffy_cuckoo_head_size) - 1);
     if (0 == fingerprint) return true;
     // TODO: SWAR
@@ -268,7 +273,7 @@ void FrozenTaffyCuckooBaseDestroy(FrozenTaffyCuckooBase* here);
 FrozenTaffyCuckooBase FrozenTaffyCuckooBaseCreate(const uint64_t entropy[8],
                                                   int log_side_size);
 
-typedef struct  {
+typedef struct {
   Side sides[2];
   int log_side_size;
   libfilter_pcg_random rng;
@@ -285,18 +290,17 @@ FrozenTaffyCuckooBase BaseFreeze(const TaffyCuckooFilterBase* here);
 
 uint64_t TaffyCuckooSizeInBytes(const TaffyCuckooFilterBase* here);
 
-
 INLINE bool BaseFindHash(const TaffyCuckooFilterBase* here, uint64_t k) {
 #if defined(__clang) || defined(__clang__)
 #pragma unroll
 #else
 #pragma GCC unroll 2
 #endif
-    for (int s = 0; s < 2; ++s) {
-      if (Find(&here->sides[s], ToPath(k, &here->sides[s].f, here->log_side_size)))
-        return true;
-    }
-    return false;
+  for (int s = 0; s < 2; ++s) {
+    if (Find(&here->sides[s], ToPath(k, &here->sides[s].f, here->log_side_size)))
+      return true;
+  }
+  return false;
 }
 
 INLINE uint64_t Capacity(const TaffyCuckooFilterBase* here) {
@@ -336,10 +340,10 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, Path p, int ttl) {
         // pre-condition for this method.
         if (both[i]->stash_size == both[i]->stash_capacity) {
           both[i]->stash_capacity *= 2;
-          //std::cerr << both[i]->stash_capacity << std::endl;
-          Path * new_stash = (Path*)calloc(both[i]->stash_capacity, sizeof(Path));
+          // std::cerr << both[i]->stash_capacity << std::endl;
+          Path* new_stash = (Path*)calloc(both[i]->stash_capacity, sizeof(Path));
           memcpy(new_stash, both[i]->stash, both[i]->stash_size * sizeof(Path));
-          free( both[i]->stash);
+          free(both[i]->stash);
           both[i]->stash = new_stash;
         }
         both[i]->stash[both[i]->stash_size++] = p;
@@ -348,8 +352,8 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, Path p, int ttl) {
       }
       --ttl;
       // translate p to beign a path about the right half of the table
-      p = ToPath(FromPathNoTail(p, &both[i]->f, here->log_side_size),
-                         &both[1 - i]->f, here->log_side_size);
+      p = ToPath(FromPathNoTail(p, &both[i]->f, here->log_side_size), &both[1 - i]->f,
+                 here->log_side_size);
       // P's tail is now artificiall 0, but it should stay the same as we move from side
       // to side
       p.slot.tail = tail;
@@ -357,8 +361,8 @@ INLINE bool InsertTTL(TaffyCuckooFilterBase* here, int s, Path p, int ttl) {
   }
 }
 
-  // This method just increases ttl until insert succeeds.
-  // TODO: upsize when insert fails with high enough ttl?
+// This method just increases ttl until insert succeeds.
+// TODO: upsize when insert fails with high enough ttl?
 INLINE bool InsertTCFB(TaffyCuckooFilterBase* here, int s, Path q) {
   int ttl = 32;
   return InsertTTL(here, s, q, ttl);
@@ -379,4 +383,5 @@ INLINE bool BaseInsertHash(TaffyCuckooFilterBase* here, uint64_t k) {
   return true;
 }
 
-TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase* x, const TaffyCuckooFilterBase* y);
+TaffyCuckooFilterBase UnionTwo(const TaffyCuckooFilterBase* x,
+                               const TaffyCuckooFilterBase* y);
