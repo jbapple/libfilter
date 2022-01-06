@@ -1847,7 +1847,7 @@ The code for \taffy{} filters is available \ifanon\else on GitHub\fi under a per
 
 This work exhibits for the first time practical structures supporting approximate membership queries and filter growth without exceeding $O(\lg (1/\varepsilon) + \lg \lg N)$ bits of space used per distinct key.
 We presented three structures of increasing complexity: the \TBF{}, the \TCF{}, and the \MTCF{}.
-We showed that these data structures can perform well at scale under both synthetic and real-world benchmarks and have potential for multiple applications in databases and security, and we identified decision points for a practitioner to decide when to use which structure.
+We demonstrated taffy filter performance and correctness under synthetic and real-world benchmarks, and we identified decision points for a practitioner to decide when to use which structure.
 
 %% Future work includes:
 
@@ -1965,8 +1965,9 @@ Thanks to Pedro Vasallo and Alex Breslow for helpful discussions and feedback.
 %%  LocalWords:  upsizes TODO fpp LookupSide mtcf MLookup MInsertSide
 %%  LocalWords:  MInsertPermuted permuteds MTCFs InsertMTCF MElement
 %%  LocalWords:  UpsizeMTCF TBFs Structs structs SMT Pagh Segev FOCS
-%%  LocalWords:  Wieder longhead TBF Raman Rao's Rao Maier Gatos
+%%  LocalWords:  Wieder longhead TBF Raman Rao's Rao Maier Gatos fpps
 %%  LocalWords:  Vasallo Breslow PVLDB VLDB ISSN logarithmically AWS
 %%  LocalWords:  Polychroniou vectorization subtables subtable SBBF
 %%  LocalWords:  Graviton resizable ApproxJoin LSM RocksDB Chucky GiB
 %%  LocalWords:  cuckooing Bloomier Feistel SlimDB dataset tinySet
+%%  LocalWords:  upsizing
