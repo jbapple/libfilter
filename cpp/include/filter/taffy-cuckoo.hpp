@@ -21,10 +21,10 @@ extern "C" {
 namespace filter {
 
 struct FrozenTaffyCuckoo {
-  FrozenTaffyCuckooBase b;
-  bool FindHash(uint64_t x) const { return FrozenFindHash(&b, x); }
+  libfilter_frozen_taffy_cuckoo b;
+  bool FindHash(uint64_t x) const { return libfilter_frozen_taffy_cuckoo_find_hash(&b, x); }
 
-  size_t SizeInBytes() const { return FrozenSizeInBytes(&b); }
+  size_t SizeInBytes() const { return libfilter_frozen_taffy_cuckoo_size_in_bytes(&b); }
   // bool InsertHash(uint64_t hash);
 
   INLINE static const char* Name() {
@@ -32,11 +32,11 @@ struct FrozenTaffyCuckoo {
     return result;
   }
 
-  ~FrozenTaffyCuckoo() { FrozenTaffyCuckooBaseDestroy(&b); }
+  ~FrozenTaffyCuckoo() { libfilter_frozen_taffy_cuckoo_destroy(&b); }
 };
 
 struct TaffyCuckooFilter {
-  TaffyCuckooFilterBase b;
+  libfilter_taffy_cuckoo b;
 
   // TODO: change to int64_t and prevent negatives
   static TaffyCuckooFilter CreateWithBytes(size_t bytes) {
