@@ -21,6 +21,8 @@
 
 #include "filter/util.h"
 
+typedef struct libfilter_taffy_cuckoo_struct libfilter_taffy_cuckoo;
+
 // From the paper, libfilter_taffy_cuckoo_tail_size is the log of the number of times the
 // size will double, while kHead size is two more than ceil(log(1/epsilon)) + i, bit i is
 // only used up  by 1 (for the sides) plus libfilter_log_slots. For instance, with
@@ -220,17 +222,6 @@ INLINE bool libfilter_taffy_cuckoo_side_find(const libfilter_taffy_cuckoo_side* 
   return false;
 }
 
-/*
-INLINE void swap(Side* x, Side* y) {
-  using std::swap;
-  swap(x->f, y->f);
-  swap(x->data, y->data);
-  swap(x->stash, y->stash);
-  swap(x->stash_size, y->stash_size);
-  swap(x->stash_capacity, y->stash_capacity);
-}
-*/
-
 typedef struct {
   uint64_t zero : libfilter_taffy_cuckoo_head_size;
   uint64_t one : libfilter_taffy_cuckoo_head_size;
@@ -242,7 +233,7 @@ typedef struct {
 //                   libfilter_slots * libfilter_taffy_cuckoo_head_size / CHAR_BIT,
 //               "packed");
 
-typedef struct {
+typedef struct libfilter_frozen_taffy_cuckoo_struct {
   libfilter_feistel hash_[2];
   int log_side_size_;
   libfilter_frozen_taffy_cuckoo_bucket* data_[2];
@@ -283,10 +274,8 @@ INLINE bool libfilter_frozen_taffy_cuckoo_find_hash(
 }
 
 void libfilter_frozen_taffy_cuckoo_destroy(libfilter_frozen_taffy_cuckoo* here);
-libfilter_frozen_taffy_cuckoo libfilter_frozen_taffy_cuckoo_create(
-    const uint64_t entropy[8], int log_side_size);
 
-typedef struct {
+typedef struct libfilter_taffy_cuckoo_struct {
   libfilter_taffy_cuckoo_side sides[2];
   int log_side_size;
   libfilter_pcg_random rng;
@@ -294,36 +283,41 @@ typedef struct {
   uint64_t occupied;
 } libfilter_taffy_cuckoo;
 
-void TaffyCuckooFilterBaseSwap(libfilter_taffy_cuckoo* x, libfilter_taffy_cuckoo* y);
-libfilter_taffy_cuckoo TaffyCuckooFilterBaseCreate(int log_side_size,
-                                                  const uint64_t* entropy);
-libfilter_taffy_cuckoo TaffyCuckooFilterBaseClone(const libfilter_taffy_cuckoo* that);
-libfilter_taffy_cuckoo BaseCreateWithBytes(uint64_t bytes);
-libfilter_frozen_taffy_cuckoo BaseFreeze(const libfilter_taffy_cuckoo* here);
+void libfilter_taffy_cuckoo_swap(libfilter_taffy_cuckoo* x, libfilter_taffy_cuckoo* y);
+libfilter_taffy_cuckoo libfilter_taffy_cuckoo_clone(const libfilter_taffy_cuckoo* that);
+libfilter_taffy_cuckoo libfilter_taffy_cuckoo_create_with_bytes(uint64_t bytes);
+libfilter_frozen_taffy_cuckoo libfilter_taffy_cuckoo_freeze(
+    const libfilter_taffy_cuckoo* here);
 
-uint64_t TaffyCuckooSizeInBytes(const libfilter_taffy_cuckoo* here);
+uint64_t libfilter_taffy_cuckoo_size_in_bytes(const libfilter_taffy_cuckoo* here);
 
-INLINE bool BaseFindHash(const libfilter_taffy_cuckoo* here, uint64_t k) {
+INLINE bool libfilter_taffy_cuckoo_find_hash(const libfilter_taffy_cuckoo* here,
+                                             uint64_t k) {
 #if defined(__clang) || defined(__clang__)
 #pragma unroll
 #else
 #pragma GCC unroll 2
 #endif
   for (int s = 0; s < 2; ++s) {
-    if (libfilter_taffy_cuckoo_side_find(&here->sides[s], libfilter_taffy_cuckoo_to_path(k, &here->sides[s].f, here->log_side_size)))
+    if (libfilter_taffy_cuckoo_side_find(
+            &here->sides[s],
+            libfilter_taffy_cuckoo_to_path(k, &here->sides[s].f, here->log_side_size)))
       return true;
   }
   return false;
 }
 
-INLINE uint64_t Capacity(const libfilter_taffy_cuckoo* here) {
+INLINE uint64_t libfilter_taffy_cuckoo_capacity(const libfilter_taffy_cuckoo* here) {
   return 2 * libfilter_slots * (1ul << here->log_side_size);
 }
 
 // After Stashed result, HT is close to full and should be upsized
 // After ttl, stash the input and return Stashed. Pre-condition: at least one stash is
 // empty. Also, p is a left path, not a right one.
-INLINE bool InsertTTL(libfilter_taffy_cuckoo* here, int s, libfilter_taffy_cuckoo_path p, int ttl) {
+INLINE bool libfilter_taffy_cuckoo_insert_side_path_ttl(libfilter_taffy_cuckoo* here,
+                                                        int s,
+                                                        libfilter_taffy_cuckoo_path p,
+                                                        int ttl) {
   // if (sides[0].stash.tail != 0 && sides[1].stash.tail != 0) return
   // InsertResult::Failed;
   libfilter_taffy_cuckoo_side* both[2] = {&here->sides[s], &here->sides[1 - s]};
@@ -354,8 +348,10 @@ INLINE bool InsertTTL(libfilter_taffy_cuckoo* here, int s, libfilter_taffy_cucko
         if (both[i]->stash_size == both[i]->stash_capacity) {
           both[i]->stash_capacity *= 2;
           // std::cerr << both[i]->stash_capacity << std::endl;
-          libfilter_taffy_cuckoo_path* new_stash = (libfilter_taffy_cuckoo_path*)calloc(both[i]->stash_capacity, sizeof(libfilter_taffy_cuckoo_path));
-          memcpy(new_stash, both[i]->stash, both[i]->stash_size * sizeof(libfilter_taffy_cuckoo_path));
+          libfilter_taffy_cuckoo_path* new_stash = (libfilter_taffy_cuckoo_path*)calloc(
+              both[i]->stash_capacity, sizeof(libfilter_taffy_cuckoo_path));
+          memcpy(new_stash, both[i]->stash,
+                 both[i]->stash_size * sizeof(libfilter_taffy_cuckoo_path));
           free(both[i]->stash);
           both[i]->stash = new_stash;
         }
@@ -365,8 +361,9 @@ INLINE bool InsertTTL(libfilter_taffy_cuckoo* here, int s, libfilter_taffy_cucko
       }
       --ttl;
       // translate p to beign a path about the right half of the table
-      p = libfilter_taffy_cuckoo_to_path(libfilter_taffy_cuckoo_from_path_no_tail(p, &both[i]->f, here->log_side_size), &both[1 - i]->f,
-                 here->log_side_size);
+      p = libfilter_taffy_cuckoo_to_path(
+          libfilter_taffy_cuckoo_from_path_no_tail(p, &both[i]->f, here->log_side_size),
+          &both[1 - i]->f, here->log_side_size);
       // P's tail is now artificiall 0, but it should stay the same as we move from side
       // to side
       p.slot.tail = tail;
@@ -376,25 +373,28 @@ INLINE bool InsertTTL(libfilter_taffy_cuckoo* here, int s, libfilter_taffy_cucko
 
 // This method just increases ttl until insert succeeds.
 // TODO: upsize when insert fails with high enough ttl?
-INLINE bool InsertTCFB(libfilter_taffy_cuckoo* here, int s, libfilter_taffy_cuckoo_path q) {
+INLINE bool libfilter_taffy_cuckoo_side_path(libfilter_taffy_cuckoo* here, int s,
+                                             libfilter_taffy_cuckoo_path q) {
   int ttl = 32;
-  return InsertTTL(here, s, q, ttl);
+  return libfilter_taffy_cuckoo_insert_side_path_ttl(here, s, q, ttl);
 }
 
-void TaffyCuckooFilterBaseDestroy(libfilter_taffy_cuckoo* t);
+void libfilter_taffy_cuckoo_destroy(libfilter_taffy_cuckoo* t);
 
 // Double the size of the filter
-void Upsize(libfilter_taffy_cuckoo* here);
+void libfilter_taffy_cuckoo_upsize(libfilter_taffy_cuckoo* here);
 
-INLINE bool BaseInsertHash(libfilter_taffy_cuckoo* here, uint64_t k) {
+INLINE bool libfilter_taffy_cuckoo_insert_hash(libfilter_taffy_cuckoo* here, uint64_t k) {
   // 95% is achievable, generally,but give it some room
-  while (here->occupied > 0.90 * Capacity(here) || here->occupied + 4 >= Capacity(here) ||
+  while (here->occupied > 0.90 * libfilter_taffy_cuckoo_capacity(here) ||
+         here->occupied + 4 >= libfilter_taffy_cuckoo_capacity(here) ||
          here->sides[0].stash_size + here->sides[1].stash_size > 8) {
-    Upsize(here);
+    libfilter_taffy_cuckoo_upsize(here);
   }
-  InsertTCFB(here, 0, libfilter_taffy_cuckoo_to_path(k, &here->sides[0].f, here->log_side_size));
+  libfilter_taffy_cuckoo_side_path(
+      here, 0, libfilter_taffy_cuckoo_to_path(k, &here->sides[0].f, here->log_side_size));
   return true;
 }
 
-libfilter_taffy_cuckoo UnionTwo(const libfilter_taffy_cuckoo* x,
-                               const libfilter_taffy_cuckoo* y);
+libfilter_taffy_cuckoo libfilter_taffy_cuckoo_union(const libfilter_taffy_cuckoo* x,
+                                                    const libfilter_taffy_cuckoo* y);
