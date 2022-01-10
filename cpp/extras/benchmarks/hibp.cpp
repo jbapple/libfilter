@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
   }
   ifstream f(argv[1]);
   char sha1[40];
-  TaffyBlockFilter tbf = TaffyBlockFilter::CreateWithNdvFpp(1, 0.016);
+  TaffyBlockFilter tbf = TaffyBlockFilter::CreateWithNdvFpp(1, 0.044);
   TaffyCuckooFilter tcf = TaffyCuckooFilter::CreateWithBytes(1);
   vector<uint64_t> raw;
   size_t count = 0, tbf_nanos = 0, tcf_nanos = 0, raw_nanos = 0;
