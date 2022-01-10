@@ -373,7 +373,7 @@ INLINE bool libfilter_taffy_cuckoo_insert_side_path_ttl(libfilter_taffy_cuckoo* 
 
 // This method just increases ttl until insert succeeds.
 // TODO: upsize when insert fails with high enough ttl?
-INLINE bool libfilter_taffy_cuckoo_side_path(libfilter_taffy_cuckoo* here, int s,
+INLINE bool libfilter_taffy_cuckoo_insert_side_path(libfilter_taffy_cuckoo* here, int s,
                                              libfilter_taffy_cuckoo_path q) {
   int ttl = 32;
   return libfilter_taffy_cuckoo_insert_side_path_ttl(here, s, q, ttl);
@@ -391,7 +391,7 @@ INLINE bool libfilter_taffy_cuckoo_insert_hash(libfilter_taffy_cuckoo* here, uin
          here->sides[0].stash_size + here->sides[1].stash_size > 8) {
     libfilter_taffy_cuckoo_upsize(here);
   }
-  libfilter_taffy_cuckoo_side_path(
+  libfilter_taffy_cuckoo_insert_side_path(
       here, 0, libfilter_taffy_cuckoo_to_path(k, &here->sides[0].f, here->log_side_size));
   return true;
 }

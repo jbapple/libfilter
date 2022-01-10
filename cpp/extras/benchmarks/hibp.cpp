@@ -1,5 +1,6 @@
 #include <immintrin.h>
 
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <fstream>
@@ -28,15 +29,15 @@ int FromHex(char x) {
   else return 10 + x - 'A';
 }
 
-void PrintFpp(const TaffyBlockFilter& tbf, const TaffyCuckooFilter &tcf) {
+void PrintFpp(const TaffyBlockFilter& tbf, const TaffyCuckooFilter& tcf,
+              const vector<uint64_t>& raw) {
   random_device d;
   auto d64 = [&d]() { return (static_cast<uint64_t>(d()) << 32) | d(); };
-  size_t tbf_found = 0, tcf_found = 0, ftcf_found = 0;
+  size_t tbf_found = 0, tcf_found = 0, ftcf_found = 0, raw_found = 0;
   vector<uint64_t> randoms(1000 * 1000);
   for (int i = 0; i < 1000 * 1000; ++i) {
     randoms[i] = d64();
   }
-  auto frozen = tcf.Freeze();
   auto ts1 = now();
   for (int i = 0; i < 1000 * 1000; ++i) {
     tbf_found += tbf.FindHash(randoms[i]);
@@ -46,12 +47,19 @@ void PrintFpp(const TaffyBlockFilter& tbf, const TaffyCuckooFilter &tcf) {
     tcf_found += tcf.FindHash(randoms[i]);
   }
   auto ts3 = now();
+  auto frozen = tcf.Freeze();
+  auto ts4 = now();
   for (int i = 0; i < 1000 * 1000; ++i) {
     ftcf_found += frozen.FindHash(randoms[i]);
   }
-  auto ts4 = now();
-  cout << tbf_found << "\t" << tcf_found << "\t" << ftcf_found << "\t";
-  cout << ts2 - ts1 << "\t" << ts3 - ts2 << "\t" << ts4 - ts3 << "\t";
+  auto ts5 = now();
+  for (int i = 0; i < 1000 * 1000; ++i) {
+    raw_found += binary_search(raw.begin(), raw.end(), randoms[i]);
+  }
+  auto ts6 = now();
+  cout << tbf_found << "\t" << tcf_found << "\t" << ftcf_found << "\t"  << raw_found << "\t";
+  cout << ts2 - ts1 << "\t" << ts3 - ts2 << "\t" << ts4 - ts3 << "\t" << ts5 - ts4 << "\t"
+       << ts6 - ts5 << "\t";
   cout << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes() << "\t" << frozen.SizeInBytes() << endl;
 }
 
@@ -64,7 +72,8 @@ int main(int argc, char** argv) {
   char sha1[40];
   TaffyBlockFilter tbf = TaffyBlockFilter::CreateWithNdvFpp(1, 0.016);
   TaffyCuckooFilter tcf = TaffyCuckooFilter::CreateWithBytes(1);
-  size_t count = 0, tbf_nanos = 0, tcf_nanos = 0;
+  vector<uint64_t> raw;
+  size_t count = 0, tbf_nanos = 0, tcf_nanos = 0, raw_nanos = 0;
   uint64_t buffer[1024];
   int buffer_fill = 0;
   while (true) {
@@ -97,6 +106,9 @@ int main(int argc, char** argv) {
     //   cerr << "not found " << dec << count << hex << x << endl;
     //   return 1;
     // }
+    for (int i = 0; i < buffer_fill; ++i) raw.push_back(buffer[i]);
+    auto ts5 = now();
+    raw_nanos += ts5 - ts4;
     count += buffer_fill;
     if (not(count & (count - 1))) {
       // cout << count << "\t" << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes();
@@ -106,8 +118,10 @@ int main(int argc, char** argv) {
     if (buffer_fill < 1023) break;
     buffer_fill = 0;
   }
+
+  sort(raw.begin(), raw.end());
   // cout << "done\n";
   // cout << count << "\t" << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes();
   cout << "\t" << 1.0 * tbf_nanos << "\t" << 1.0 * tcf_nanos << "\t";
-  PrintFpp(tbf, tcf);
+  PrintFpp(tbf, tcf, raw);
 }

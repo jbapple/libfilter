@@ -192,12 +192,12 @@ INLINE void UpsizeHelper(libfilter_taffy_cuckoo* here, libfilter_taffy_cuckoo_sl
     p = libfilter_taffy_cuckoo_to_path(q, &t->sides[0].f, t->log_side_size);
     // Still no tail! :-)
     p.slot.tail = sl.tail;
-    libfilter_taffy_cuckoo_side_path(t, 0, p);
+    libfilter_taffy_cuckoo_insert_side_path(t, 0, p);
     // change the raw value by just one bit: its last
     q |= (1ul << (64 - here->log_side_size - libfilter_taffy_cuckoo_head_size - 1));
     p = libfilter_taffy_cuckoo_to_path(q, &t->sides[0].f, t->log_side_size);
     p.slot.tail = sl.tail;
-    libfilter_taffy_cuckoo_side_path(t, 0, p);
+    libfilter_taffy_cuckoo_insert_side_path(t, 0, p);
   } else {
     // steal a bit from the tail
     q |= ((uint64_t)(sl.tail >> libfilter_taffy_cuckoo_tail_size))
@@ -205,7 +205,7 @@ INLINE void UpsizeHelper(libfilter_taffy_cuckoo* here, libfilter_taffy_cuckoo_sl
     libfilter_taffy_cuckoo_path r =
         libfilter_taffy_cuckoo_to_path(q, &t->sides[0].f, t->log_side_size);
     r.slot.tail = (sl.tail << 1);
-    libfilter_taffy_cuckoo_side_path(t, 0, r);
+    libfilter_taffy_cuckoo_insert_side_path(t, 0, r);
   }
 }
 
@@ -241,7 +241,7 @@ static void UnionHelp(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo
     libfilter_taffy_cuckoo_path q =
         libfilter_taffy_cuckoo_to_path(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = p.slot.tail;
-    libfilter_taffy_cuckoo_side_path(here, 0, q);
+    libfilter_taffy_cuckoo_insert_side_path(here, 0, q);
     q.slot.tail = 0;  // dummy line just to break on
   } else if (that->log_side_size + tail_size >= here->log_side_size) {
     uint64_t orin3 = (((uint64_t)(p.slot.tail & (p.slot.tail - 1)))
@@ -252,7 +252,7 @@ static void UnionHelp(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo
     libfilter_taffy_cuckoo_path q =
         libfilter_taffy_cuckoo_to_path(hashed, &here->sides[0].f, here->log_side_size);
     q.slot.tail = (p.slot.tail << (here->log_side_size - that->log_side_size));
-    libfilter_taffy_cuckoo_side_path(here, 0, q);
+    libfilter_taffy_cuckoo_insert_side_path(here, 0, q);
   } else {
     // p.tail & (p.tail - 1) removes the final 1 marker. The resulting length is
     // 0, 1, 2, 3, 4, or 5. It is also tail_size, but is packed in high bits of a
@@ -279,7 +279,7 @@ static void UnionHelp(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo
       libfilter_taffy_cuckoo_path q = libfilter_taffy_cuckoo_to_path(
           tmphashed, &here->sides[0].f, here->log_side_size);
       q.slot.tail = (1u << libfilter_taffy_cuckoo_tail_size);
-      libfilter_taffy_cuckoo_side_path(here, 0, q);
+      libfilter_taffy_cuckoo_insert_side_path(here, 0, q);
     }
   }
 }

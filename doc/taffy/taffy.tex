@@ -381,7 +381,7 @@ See Sections~\ref{tcf}~and~\ref{mtcf}. \\
 \hline $\delta$ & The over-provisioning per structure - the percent of empty space in a dictionary or filter. \\
 \hline $\varepsilon$ & The false positive probability, or ``fpp''. \\
 \hline $\varphi_i$ & The permutations associated with side $i$ of a \TCF{}.
-Se Section~\ref{tcf}. \\
+See Section~\ref{tcf}. \\
 \hline $A \dotcup B$ & The tagged union of $A$ and $B$ such that even if $A \subseteq B$, $A \dotcup B \ne B$. \\
 \hline
 \end{tabular}
@@ -1752,7 +1752,7 @@ Performance on ``Have I Been Pwned''}
 %% Lookups in the full filters took 294 nanoseconds each for the \TBF{} and 111 nanoseconds each for the \TCF{}.
 As in the case of the synthetic benchmarks, insert is faster for the \TBF{} and lookup is faster for the \TCF{}.
 This omission of the tails leaves the false positive rate higher but the lookup faster, since the prefix checks are now unnecessary and the fingerprint matches can now be performed with SIMD-within-a-register techniques, just as in the original cuckoo filter ~\cite{cuckoo-filter-github}.
-For the ``Raw data'' column, we consider only the cost of storing the last 64 bits in each hash in a single flat file, with no associated lookup method.
+For the ``Raw'' column, we consider only the cost of storing the last 64 bits in each hash in a single flat file or array, with no associated lookup method.
 
 %The list of SHA-1 hashes uses 34.8 GiB in uncompressed hex ASCII, with no lookup facilities such as being stored in a hash table or B-tree, while the \taffy{} filters use 4.2GiB and 4.0GiB in memory, respectively.
 %Storing just the last 64 bits of each SHA-1 hash (the bits used in constructing the \taffy{} filters) without any lookup metadata like a hash table or B-tree would use 6.3GB.

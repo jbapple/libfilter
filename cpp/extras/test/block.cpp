@@ -44,11 +44,6 @@ TYPED_TEST_SUITE(UnionTest, UnionTypes);
 
 // TODO: test more methods, including copy
 
-TEST(Huge, Huge) {
-  auto f = BlockFilter::CreateWithNdvFpp(1ul << 34, 0.0001);
-  f.InsertHash(0);
-}
-
 TYPED_TEST(UnionTest, UnionDoes) {
   for (unsigned xndv = 1; xndv < 200; ++xndv) {
     for (unsigned yndv = 1; yndv < 1024; yndv += xndv) {
