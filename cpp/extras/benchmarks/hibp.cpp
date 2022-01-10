@@ -118,10 +118,12 @@ int main(int argc, char** argv) {
     if (buffer_fill < 1023) break;
     buffer_fill = 0;
   }
-
+  auto ts6 = now();
   sort(raw.begin(), raw.end());
+  auto ts7 = now();
+  raw_nanos += ts7 - ts6;
   // cout << "done\n";
   // cout << count << "\t" << tbf.SizeInBytes() << "\t" << tcf.SizeInBytes();
-  cout << "\t" << 1.0 * tbf_nanos << "\t" << 1.0 * tcf_nanos << "\t";
+  cout << "\t" << 1.0 * tbf_nanos << "\t" << 1.0 * tcf_nanos << "\t" << 1.0 * raw_nanos << "\t";
   PrintFpp(tbf, tcf, raw);
 }
