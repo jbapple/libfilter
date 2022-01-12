@@ -3,13 +3,13 @@
 % TKDE - Journal https://www.computer.org/csdl/journal/tk can't figure out if open access available with fee
 % Software: Practice and Experience
 
-% NSDI - September 9, https://www.usenix.org/conference/nsdi22, April 4-6, Renton, WA
-% SIGMOD - September 15th, feedback November 1-8, accept reject December 6th https://2022.sigmod.org/calls_papers_important_dates.shtml, Philly, June 12-17th
-% EDBT - https://conferences.inf.ed.ac.uk/edbticdt2022/?contents=important_dates.html, Edinburgh, October 1 deadline, 29 March 2022
+% NSDI
+% SIGMOD
+% EDBT
 % VLDB -  February 28th, https://vldb.org/2022/ Sydney, September 5-9
 
 % SODA - Passed, no 2023 date yet https://www.siam.org/conferences/cm/conference/soda22
-% USENIX ATC - July 11, 2022 - July 13, 2022 | Carlsbad, CA, no 2022 website yet https://www.usenix.org/conferences/byname/131
+% USENIX ATC - July 11, 2022 - July 13, 2022 | Carlsbad, CA  https://www.usenix.org/conferences/byname/131
 % KDD - Passed, no 2022 website yet https://kdd.org/conferences
 % ICDE - Passed, no 2023 website yet https://icde2022.ieeecomputer.my/research-track/
 % SEA -Passed, no 2022 date yet
@@ -24,7 +24,7 @@
 % IEEE big data
 
 % PVLDB - same conference as VLDB, submit here first http://vldb.org/pvldb/vol15-submission/
-% CIDR - August 27, 2021: Submission deadline for all contributions, October 15, 2021: author notification for all contributions, Chaminade, on-site, 6 pages maximum
+% CIDR
 
 \newif\ifanon
 \anontrue
@@ -678,7 +678,8 @@ If the last $T+1$ bits are all zero, the slot is empty.
 Otherwise, there must be a one bit in the last $T+1$ bits.
 All bits following that one bit are the tail.
 Bits $1-F$ are the $F$-bit fingerprint.
-For example, the tail {\tt 010000} represents a tail of size 4, {\tt 0000}, while {\tt 000001} represents an empty tail.
+For example, the tail {\tt 010000} represents a tail of size 4, {\tt 0000}, while {\tt 000001} represents tail of length zero.
+The tail {\tt 000000} represents an empty slot, which is dinstinct from an element with a tail of length zero.
 
 \paragraph{Lookup}
 A lookup begins by hashing a key with the \TCF{}'s hash function. %(Listing~\ref{tcf-lookup}, line 12)
@@ -751,7 +752,7 @@ ${}^*$ index into bucket array; stored implicitly using quotienting
 %% \end{figure*}
 
 \paragraph{Insert}
-Insert places the key's fingerprint and tail in one of the $2b$ slots corresponding to that key, if an empty one is found.
+Insert places the key's fingerprint and tail in one of the $2b$ slots corresponding to that key, if an empty slot is found.
 Otherwise, insert selects an occupied slot from the bucket to {\em evict}: the element in this slot will be moved to the other side. %(Listing~\ref{tcf-insert}, Line 19)
 
 The evict operation first reconstructs the high order $a + F$ bits of the key by concatenating the $a$ bits of the bucket index and the $F$ bits of the fingerprint, then applying that side's permutation in reverse to the value. %(Line 23--24)
@@ -913,7 +914,7 @@ See also~\cite{psw}.
 \TCF{}s also support {\em freeze} and {\em thaw} operations.
 Freeze reduces the space consumption of a \TCF{} from $O(\lg(1/\varepsilon) + \lg \lg N)$ to $O(\lg (1 / \varepsilon))$ bits per item, where $N$ is the largest size the structure will grow to.
 It does so by recreating the structure as a \TCF{} with tail length capacity $0$.
-Thaw simply turns a frozen structure into an unfrozen structure by recreating a \TCF{} with tail length capacity $\lg \lg N$ in which all of the tails are empty.
+Thaw simply turns a frozen structure into an unfrozen structure by recreating a \TCF{} with tail length capacity $\lg \lg N$ in which all of the tails have length zero.
 This allows new inserts to take place while capturing their tails.
 
 \subsection{Cuckoo filters $\cong$ cuckoo hashing with permutations and quotienting}
@@ -1457,7 +1458,7 @@ See Figure~\ref{mtcf-state-transition}, which illustrates the transitions an ele
 % The diagram can be read as ``an element in state A can become an element in state B when evicted''.
 The states indicate the lengths of the level, fingerprint, and tail.
 For instance, when a level's index is less than the cursor (the center state in the diagram), the length of that level is twice what it would be if its index were higher.
-For elements in a short level with a short fingerprint an empty tail, when they are evicted to an element in a long level, two elements are created, as it is impossible to steal a bit from the empty tail.
+For elements in a short level with a short fingerprint and a tail of length zero, when they are evicted to an element in a long level, two elements are created, as it is impossible to steal a bit from the tail of length zero.
 
 
 \begin{figure}[b!]
@@ -1542,7 +1543,7 @@ The fingerprint is encoded by using a single bit to indicate if the fingerprint 
 Thus, a slot needs to store $F + 1 + T + 1$ bits.
 For speed of operation, we choose $F = 9$ and $T = 5$ so that slots fit into {\tt uint16\_t}s.
 As with \TCF{}s, and for the same reason, we pick $b$, the number of slots in a bucket, to be 4.
-We pick $p$, the logarithm of the number of levels to be $5$; other choices are valid, but this one made a nice compromise between insert speed and overhead.
+We pick $p$, the logarithm of the number of levels, to be $5$; other choices are valid, but this one made a nice compromise between insert speed and space overhead.
 
 % Pseudocode for insert and upsize are available in Appendix~\ref{mtcf-appendix}.
 
@@ -1556,7 +1557,7 @@ We pick $p$, the logarithm of the number of levels to be $5$; other choices are 
 
 % TODO: evaluate starting \taffy{} filters with more starting elements: maybe 1024
 
-\TBF{}s, \TCF{}s, and \MTCF{}s have been implemented and tested for correctness; this section describes their space usage, false positive probabilities, and performance under the insert and lookup operations.
+\TBF{}s, \TCF{}s, and \MTCF{}s have been implemented and tested for correctness; this section describes their space usage, false positive probabilities, and performance.% under the insert and lookup operations.
 
 In each chart, \TBF{}s are configured for a maximum fpp of 0.4\%.
 All \taffy{} filters are configured with an initial capacity of 1. %, however the \MTCF{} has a minimum size of 2 bytes/entry $\cdot$ 32 levels $\cdot$ 2 sides/level $\cdot$ 1 entry / side = 128 bytes.
@@ -1565,15 +1566,12 @@ The experiments used Ubuntu 18.04 and 20.04, respectively, and g++ 10 and 9, res
 
 For performance testing, we equipped both \TCF{}s and \MTCF{}s with stashes, extra storage slots not associated with any bucket~\cite{stash}.
 We set both filters to upsize when they were 90\% full or their stashes had size greater than 4.
-
 For the random permutations we use Feistel networks with 2-independent multiply-shift as the round function~\cite{two-independent-multiply-shift}.
 These are not perfectly random, of course; analyzing the sufficiency in theory is future work.~\cite{why-simple,backyard}.
 
 For comparison, the graphs also include a cuckoo filter (labeled ``CF'') with fingerprints of size 12 and a split block Bloom filter (labeled ``SBBF'') sized to hold 100 million elements with an fpp of 0.4\%.
-
 The keys used in the experiments are all randomly-generated 64-bit integers.
 This suffices for testing larger universes as well, as noted in Section~\ref{filters-that-grow}.
-
 To benchmark the insert time, 100 million elements are inserted.
 At intermediate points we also benchmark the lookup operation one million times both on integer keys that are guaranteed to be present and on randomly-generated integer keys.
 Figures~\ref{lookup-both}~and~\ref{arm-lookup-both}, which show the results of lookup performance testing, only show the randomly-generated-keys result, as the same chart for guaranteed-to-be-present keys shows the same characteristics.
@@ -1722,22 +1720,22 @@ The \MTCF{} lags behind both.
 \label{hibp}
 
 In this section we test the dataset of previously used passwords from ``Have I Been Pwned''~\cite{pwned}.
-This dataset consists of 847 million SHA-1 hashes of leaked passwords.
+This dataset consists of 847 million hashes of leaked passwords.
 It has grown over time, starting in August 2017 with 306 million passwords. It is currently\footnote{As of December 2021} on version 8.
 
-\Taffy{} Bloom filters and \taffy{} cuckoo filters were tested on this dataset using the low-order bits from the SHA-1 hashes as the keys.
+\Taffy{} Bloom filters and \taffy{} cuckoo filters were tested on this dataset using the 64 low-order bits from the hashes as the keys.
 Both filters started out configured with an initial capacity of a single element; the \TBF{} was configured to have a similar fpp to the \TCF{}.
-Once insertion was complete, the $\TCF{}$ was frozen to see the lookup performance and fpp of the resulting data structure.
-Experiments were conducted on an AWS EC2 r6i.xlarge with 32GiB of memory and an Intel Xeon Platinum 8375C clocked at 2.90GHz.
-Times are the minimum over a set of 86 runs; fpps are the median.
-The results are in Figure~\ref{hibp-table}.
+Once insertion was complete, the \TCF{} was frozen to test the lookup performance and fpp of the resulting data structure.
+Experiments were conducted on an AWS EC2 r6i.xlarge with 32GiB of memory and an Intel Xeon Platinum 8375C. % clocked at 2.90GHz.
+Times are the minimum over a set of 7 runs; fpps are the median.
+See Figure~\ref{hibp-table}.
 
 \begin{figure}[b!]
 \begin{tabular}{|m{0.5in}|m{0.5in}|m{0.5in}|m{0.5in}|m{0.5in}|}
-\hline & {\bf \TBF{}} & {\bf \TCF{}} & {\bf Frozen} & {\bf Raw}\\
-\hline {\bf insert (ns/key)} & 25 & 558 & \TCF{} + 2.2 & 113\\
+\hline & {\bf \TBF{}} & {\bf \TCF{}} & {\bf Frozen} & {\bf Raw, sorted}\\
+\hline {\bf insert (ns/key)} & 24 & 572 & \TCF{} + 2.2 & 113\\
 \hline {\bf fpp} & 0.25\% & 0.26\% & 0.71\% & 0\%\\
-\hline {\bf lookup (ns/key)} & 301 & 111 & 74 & 5347\\
+\hline {\bf lookup (ns/key)} & 290 & 108 & 70 & 719\\
 \hline {\bf space} & 4.1GiB & 4.0GiB & 2.5GiB & 6.3GiB\\
 \hline
 \end{tabular}
@@ -1751,8 +1749,8 @@ Performance on ``Have I Been Pwned''}
 %% The filters had fpps of 0.24\% and 0.26\%, respectively.\footnote{These are the numbers for the average and also for the median.}
 %% Lookups in the full filters took 294 nanoseconds each for the \TBF{} and 111 nanoseconds each for the \TCF{}.
 As in the case of the synthetic benchmarks, insert is faster for the \TBF{} and lookup is faster for the \TCF{}.
-This omission of the tails leaves the false positive rate higher but the lookup faster, since the prefix checks are now unnecessary and the fingerprint matches can now be performed with SIMD-within-a-register techniques, just as in the original cuckoo filter ~\cite{cuckoo-filter-github}.
-For the ``Raw'' column, we consider only the cost of storing the last 64 bits in each hash in a single sorted array with binary search as the lookup method.
+This omission of the tails makes the false positive rate higher but the lookup faster, since the prefix checks are now unnecessary and the fingerprint matches can now be performed with SIMD-within-a-register techniques, just as in the original cuckoo filter ~\cite{cuckoo-filter-github}.
+For the ``Raw, sorted'' column, we consider the cost of storing 64 bits of each hash in a single array with sorting as the input method and binary search as the lookup method.
 
 %The list of SHA-1 hashes uses 34.8 GiB in uncompressed hex ASCII, with no lookup facilities such as being stored in a hash table or B-tree, while the \taffy{} filters use 4.2GiB and 4.0GiB in memory, respectively.
 %Storing just the last 64 bits of each SHA-1 hash (the bits used in constructing the \taffy{} filters) without any lookup metadata like a hash table or B-tree would use 6.3GB.
@@ -1813,7 +1811,7 @@ See Figures~\ref{lookup-both}~and~\ref{arm-lookup-both}.
 Split block Bloom filters and cuckoo filters are still attractive choices when the size of the set to be approximated is known in advance.
 When a growable filter is needed, the application matters quite a bit.
 If saving every byte matters, \MTCF{}s are called for.
-If union, intersection, or freeze operations are needed, a \TCF{} or \MTCF{} is called for.
+%If union, intersection, or freeze operations are needed, a \TCF{} or \MTCF{} is called for.
 If satellite data (as in a Bloomier filter) is needed, such as when using the filter in front of an LSM tree, a \TCF{} or \MTCF{} should be used, as \TBF{}s do not support satellite data.
 Otherwise, a practitioner must ask themselves:
 
@@ -1821,7 +1819,8 @@ Otherwise, a practitioner must ask themselves:
 \item Is the workload write-heavy or read-heavy?
   Write-heavy workloads favor \TBF{}s over \TCF{}s.
 \item Is the set likely to exceed one million elements (x86) or 1000 elements (ARM)?
-  If yes, a \TCF{} is an attractive choice.
+  If yes, a \TCF{} should be preferred.
+%is an attractive choice.
 %% \item Are union, intersection, or freeze operations needed?
 %%   A TCF or \MTCF{} is the only choice.
 %% \item Is the hardware known in advance?
