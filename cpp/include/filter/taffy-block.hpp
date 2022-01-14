@@ -21,7 +21,7 @@ struct TaffyBlockFilter {
 
   bool InsertHash(uint64_t h) { return libfilter_taffy_block_insert_hash(&data, h); }
 
-  bool FindHash( uint64_t h) const { return libfilter_taffy_block_find_hash(&data, h); }
+  bool FindHash(uint64_t h) const { return libfilter_taffy_block_find_hash(&data, h); }
 
   static const char* Name() { return "TaffyBlock"; }
 };

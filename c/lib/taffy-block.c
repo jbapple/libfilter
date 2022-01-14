@@ -3,6 +3,7 @@
 void libfilter_taffy_block_destroy(libfilter_taffy_block* here) {
   for (int i = 0; i < here->cursor; ++i) {
     libfilter_block_destruct(here->levels[i]);
+    free(here->levels[i]);
     here->levels[i] = NULL;
   }
 }
@@ -20,7 +21,7 @@ libfilter_taffy_block libfilter_taffy_block_create(uint64_t ndv, double fpp) {
   result.levels[0] = (libfilter_block*)malloc(sizeof(libfilter_block));
   libfilter_block_init(libfilter_block_bytes_needed(ndv, fpp * sum), result.levels[0]);
   ++result.cursor;
-  for (uint64_t x = 0; x < 64; ++x) {
+  for (uint64_t x = 0; x < 32; ++x) {
     result.sizes[x] = libfilter_block_bytes_needed(ndv << x, fpp / pow(x + 1, 2) * sum);
   }
   return result;
