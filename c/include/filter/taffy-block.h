@@ -8,8 +8,8 @@
 #include "filter/util.h"  // INLINE
 
 typedef struct {
-  libfilter_block* levels[32];
-  uint64_t sizes[32];
+  libfilter_block* levels[48];
+  uint64_t sizes[48];
   int cursor;
   uint64_t last_ndv;
   int64_t ttl;

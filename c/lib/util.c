@@ -39,6 +39,7 @@ uint64_t libfilter_block_bytes_needed_detail(double ndv, double fpp, double word
   uint64_t result = 1;
   while (libfilter_block_fpp_detail(ndv, result, word_bits, bucket_words, hash_bits) > fpp) {
     result *= 2;
+    ++result;
   }
   if (result <= bucket_bytes) return bucket_bytes;
   uint64_t lo = 0;
