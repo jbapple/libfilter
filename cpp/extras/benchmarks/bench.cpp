@@ -274,14 +274,14 @@ void Samples(uint64_t ndv, vector<uint64_t>& to_insert, vector<uint64_t>& to_fin
 }
 
 int main(int argc, char** argv) {
-  if (argc < 7) {
+  if (argc < 8) {
   err:
-    cerr << "one optional flag (--print_header) and four required flags: --ndv, --reps, "
-            "--bytes, --fpp\n";
+    cerr << "one optional flag (--print_header) and five required flags: --ndv, --reps, "
+            "--bytes, --block_fpp, --taffy_fpp\n";
     return 1;
   }
   uint64_t ndv = 0, reps = 0, bytes = 0;
-  double fpp = 0.0;
+  double block_fpp = 0.0, taffy_fpp = 0.0;
   bool print_header = false;
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == string("--ndv")) {
@@ -299,10 +299,15 @@ int main(int argc, char** argv) {
       auto s = istringstream(argv[i]);
       if (not(s >> bytes)) goto err;
       if (not s.eof()) goto err;
-    } else if (argv[i] == string("--fpp")) {
+    } else if (argv[i] == string("--block_fpp")) {
       ++i;
       auto s = istringstream(argv[i]);
-      if (not(s >> fpp)) goto err;
+      if (not(s >> block_fpp)) goto err;
+      if (not s.eof()) goto err;
+    } else if (argv[i] == string("--taffy_fpp")) {
+      ++i;
+      auto s = istringstream(argv[i]);
+      if (not(s >> taffy_fpp)) goto err;
       if (not s.eof()) goto err;
     } else if (argv[i] == string("--print_header")) {
       print_header = true;
@@ -310,7 +315,7 @@ int main(int argc, char** argv) {
       goto err;
     }
   }
-  if (reps == 0 or ndv == 0 or reps == 0 or fpp == 0 or bytes == 0) goto err;
+  if (reps == 0 or ndv == 0 or block_fpp == 0 or taffy_fpp == 0 or bytes == 0) goto err;
 
   vector<uint64_t> to_insert;
   vector<uint64_t> to_find;
@@ -318,11 +323,11 @@ int main(int argc, char** argv) {
 
   if (print_header) cout << Sample::kHeader() << endl;
   for (unsigned i = 0; i < reps; ++i) {
-    BenchWithBytes<Cuckoo32Shim>(reps, bytes, 1.05, to_insert, to_find);
-    BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, fpp);
+    // BenchWithBytes<Cuckoo32Shim>(reps, bytes, 1.05, to_insert, to_find);
+    BenchWithNdvFpp<CuckooShim<12>>(reps, 1.05, to_insert, to_find, ndv, block_fpp);
     BenchWithBytes<MinimalTaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
     BenchWithBytes<TaffyCuckooFilter>(reps, bytes, 1.05, to_insert, to_find);
-    BenchGrowWithNdvFpp<TaffyBlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
-    BenchWithNdvFpp<BlockFilter>(reps, 1.05, to_insert, to_find, ndv, fpp);
+    BenchGrowWithNdvFpp<TaffyBlockFilter>(reps, 1.05, to_insert, to_find, ndv, taffy_fpp);
+    BenchWithNdvFpp<BlockFilter>(reps, 1.05, to_insert, to_find, ndv, block_fpp);
   }
 }
