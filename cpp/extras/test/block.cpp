@@ -232,3 +232,17 @@ TYPED_TEST(BlockTest, EqualStayEqual) {
     EXPECT_TRUE(z == x);
   }
 }
+
+TEST(FreezeTest, FreezeTest) {
+  Rand r;
+  vector<uint64_t> keys;
+  TaffyCuckooFilter tcf = TaffyCuckooFilter::CreateWithBytes(0);
+  for (size_t i = 0; i < 5000000; ++i) {
+    keys.push_back(r());
+    tcf.InsertHash(keys.back());
+  }
+  auto ftcf = tcf.Freeze();
+  for (size_t i = 0; i < keys.size(); ++i) {
+    EXPECT_TRUE(ftcf.FindHash(keys[i]));
+  }
+}
