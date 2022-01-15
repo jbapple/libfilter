@@ -38,6 +38,7 @@ uint64_t libfilter_block_bytes_needed_detail(double ndv, double fpp, double word
   const uint64_t bucket_bytes = (word_bits * bucket_words) / CHAR_BIT;
   uint64_t result = 1;
   while (libfilter_block_fpp_detail(ndv, result, word_bits, bucket_words, hash_bits) > fpp) {
+    if (result * 2 < result) return result;
     result *= 2;
   }
   if (result <= bucket_bytes) return bucket_bytes;
