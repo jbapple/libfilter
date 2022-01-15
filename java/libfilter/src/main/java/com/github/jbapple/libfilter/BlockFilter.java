@@ -53,11 +53,11 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
     // case: bucket_words
     if (ndv == 0) return 0.0;
     if (bytes <= 0) return 1.0;
-    if (1.0 * ndv / (1.0 * bytes * 8) > 3) return 1.0;
+    if (ndv / (1.0 * bytes * 8) > 3) return 1.0;
 
     double result = 0;
     double lam =
-        bucket_words * (double) word_bits / (((double) bytes * 8) / (double) ndv);
+        bucket_words * word_bits / (( bytes * 8) / ndv);
     double loglam = Math.log(lam);
     double log1collide = -hash_bits * Math.log(2.0);
     int MAX_J = 10000;
@@ -69,7 +69,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
       double logcollide = Math.log(i) + log1collide;
       result += Math.exp(logp + logfinner) + Math.exp(logp + logcollide);
     }
-    return (result > 1.0) ? 1.0 : result;
+    return Math.min(result, 1.0);
   }
 
   /**
@@ -83,13 +83,12 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
   public static int BytesNeeded(double ndv, double fpp) {
     double word_bits = 32;
     double bucket_words = 8;
-    double hash_bits = 32;
     int bucket_bytes = (int) ((word_bits * bucket_words) / 8);
     double result = 1;
     while (Fpp(ndv, result) > fpp) {
       result *= 2;
     }
-    if (result <= bucket_bytes) return (int)bucket_bytes;
+    if (result <= bucket_bytes) return bucket_bytes;
     double lo = 0;
     while (lo + 1 < result) {
       double mid = lo + (result - lo) / 2;
@@ -110,7 +109,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
   }
 
   /**
-   * Calculates the number of dstinct elements that can be stored in a filter of size
+   * Calculates the number of distinct elements that can be stored in a filter of size
    * <code>bytes</code> without exceeding the given false positive probability.
    *
    * @param bytes the size of the filter
@@ -118,9 +117,6 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
    * @return the maximum number of distinct values that can be added
    */
   public static double TotalHashCapacity(double bytes, double fpp) {
-    double word_bits = 32;
-    double bucket_words = 8;
-    double hash_bits = 32;
     double result = 1;
     // TODO: unify this exponential + binary search with the bytes needed function above
     while (Fpp(result, bytes) < fpp) {
@@ -168,7 +164,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
 
   private int[] payload;
 
-  public long sizeInBytes() { return payload.length * 4; }
+  public long sizeInBytes() { return payload.length * 4L; }
 
   BlockFilter(int bytes) { payload = new int[Math.max(8, (bytes / 4) / 8 * 8)]; }
 
@@ -190,10 +186,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
    */
   public static BlockFilter CreateWithNdvFpp(double ndv, double fpp) {
     int bytes = BytesNeeded(ndv, fpp);
-    if (bytes > Integer.MAX_VALUE) {
-      return null;
-    }
-    return new BlockFilter((int)bytes);
+    return new BlockFilter(bytes);
   }
 
   private static final int[] INTERNAL_HASH_SEEDS = {0x47b6137b, 0x44974d91, 0x8824ad5b,
@@ -216,20 +209,6 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
     }
   }
 
-  /**
-   * Add a hash value to the filter.
-   * <p>
-   * Do not mix with <code>FindHash32</code> - a hash value that is present with
-   * <code>FindHash64(x)</code> will not be present when calling
-   * <code>FindHash32((int)x)</code>.
-   * <p>
-   * Do not pass values to this function, only their hashes.
-   * <p>
-   * <em>Hashes must be 64-bits</em>. 32-bit hashes will result in a useless filter where
-   * <code>FindHash64</code> always returns <code>true</code> for any input.
-   *
-   * @param hash the 64-bit hash value of the element you wish to insert
-   */
   @Override
   public boolean AddHash64(long hash) {
     int bucket_idx = Index(hash, payload.length / 8);
@@ -241,18 +220,6 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
     return true;
   }
 
-  /**
-   * Find a hash value in the filter.
-   * <p>
-   * Do not mix with <code>AddHash32</code> - a hash value that is added with
-   * <code>AddHash32</code> will not be present when calling <code>FindHash64</code>.
-   * <p>
-   * Do not pass values to this funciton, only their hashes.
-   * <p>
-   * <em>Hashes must be 64-bits</em>. 32-bit hashes will return incorrect results.
-   *
-   * @param hash the 64-bit hash value of the element you are checking the presence of
-   */
   @Override
   public boolean FindHash64(long hash) {
     int bucket_idx = Index(hash, payload.length / 8);
@@ -266,15 +233,6 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
 
   private static final long REHASH_32 = (((long) 0xd1012a3a) << 32) | (long) 0x7a1f4a8a;
 
-  /**
-   * Add a hash value to the filter.
-   * <p>
-   * Do not mix with <code>FindHash64</code> - a hash value that is present with
-   * <code>FindHash64(x)</code> will not be present when calling
-   * <code>FindHash32((int)x)</code>.
-   *
-   * @param hash the 32-bit hash value of the element you wish to insert
-   */
   @Override
   public boolean AddHash32(int hash) {
     long hash64 = (((REHASH_32 * (long) hash) >>> 32) << 32) | hash;
@@ -287,14 +245,6 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
     return true;
   }
 
-  /**
-   * Find a hash value in the filter.
-   * <p>
-   * Do not mix with <code>AddHash64</code> - a hash value that is added with
-   * <code>AddHash64</code> will not be present when calling <code>FindHash32</code>.
-   *
-   * @param hash the 32-bit hash value of the element you are checking the presence of
-   */
   @Override
   public boolean FindHash32(int hash) {
     long hash64 = (((REHASH_32 * (long) hash) >>> 32) << 32) | hash;

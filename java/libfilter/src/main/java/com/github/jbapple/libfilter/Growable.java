@@ -9,5 +9,5 @@ public interface Growable {
    * have capacity enough to perform more <code>Insert</code> operations without
    * triggering an <code>Upsize</code> call.
    */
-  public void Upsize();
+  void Upsize();
 }

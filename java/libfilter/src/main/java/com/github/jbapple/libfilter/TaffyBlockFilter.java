@@ -45,7 +45,7 @@ public class TaffyBlockFilter
   @Override
   public boolean equals(Object there) {
     if (there == null) return false;
-    if (!(there instanceof BlockFilter)) return false;
+    if (!(there instanceof TaffyBlockFilter)) return false;
     TaffyBlockFilter that = (TaffyBlockFilter) there;
     return compareTo(that) == 0;
   }
@@ -71,7 +71,7 @@ public class TaffyBlockFilter
         .append(fpp)
         .append("|");
     for (int i = 0; i < cursor; ++i) {
-      result.append(sizes);
+      result.append(Arrays.toString(sizes));
       result.append("|");
       result.append(levels[i].toString());
       result.append("|");
@@ -88,12 +88,11 @@ public class TaffyBlockFilter
     cursor = 0;
     lastNdv = (ndv > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)ndv;
     ttl = (ndv > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)ndv;
-    fpp = fpp;
     levels[0] = BlockFilter.CreateWithNdvFpp(ndv, fpp / 1.65);
     ++cursor;
     for (int x = 0; x < 32; ++x) {
       sizes[x] = BlockFilter.BytesNeeded(
-          ndv, fpp / Math.pow(cursor + 1, 2) * 6 / Math.pow(3.1415, 2));
+          ndv, fpp / Math.pow(cursor + 1, 2) * 6 / Math.pow(Math.PI, 2));
       ndv *= 2;
     }
   }

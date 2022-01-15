@@ -4,7 +4,7 @@ import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-// TODO: Comparable, Serialeable
+// TODO: Comparable, Serializable
 /**
  * TaffyCuckooFilter is a filter based on the paper "Stretching your data with taffy
  * filters". It can grow when it becomes full without affecting the false positive
@@ -33,7 +33,7 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
     return x;
   }
 
-  private static short encodedTail(short x) { return x &= ((1 << (kTailSize + 1)) - 1); }
+  private static short encodedTail(short x) { return (short)(x & ((1 << (kTailSize + 1)) - 1)); }
 
   private static class Path implements Cloneable {
     private int bucket;
@@ -334,7 +334,7 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
       t.InsertPath(0, p);
     } else {
       // steal a bit from the tail
-      q |= (((long) (((long) encodedTail(sl)) >>> kTailSize))
+      q |= ((((long) encodedTail(sl)) >>> kTailSize)
           << (64 - log_side_size - kHeadSize - 1));
       Path r = toPath(q, t.sides[0].f, t.log_side_size);
       r.slot = withEncodedTail(
@@ -379,10 +379,7 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
       Upsize();
     }
     Path p = toPath(k, sides[0].f, log_side_size);
-    long preimage = FromPathNoTail(p, sides[0].f, log_side_size);
     InsertPath(0, p);
-    Path q = toPath(k, sides[1].f, log_side_size);
-    preimage = FromPathNoTail(q, sides[0].f, log_side_size);
     return true;
   }
 
