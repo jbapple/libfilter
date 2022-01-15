@@ -7,7 +7,7 @@ namespace filter {
 
 thread_local const constexpr int kHeadSize = 9;
 thread_local const constexpr int kTailSize = 5;
-static_assert(kHeadSize + kTailSize == 14, "kHeadSize + kTailSize == 15");
+static_assert(kHeadSize + kTailSize == 14, "kHeadSize + kTailSize == 14");
 
 struct TaffyVectorQuotientFilter {
   uint64_t occupancy = 0;
