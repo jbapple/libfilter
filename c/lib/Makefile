@@ -17,7 +17,7 @@ lib: libfilter.a libfilter.so Makefile
 # Same with gnu and mmap, although probably header, object, and
 # program all have the same answer to that one. Still need a way to test
 
-WARN=-W -Wall -Wextra -Werror
+WARN=-W -Wall -Wextra
 RELEASE=-fPIC -O3 -ggdb3
 CFLAGS=-std=gnu11 -march=native -mtune=native $(INCLUDES) $(WARN) $(RELEASE)
 LINKS=
