@@ -1,4 +1,4 @@
-![](https://github.com/jbapple/libfilter/workflows/c-cpp/badge.svg?branch=master)
+![](https://github.com/jbapple/libfilter/workflows/unit-tests/badge.svg?branch=master)
 
 This repository provides implementations of blocked Bloom filters and
 taffy filters for C, C++, and Java. Blocked filters use slightly
