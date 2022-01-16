@@ -1,4 +1,4 @@
-name: c-cpp
+name: unit-tests
 
 on: push
 
@@ -17,7 +17,9 @@ jobs:
         submodules: 'recursive'
     - name: make
       run: make world
+    - name: run C tests
+      run: c/extras/test/paths.exe
     - name: run C++ tests
-      run: cpp/extras/test/block.exe && cpp/extras/test/paths.exe
+      run: cpp/extras/test/block.exe
     - name: run Java tests
       run: mvn -f ./java/ test
