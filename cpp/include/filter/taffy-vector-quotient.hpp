@@ -3,6 +3,12 @@
 #include <cstdint>
 #include <string>
 
+extern "C" {
+#include "filter/util.h"
+}
+
+#include "util.hpp"
+
 namespace filter {
 
 thread_local const constexpr int kHeadSize = 9;
@@ -97,12 +103,14 @@ struct TaffyVectorQuotientFilter {
 
   int log_size;
   Line* lines;
-  detail::Feistel f[2];
+  libfilter_feistel f[2];
 
   TaffyVectorQuotientFilter(int log_size, const uint64_t entropy[8])
       : log_size(log_size),
-        lines(new Line[1ull << log_size]()),
-        f{entropy, entropy + 4} {}
+        lines(new Line[1ull << log_size]()) {
+    f[0] = libfilter_feistel_create(&entropy[0]);
+    f[1] = libfilter_feistel_create(&entropy[4]);
+  }
 
   ~TaffyVectorQuotientFilter() { delete[] lines; }
 
@@ -113,8 +121,8 @@ struct TaffyVectorQuotientFilter {
     if ((1 << kTailSize) != encoded_tail) {
       uint64_t permuted[2], pop[2];
       for (int i : {0, 1}) {
-        permuted[i] = f[i].Permute(log_size + 5 + kHeadSize,
-                                   (raw << 1) | (encoded_tail << kHeadSize));
+        permuted[i] = libfilter_feistel_permute_forward(
+            &f[i], log_size + 5 + kHeadSize, (raw << 1) | (encoded_tail << kHeadSize));
         pop[i] = lines[permuted[i] >> (kHeadSize + 5)].Population();
       }
       int lean = pop[0] > pop[1];
@@ -133,8 +141,8 @@ struct TaffyVectorQuotientFilter {
 
   __attribute__((always_inline)) bool Find(uint64_t raw, uint64_t encoded_tail) {
     for (int i : {0, 1}) {
-      uint64_t permuted = f[i].Permute(log_size + 5 + kHeadSize,
-                                       (raw << 1) | (encoded_tail << kHeadSize));
+      uint64_t permuted = libfilter_feistel_permute_forward(
+          &f[i], log_size + 5 + kHeadSize, (raw << 1) | (encoded_tail << kHeadSize));
       if (lines[permuted >> (kHeadSize + 5)].Find(
               i, (permuted >> kHeadSize) & ((1 << 5) - 1),
               permuted & ((1 << kHeadSize) - 1), encoded_tail)) {
@@ -176,8 +184,8 @@ struct TaffyVectorQuotientFilter {
         } else {
           Line::Entry e = line.data[j];
           uint64_t permuted = (((i << 5) | m) << kHeadSize) | e.fingerprint;
-          uint64_t raw =
-              f[e.lean].ReversePermute(log_size + size_up + 5 + kHeadSize, permuted);
+          uint64_t raw = libfilter_feistel_permute_backward(
+              &f[e.lean], log_size + size_up + 5 + kHeadSize, permuted);
           bool ok = that.InsertNeedsNoUpsize(raw, e.tail);
           if (not ok) {
             ++size_up;

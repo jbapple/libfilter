@@ -7,6 +7,7 @@ include util.d
 include block.d
 include taffy-cuckoo.d
 include taffy-block.d
+include minimal-taffy-cuckoo.d
 
 lib: libfilter.a libfilter.so Makefile
 
@@ -24,11 +25,11 @@ LINKS=
 
 include $(DEFAULT_RECIPE)
 
-libfilter.so: util.o memory.o block.o taffy-cuckoo.o taffy-block.o Makefile
-	$(CC) -fPIC -shared -o libfilter.so util.o memory.o block.o taffy-cuckoo.o taffy-block.o
+libfilter.so: util.o memory.o block.o taffy-cuckoo.o taffy-block.o minimal-taffy-cuckoo.o Makefile
+	$(CC) -fPIC -shared -o libfilter.so util.o memory.o block.o taffy-cuckoo.o taffy-block.o minimal-taffy-cuckoo.o
 
-libfilter.a: util.o memory.o block.o taffy-cuckoo.o taffy-block.o Makefile
-	ar rcs libfilter.a util.o memory.o block.o taffy-cuckoo.o taffy-block.o
+libfilter.a: util.o memory.o block.o taffy-cuckoo.o taffy-block.o minimal-taffy-cuckoo.o Makefile
+	ar rcs libfilter.a util.o memory.o block.o taffy-cuckoo.o taffy-block.o minimal-taffy-cuckoo.o
 
 clean:
 	rm -f libfilter.so libfilter.a
@@ -37,3 +38,4 @@ clean:
 	rm -f block.o block.d block.d.new
 	rm -f taffy-cuckoo.o taffy-cuckoo.d taffy-cuckoo.d.new
 	rm -f taffy-block.o taffy-block.d taffy-block.d.new
+	rm -f minimal-taffy-cuckoo.o minimal-taffy-cuckoo.d minimal-taffy-cuckoo.d.new

@@ -1,6 +1,6 @@
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-CXXFLAGS += --std=c++14
+CXXFLAGS += --std=c++14 -fPIC
 
 .PHONY: default world clean
 
