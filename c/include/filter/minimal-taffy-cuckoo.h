@@ -195,7 +195,7 @@ INLINE bool libfilter_minimal_taffy_cuckoo_insert_hash(
   return true;
 }
 
-INLINE void libfilter_minimal_taffy_cuckoo_insert_detail(
+inline void libfilter_minimal_taffy_cuckoo_insert_detail(
     libfilter_minimal_taffy_cuckoo* here, int side, libfilter_minimal_taffy_cuckoo_path p,
     int ttl) {
   assert(p.slot.tail != 0);
