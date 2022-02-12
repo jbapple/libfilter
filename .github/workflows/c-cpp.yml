@@ -16,7 +16,7 @@ jobs:
       with:
         submodules: 'recursive'
     - name: check C compiler exists
-      run: cc --version
+      run: gcc --version
     - name: check make version
       run: make --version
     - name: make
