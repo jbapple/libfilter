@@ -1,9 +1,10 @@
-#include "filter/util.h"
 #include "filter/paths.h"
 
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#include "filter/util.h"
 
 #if defined(NDEBUG)
 #error NDEBUG
@@ -15,7 +16,7 @@ void from_to() {
   libfilter_feistel f = libfilter_feistel_create(entropy);
   uint64_t xbase = 0x123456789abcdef0;
   int low_level = 16;
-  unsigned many  = 0;
+  unsigned many = 0;
   for (int i = 0; i < 64; ++i) {
     for (int cursor = 0; cursor < 32; ++cursor) {
       for (int is_short = 0; is_short < 2; ++is_short) {
@@ -68,7 +69,7 @@ void to_from_to() {
 void re_path_half_identity() {
   printf("%s\n", __FUNCTION__);
   uint64_t entropy[4] = {1, 0, 1, 0};
-  libfilter_feistel identity  = libfilter_feistel_create(entropy);
+  libfilter_feistel identity = libfilter_feistel_create(entropy);
   uint64_t entropy2[4] = {0x37156873ab534ce7, 0x5c669c3116114489, 0xfa52f24f2bc644d6,
                           0xcba217328d2f4950};
   libfilter_feistel f = libfilter_feistel_create(entropy2);
@@ -129,7 +130,6 @@ void re_path_short_identity() {
   }
 }
 
-
 void re_path_short_long_identity() {
   printf("%s\n", __FUNCTION__);
   uint64_t entropy[4] = {1, 0, 1, 0};
@@ -165,7 +165,6 @@ void re_path_short_long_identity() {
   assert(count >= 100u);
 }
 
-
 // Test RePath when there are two outputs
 void re_path_double() {
   printf("%s\n", __FUNCTION__);
@@ -193,13 +192,13 @@ void re_path_double() {
       libfilter_minimal_taffy_cuckoo_path s = libfilter_minimal_taffy_cuckoo_re_path(
           p, &identity, &identity, &f, &f, low_level, low_level, cursor, cursor, &r);
       assert(s.slot.tail == (1u << libfilter_minimal_taffy_cuckoo_tail_size));
-      assert(r.slot.tail ==( 1u << libfilter_minimal_taffy_cuckoo_tail_size));
+      assert(r.slot.tail == (1u << libfilter_minimal_taffy_cuckoo_tail_size));
       assert((q.level == s.level && q.bucket == s.bucket &&
-                   q.slot.fingerprint == s.slot.fingerprint &&
-                   q.slot.long_fp == s.slot.long_fp) ||
-                  (q.level == r.level && q.bucket == r.bucket &&
-                   q.slot.fingerprint == r.slot.fingerprint &&
-                   q.slot.long_fp == r.slot.long_fp));
+              q.slot.fingerprint == s.slot.fingerprint &&
+              q.slot.long_fp == s.slot.long_fp) ||
+             (q.level == r.level && q.bucket == r.bucket &&
+              q.slot.fingerprint == r.slot.fingerprint &&
+              q.slot.long_fp == r.slot.long_fp));
     }
   }
   assert(count >= 100u);
