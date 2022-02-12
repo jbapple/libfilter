@@ -20,7 +20,7 @@ jobs:
     - name: check make version
       run: make --version
     - name: Add Msys64 to PATH
-      if: matrix.os == 'windows-2019'
+      if: matrix.os == 'windows-latest'
       run: |
         echo "/c/msys64/mingw64/bin" >> $GITHUB_PATH
         echo "/c/msys64/usr/bin" >> $GITHUB_PATH
