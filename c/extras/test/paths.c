@@ -187,7 +187,7 @@ void re_path_double() {
       if (q.slot.tail != 0) continue;
       count++;
       q = libfilter_minimal_taffy_cuckoo_to_path(x, &f, cursor, low_level, false);
-      libfilter_minimal_taffy_cuckoo_path r;
+      libfilter_minimal_taffy_cuckoo_path r = {};
       p.slot.tail = 1u << libfilter_minimal_taffy_cuckoo_tail_size;
       libfilter_minimal_taffy_cuckoo_path s = libfilter_minimal_taffy_cuckoo_re_path(
           p, &identity, &identity, &f, &f, low_level, low_level, cursor, cursor, &r);
