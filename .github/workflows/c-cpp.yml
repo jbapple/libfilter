@@ -21,7 +21,10 @@ jobs:
       run: make --version
     - name: Add Msys64 to PATH
       if: matrix.os == 'windows-2019'
-      run: echo "::add-path::/c/msys64/mingw64/bin:/c/msys64/usr/bin"
+      run: |
+        echo "/c/msys64/mingw64/bin" >> $GITHUB_PATH
+        echo "/c/msys64/usr/bin" >> $GITHUB_PATH
+        echo "$PATH"
       shell: bash
     - name: make
       run: make world
