@@ -26,6 +26,10 @@ jobs:
         echo "/c/msys64/usr/bin" >> $GITHUB_PATH
         echo "$PATH"
       shell: bash
+    - name: Find cc
+      if: matrix.os == 'windows-latest'
+      run: find / -name cc 2>/dev/null
+      shell: bash
     - name: check C compiler exists
       run: cc --version
       shell: bash
