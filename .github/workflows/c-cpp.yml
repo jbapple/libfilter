@@ -26,6 +26,8 @@ jobs:
         echo "/c/msys64/usr/bin" >> $GITHUB_PATH
         echo "$PATH"
       shell: bash
+    - name: check C compiler exists
+      run: cc --version
     - name: make
       run: make world
     - name: run C tests
