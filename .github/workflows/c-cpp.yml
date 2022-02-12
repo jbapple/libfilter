@@ -28,8 +28,10 @@ jobs:
       shell: bash
     - name: check C compiler exists
       run: cc --version
+      shell: bash
     - name: make
       run: make world
+      shell: bash
     - name: run C tests
       run: c/extras/test/paths.exe
     - name: run C++ tests
