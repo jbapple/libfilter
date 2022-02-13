@@ -11,15 +11,17 @@ namespace filter {
 
 struct TaffyBlockFilter {
   libfilter_taffy_block data;
-  ~TaffyBlockFilter() { libfilter_taffy_block_destroy(&data); }
+  ~TaffyBlockFilter() { libfilter_taffy_block_destruct(&data); }
 
   static TaffyBlockFilter CreateWithNdvFpp(uint64_t ndv, double fpp) {
-    return TaffyBlockFilter{libfilter_taffy_block_create(ndv, fpp)};
+    TaffyBlockFilter result;
+    libfilter_taffy_block_init(ndv, fpp, &result.data);
+    return result;
   }
 
   uint64_t SizeInBytes() const { return libfilter_taffy_block_size_in_bytes(&data); }
 
-  bool InsertHash(uint64_t h) { return libfilter_taffy_block_insert_hash(&data, h); }
+  bool InsertHash(uint64_t h) { return libfilter_taffy_block_add_hash(&data, h); }
 
   bool FindHash(uint64_t h) const { return libfilter_taffy_block_find_hash(&data, h); }
 

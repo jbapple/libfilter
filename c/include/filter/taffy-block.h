@@ -15,9 +15,9 @@ typedef struct {
   int64_t ttl;
 } libfilter_taffy_block;
 
-void libfilter_taffy_block_destroy(libfilter_taffy_block* here);
+void libfilter_taffy_block_destruct(libfilter_taffy_block* here);
 
-libfilter_taffy_block libfilter_taffy_block_create(uint64_t ndv, double fpp);
+int libfilter_taffy_block_init(uint64_t ndv, double fpp, libfilter_taffy_block*);
 
 INLINE uint64_t libfilter_taffy_block_size_in_bytes(const libfilter_taffy_block* here) {
   uint64_t result = 0;
@@ -29,7 +29,7 @@ INLINE uint64_t libfilter_taffy_block_size_in_bytes(const libfilter_taffy_block*
 
 void libfitler_taffy_block_upsize(libfilter_taffy_block* here);
 
-INLINE bool libfilter_taffy_block_insert_hash(libfilter_taffy_block* here, uint64_t h) {
+INLINE bool libfilter_taffy_block_add_hash(libfilter_taffy_block* here, uint64_t h) {
   if (here->ttl <= 0) libfitler_taffy_block_upsize(here);
   libfilter_block_add_hash(h, &here->levels[here->cursor - 1]);
   --here->ttl;
