@@ -41,7 +41,7 @@ struct MinimalTaffyCuckooFilter {
     libfilter_minimal_taffy_cuckoo_null_out(&that.data);
   }
   //MinimalTaffyCuckooFilter(libfilter_minimal_taffy_cuckoo&& b) : data(std::move(b)) {}
-  ~MinimalTaffyCuckooFilter() { libfilter_minimal_taffy_cuckoo_destroy(&data); }
+  ~MinimalTaffyCuckooFilter() { libfilter_minimal_taffy_cuckoo_destruct(&data); }
   MinimalTaffyCuckooFilter(const MinimalTaffyCuckooFilter&) = delete;
   MinimalTaffyCuckooFilter(libfilter_minimal_taffy_cuckoo&& steal) : data(steal) {
     libfilter_minimal_taffy_cuckoo_null_out(&steal);
@@ -87,7 +87,7 @@ struct MinimalTaffyCuckooFilter {
     return libfilter_minimal_taffy_cuckoo_find_hash(&data, k);
   }
   INLINE bool InsertHash(uint64_t k) {
-    return libfilter_minimal_taffy_cuckoo_insert_hash(&data, k);
+    return libfilter_minimal_taffy_cuckoo_add_hash(&data, k);
   }
 };
 

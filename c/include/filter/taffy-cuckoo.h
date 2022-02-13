@@ -273,7 +273,7 @@ INLINE bool libfilter_frozen_taffy_cuckoo_find_hash(
   return false;
 }
 
-void libfilter_frozen_taffy_cuckoo_destroy(libfilter_frozen_taffy_cuckoo* here);
+void libfilter_frozen_taffy_cuckoo_destruct(libfilter_frozen_taffy_cuckoo* here);
 
 typedef struct libfilter_taffy_cuckoo_struct {
   libfilter_taffy_cuckoo_side sides[2];
@@ -379,12 +379,12 @@ INLINE bool libfilter_taffy_cuckoo_insert_side_path(libfilter_taffy_cuckoo* here
   return libfilter_taffy_cuckoo_insert_side_path_ttl(here, s, q, ttl);
 }
 
-void libfilter_taffy_cuckoo_destroy(libfilter_taffy_cuckoo* t);
+void libfilter_taffy_cuckoo_destruct(libfilter_taffy_cuckoo* t);
 
 // Double the size of the filter
 void libfilter_taffy_cuckoo_upsize(libfilter_taffy_cuckoo* here);
 
-INLINE bool libfilter_taffy_cuckoo_insert_hash(libfilter_taffy_cuckoo* here, uint64_t k) {
+INLINE bool libfilter_taffy_cuckoo_add_hash(libfilter_taffy_cuckoo* here, uint64_t k) {
   // 95% is achievable, generally,but give it some room
   while (here->occupied > 0.90 * libfilter_taffy_cuckoo_capacity(here) ||
          here->occupied + 4 >= libfilter_taffy_cuckoo_capacity(here) ||

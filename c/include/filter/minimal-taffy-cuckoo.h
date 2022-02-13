@@ -136,9 +136,9 @@ typedef struct {
   uint64_t occupied;
 } libfilter_minimal_taffy_cuckoo;
 
-void libfilter_minimal_taffy_cuckoo_null_out(libfilter_minimal_taffy_cuckoo * );
+void libfilter_minimal_taffy_cuckoo_null_out(libfilter_minimal_taffy_cuckoo*);
 
-void libfilter_minimal_taffy_cuckoo_destroy(libfilter_minimal_taffy_cuckoo* );
+void libfilter_minimal_taffy_cuckoo_destruct(libfilter_minimal_taffy_cuckoo*);
 
 libfilter_minimal_taffy_cuckoo libfilter_minimal_taffy_cuckoo_create(
     int log_side_size, const uint64_t* entropy);
@@ -181,7 +181,7 @@ void libfilter_minimal_taffy_cuckoo_insert_detail(libfilter_minimal_taffy_cuckoo
                                                   libfilter_minimal_taffy_cuckoo_path p,
                                                   int ttl);
 
-INLINE bool libfilter_minimal_taffy_cuckoo_insert_hash(
+INLINE bool libfilter_minimal_taffy_cuckoo_add_hash(
     libfilter_minimal_taffy_cuckoo* here, uint64_t k) {
   while (here->occupied > 0.9 * libfilter_minimal_taffy_cuckoo_capacity(here) ||
          here->occupied + 4 >= libfilter_minimal_taffy_cuckoo_capacity(here) ||

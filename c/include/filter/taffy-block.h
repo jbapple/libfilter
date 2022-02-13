@@ -27,10 +27,10 @@ INLINE uint64_t libfilter_taffy_block_size_in_bytes(const libfilter_taffy_block*
   return result;
 }
 
-void libfitler_taffy_block_upsize(libfilter_taffy_block* here);
+void libfilter_taffy_block_upsize(libfilter_taffy_block* here);
 
 INLINE bool libfilter_taffy_block_add_hash(libfilter_taffy_block* here, uint64_t h) {
-  if (here->ttl <= 0) libfitler_taffy_block_upsize(here);
+  if (here->ttl <= 0) libfilter_taffy_block_upsize(here);
   libfilter_block_add_hash(h, &here->levels[here->cursor - 1]);
   --here->ttl;
   return true;

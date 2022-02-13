@@ -20,7 +20,7 @@ size_t libfilter_frozen_taffy_cuckoo_size_in_bytes(
          sizeof(uint64_t) * (b->stash_capacity_[0] + b->stash_capacity_[1]);
 }
 
-void libfilter_frozen_taffy_cuckoo_destroy(libfilter_frozen_taffy_cuckoo* here) {
+void libfilter_frozen_taffy_cuckoo_destruct(libfilter_frozen_taffy_cuckoo* here) {
   free(here->data_[0]);
   free(here->data_[1]);
   free(here->stash_[0]);
@@ -168,7 +168,7 @@ uint64_t libfilter_taffy_cuckoo_size_in_bytes(const libfilter_taffy_cuckoo* here
 //   }
 // }
 
-void libfilter_taffy_cuckoo_destroy(libfilter_taffy_cuckoo* t) {
+void libfilter_taffy_cuckoo_destruct(libfilter_taffy_cuckoo* t) {
   free(t->sides[0].data);
   free(t->sides[0].stash);
   free(t->sides[1].data);
@@ -227,7 +227,7 @@ void libfilter_taffy_cuckoo_upsize(libfilter_taffy_cuckoo* here) {
   }
   // using std::swap;
   libfilter_taffy_cuckoo_swap(here, &t);
-  libfilter_taffy_cuckoo_destroy(&t);
+  libfilter_taffy_cuckoo_destruct(&t);
 }
 
 static void UnionHelp(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo* that,

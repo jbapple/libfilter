@@ -24,8 +24,7 @@ int libfilter_taffy_block_init(uint64_t ndv, double fpp, libfilter_taffy_block *
   return result;
 }
 
-
-void libfitler_taffy_block_upsize(libfilter_taffy_block* here) {
+void libfilter_taffy_block_upsize(libfilter_taffy_block* here) {
   here->last_ndv *= 2;
   libfilter_block_init(here->sizes[here->cursor], &here->levels[here->cursor]);
   ++here->cursor;

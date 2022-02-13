@@ -54,7 +54,7 @@ void libfilter_minimal_taffy_cuckoo_null_out(libfilter_minimal_taffy_cuckoo * he
   }
 }
 
-void libfilter_minimal_taffy_cuckoo_destroy(libfilter_minimal_taffy_cuckoo* here) {
+void libfilter_minimal_taffy_cuckoo_destruct(libfilter_minimal_taffy_cuckoo* here) {
   libfilter_minimal_taffy_cuckoo_side_destroy(&here->sides[0]);
   libfilter_minimal_taffy_cuckoo_side_destroy(&here->sides[1]);
 }

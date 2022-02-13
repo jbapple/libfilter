@@ -34,7 +34,7 @@ struct FrozenTaffyCuckoo {
     return result;
   }
 
-  ~FrozenTaffyCuckoo() { libfilter_frozen_taffy_cuckoo_destroy(&b); }
+  ~FrozenTaffyCuckoo() { libfilter_frozen_taffy_cuckoo_destruct(&b); }
   FrozenTaffyCuckoo(const FrozenTaffyCuckoo&) = delete;
   FrozenTaffyCuckoo(FrozenTaffyCuckoo&& that) {
     b = that.b;
@@ -82,13 +82,13 @@ struct FrozenTaffyCuckoo {
       return result;
     }
 
-    bool InsertHash(uint64_t h) { return libfilter_taffy_cuckoo_insert_hash(&b, h); }
+    bool InsertHash(uint64_t h) { return libfilter_taffy_cuckoo_add_hash(&b, h); }
     bool FindHash(uint64_t h) const { return libfilter_taffy_cuckoo_find_hash(&b, h); }
     size_t SizeInBytes() const { return libfilter_taffy_cuckoo_size_in_bytes(&b); }
     FrozenTaffyCuckoo Freeze() const {
       return FrozenTaffyCuckoo{libfilter_taffy_cuckoo_freeze(&b)};
     }
-    ~TaffyCuckooFilter() { libfilter_taffy_cuckoo_destroy(&b); }
+    ~TaffyCuckooFilter() { libfilter_taffy_cuckoo_destruct(&b); }
 };
 
 TaffyCuckooFilter Union(const TaffyCuckooFilter& x, const TaffyCuckooFilter& y) {
