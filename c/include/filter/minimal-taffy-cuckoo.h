@@ -21,13 +21,6 @@ typedef struct {
   libfilter_minimal_taffy_cuckoo_bucket* data;
 }  libfilter_minimal_taffy_cuckoo_level;
 
-void libfilter_minimal_taffy_cuckoo_level_null_out(libfilter_minimal_taffy_cuckoo_level*);
-
-libfilter_minimal_taffy_cuckoo_level libfilter_minimal_taffy_cuckoo_level_create(
-    int log_level_size);
-
-void libfilter_minimal_taffy_cuckoo_level_destroy(libfilter_minimal_taffy_cuckoo_level*);
-
 // Returns an empty path (tail = 0) if insert added a new element. Returns p if insert
 // succeded without anning anything new. Returns something else if that something else
 // was displaced by the insert. That item must be inserted then
@@ -92,14 +85,6 @@ typedef struct {
   libfilter_minimal_taffy_cuckoo_path * stashes;
   size_t stashes_size, stashes_capacity;
 } libfilter_minimal_taffy_cuckoo_side;
-
-void libfilter_minimal_taffy_cuckoo_side_null_out(libfilter_minimal_taffy_cuckoo_side*);
-
-libfilter_minimal_taffy_cuckoo_side libfilter_minimal_taffy_cuckoo_side_create(
-    int log_level_size, const uint64_t* keys);
-
-void libfilter_minimal_taffy_cuckoo_side_destroy(
-    libfilter_minimal_taffy_cuckoo_side* side);
 
 INLINE bool libfilter_minimal_taffy_cuckoo_side_find(
     const libfilter_minimal_taffy_cuckoo_side* side,
