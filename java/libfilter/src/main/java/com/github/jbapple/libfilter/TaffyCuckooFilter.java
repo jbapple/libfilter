@@ -22,7 +22,8 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
     return x;
   }
 
-  private static short fingerprint(short x) {
+  static short fingerprint(short x) {
+    // TODO: the mask is unnecessary?
     return (short) Feistel.Mask(kHeadSize, x >>> (kTailSize + 1));
   }
 
@@ -35,9 +36,9 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
 
   private static short encodedTail(short x) { return (short)(x & ((1 << (kTailSize + 1)) - 1)); }
 
-  private static class Path implements Cloneable {
-    private int bucket;
-    private short slot;
+  static class Path implements Cloneable {
+    int bucket;
+    short slot;
 
     @Override
     public Path clone() {
@@ -61,7 +62,7 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
     }
   }
 
-  private static Path toPath(long raw, Feistel f, int log_side_size) {
+  static Path toPath(long raw, Feistel f, int log_side_size) {
     Path p = new Path();
     long pre_hash_index_and_fp = raw >>> (64 - log_side_size - kHeadSize);
     long hashed_index_and_fp =
@@ -86,10 +87,10 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
     return shifted_up;
   }
 
-  private static class Side implements Cloneable {
-    private Feistel f;
-    private ArrayList<Path> stash;
-    private short[] data;
+  static class Side implements Cloneable {
+    Feistel f;
+    ArrayList<Path> stash;
+    short[] data;
 
     @Override
     public Side clone() {
@@ -149,6 +150,7 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
     }
 
     boolean Find(Path p) {
+      // System.out.println(String.format("tcf 0x%08X", fingerprint(p.slot)));
       for (Path path : stash) {
         if (encodedTail(path.slot) != 0 && p.bucket == path.bucket
             && fingerprint(p.slot) == fingerprint(path.slot)
@@ -167,8 +169,8 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
     }
   }
 
-  private Side[] sides;
-  private int log_side_size;
+  Side[] sides;
+  int log_side_size;
   private PcgRandom rng;
   private long occupied = 0;
 
@@ -351,8 +353,8 @@ public class TaffyCuckooFilter implements Filter, Cloneable, Growable {
             sides[1].f.keys[3]});
 
     ArrayList<ArrayList<Path>> stashes = new ArrayList<ArrayList<Path>>();
-    stashes.add((ArrayList<Path>)sides[0].stash.clone());
-    stashes.add((ArrayList<Path>)sides[1].stash.clone());
+    stashes.add(new ArrayList<Path>(sides[0].stash));
+    stashes.add(new ArrayList<Path>(sides[1].stash));
     sides[0].stash.clear();
     sides[1].stash.clear();
     for (int s = 0; s < 2; ++s) {

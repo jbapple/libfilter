@@ -19,6 +19,24 @@ public class FilterTest {
     InsertPersistsHelp(TaffyBlockFilter.CreateWithNdvFpp(1, 0.001));
   }
 
+  @Test
+  public void Freeze() {
+    TaffyCuckooFilter tcf = TaffyCuckooFilter.CreateWithBytes(1);
+    int ndv = 2345678;
+    ArrayList<Long> hashes = new ArrayList<Long>(ndv);
+    Random r = new Random(0xdeadbeef);
+    for (int i = 0; i < ndv; ++i) {
+      hashes.add(r.nextLong());
+      tcf.AddHash64(hashes.get(i));
+    }
+    FrozenTaffyCuckooFilter ftcf = new FrozenTaffyCuckooFilter(tcf);
+    for (int i = 0; i < ndv; ++i) {
+      // System.out.println(String.format("ndv %d", i));
+      //assertTrue(tcf.FindHash64(hashes.get(i)));
+      assertTrue(ftcf.FindHash64(hashes.get(i)));
+    }
+  }
+
   public <T extends Filter> void InsertPersistsHelp(T x) {
     int ndv = 8000;
     ArrayList<Long> hashes = new ArrayList<Long>(ndv);
