@@ -18,14 +18,13 @@ lib: Makefile
 extras: lib
 	$(MAKE) -C extras
 
-install: lib include/filter/memory.h include/filter/block.h include/filter/hash.h
+install: lib include/filter/memory.h include/filter/block.h include/filter/minimal-taffy-cuckoo.h include/filter/paths.h include/filter/taffy-block.h include/filter/taffy-cuckoo.h
 	install -d /usr/local/include/filter
 	install lib/libfilter.a /usr/local/lib
 	install lib/libfilter.so /usr/local/lib
-	install -m 0644 include/filter/memory.h include/filter/block.h include/filter/hash.h /usr/local/include/filter
+	install -m 0644 include/filter/memory.h include/filter/block.h include/filter/minimal-taffy-cuckoo.h include/filter/paths.h include/filter/taffy-block.h include/filter/taffy-cuckoo.h /usr/local/include/filter
 
 uninstall:
-	rm -f /usr/local/include/filter/memory.h
-	rm -f /usr/local/include/filter/block.h
+	rm -f /usr/local/filter/*.h
 	rm -f /usr/local/lib/libfilter.a
 	rm -f /usr/local/lib/libfilter.so

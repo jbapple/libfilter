@@ -35,9 +35,6 @@ typedef struct libfilter_block_struct libfilter_block;
 // Given a number of distinct values and a goal false-positive probability, returns the
 // size of the filter needed to achieve them.
 uint64_t libfilter_block_bytes_needed(double ndv, double fpp);
-// Essentially the inverse operation: returns the heap space used by the data in the
-// filter
-inline uint64_t libfilter_block_size_in_bytes(const libfilter_block *);
 
 // Initializes a filter. Returns 0 on success and < 0 on error
 int libfilter_block_init(uint64_t heap_space, libfilter_block *);
@@ -58,6 +55,9 @@ double libfilter_block_fpp(double ndv, double bytes);
 uint64_t libfilter_block_capacity(uint64_t bytes, double fpp);
 void libfilter_block_zero_out(libfilter_block *);
 bool libfilter_block_equals(const libfilter_block *, const libfilter_block *);
+// Essentially the inverse operation of libfilter_block_bytes_needed: returns the heap
+// space used by the data in the filter
+inline uint64_t libfilter_block_size_in_bytes(const libfilter_block *);
 
 inline void libfilter_block_scalar_add_hash(uint64_t hash, libfilter_block *);
 inline bool libfilter_block_scalar_find_hash(uint64_t hash, const libfilter_block *);
