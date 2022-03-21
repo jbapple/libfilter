@@ -1,5 +1,4 @@
-package block
-
+package libfilter
 
 // #cgo CFLAGS: -march=native
 // #cgo LDFLAGS: -lfilter -lm

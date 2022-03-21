@@ -286,8 +286,11 @@ typedef struct libfilter_taffy_cuckoo_struct {
 void libfilter_taffy_cuckoo_swap(libfilter_taffy_cuckoo* x, libfilter_taffy_cuckoo* y);
 libfilter_taffy_cuckoo libfilter_taffy_cuckoo_clone(const libfilter_taffy_cuckoo* that);
 libfilter_taffy_cuckoo libfilter_taffy_cuckoo_create_with_bytes(uint64_t bytes);
+void libfilter_taffy_cuckoo_init(uint64_t bytes, libfilter_taffy_cuckoo* here);
 libfilter_frozen_taffy_cuckoo libfilter_taffy_cuckoo_freeze(
     const libfilter_taffy_cuckoo* here);
+void libfilter_taffy_cuckoo_freeze_init(const libfilter_taffy_cuckoo* here,
+                                        libfilter_frozen_taffy_cuckoo* result);
 
 uint64_t libfilter_taffy_cuckoo_size_in_bytes(const libfilter_taffy_cuckoo* here);
 

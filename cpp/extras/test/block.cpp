@@ -146,7 +146,6 @@ void InsertFalsePositivePersistsHelp(T& x, uint64_t n) {
   }
 }
 
-
 // Test that once something is inserted, it's always present
 TYPED_TEST(BytesTest, InsertPersistsWithBytes) {
   auto ndv = 16000;
