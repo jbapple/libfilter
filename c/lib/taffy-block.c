@@ -30,3 +30,15 @@ void libfilter_taffy_block_upsize(libfilter_taffy_block* here) {
   ++here->cursor;
   here->ttl = here->last_ndv;
 }
+
+libfilter_taffy_block libfilter_taffy_block_clone(const libfilter_taffy_block* b) {
+  libfilter_taffy_block result;
+  for(int i = 0; i < 48; ++i) {
+    result.levels[i] = libfilter_block_clone(&b->levels[i]);
+    result.sizes[i] = b->sizes[i];
+  }
+  result.cursor = b->cursor;
+  result.last_ndv = b->last_ndv;
+  result.ttl = b->ttl;
+  return result;
+}

@@ -1,5 +1,7 @@
 package libfilter
 
+// TODO: union, intersection
+
 // #cgo CFLAGS: -march=native
 // #cgo LDFLAGS: -lfilter -lm
 // #include <filter/block.h>
@@ -29,4 +31,8 @@ func (b BlockFilter) AddHash(hash uint64) {
 
 func (b BlockFilter) FindHash(hash uint64) bool {
 	return bool(C.libfilter_block_find_hash(C.uint64_t(hash), &b))
+}
+
+func (b BlockFilter) Clone() BlockFilter {
+	return C.libfilter_block_clone(&b)
 }

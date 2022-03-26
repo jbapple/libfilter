@@ -52,43 +52,44 @@ struct FrozenTaffyCuckoo {
   }
 };
 
-  struct TaffyCuckooFilter {
-    TaffyCuckooFilter(const TaffyCuckooFilter&) = delete;
-    TaffyCuckooFilter(TaffyCuckooFilter&& that) {
-      b = that.b;
-      for (int i = 0; i < 2; ++i) {
-        that.b.sides[i].data = NULL;
-        that.b.sides[i].stash = NULL;
-      }
+struct TaffyCuckooFilter {
+  TaffyCuckooFilter(const TaffyCuckooFilter& that)
+      : b(libfilter_taffy_cuckoo_clone(&that.b)) {}
+  TaffyCuckooFilter(TaffyCuckooFilter&& that) {
+    b = that.b;
+    for (int i = 0; i < 2; ++i) {
+      that.b.sides[i].data = NULL;
+      that.b.sides[i].stash = NULL;
     }
+  }
 
-    TaffyCuckooFilter(libfilter_taffy_cuckoo&& that) {
-      b = that;
-      for (int i = 0; i < 2; ++i) {
-        that.sides[i].data = NULL;
-        that.sides[i].stash = NULL;
-      }
+  TaffyCuckooFilter(libfilter_taffy_cuckoo&& that) {
+    b = that;
+    for (int i = 0; i < 2; ++i) {
+      that.sides[i].data = NULL;
+      that.sides[i].stash = NULL;
     }
+  }
 
-    libfilter_taffy_cuckoo b;
+  libfilter_taffy_cuckoo b;
 
-    // TODO: change to int64_t and prevent negatives
-    static TaffyCuckooFilter CreateWithBytes(size_t bytes) {
-      return TaffyCuckooFilter{libfilter_taffy_cuckoo_create_with_bytes(bytes)};
-    }
+  // TODO: change to int64_t and prevent negatives
+  static TaffyCuckooFilter CreateWithBytes(size_t bytes) {
+    return TaffyCuckooFilter{libfilter_taffy_cuckoo_create_with_bytes(bytes)};
+  }
 
-    static const char* Name() {
-      thread_local const constexpr char result[] = "TaffyCuckoo";
-      return result;
-    }
+  static const char* Name() {
+    thread_local const constexpr char result[] = "TaffyCuckoo";
+    return result;
+  }
 
-    bool InsertHash(uint64_t h) { return libfilter_taffy_cuckoo_add_hash(&b, h); }
-    bool FindHash(uint64_t h) const { return libfilter_taffy_cuckoo_find_hash(&b, h); }
-    size_t SizeInBytes() const { return libfilter_taffy_cuckoo_size_in_bytes(&b); }
-    FrozenTaffyCuckoo Freeze() const {
-      return FrozenTaffyCuckoo{libfilter_taffy_cuckoo_freeze(&b)};
-    }
-    ~TaffyCuckooFilter() { libfilter_taffy_cuckoo_destruct(&b); }
+  bool InsertHash(uint64_t h) { return libfilter_taffy_cuckoo_add_hash(&b, h); }
+  bool FindHash(uint64_t h) const { return libfilter_taffy_cuckoo_find_hash(&b, h); }
+  size_t SizeInBytes() const { return libfilter_taffy_cuckoo_size_in_bytes(&b); }
+  FrozenTaffyCuckoo Freeze() const {
+    return FrozenTaffyCuckoo{libfilter_taffy_cuckoo_freeze(&b)};
+  }
+  ~TaffyCuckooFilter() { libfilter_taffy_cuckoo_destruct(&b); }
 };
 
 TaffyCuckooFilter Union(const TaffyCuckooFilter& x, const TaffyCuckooFilter& y) {

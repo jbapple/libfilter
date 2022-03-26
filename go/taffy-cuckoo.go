@@ -1,5 +1,7 @@
 package libfilter
 
+// TODO: union
+
 // #cgo LDFLAGS: -lfilter -lm
 // #include <filter/taffy-cuckoo.h>
 import "C"
@@ -40,4 +42,8 @@ func (b TaffyCuckooFilter) FindHash(hash uint64) bool {
 
 func (b FrozenTaffyCuckooFilter) FindHash(hash uint64) bool {
 	return bool(C.libfilter_frozen_taffy_cuckoo_find_hash(&b, C.uint64_t(hash)))
+}
+
+func (b TaffyCuckooFilter) Clone() TaffyCuckooFilter {
+	return C.libfilter_taffy_cuckoo_clone(&b)
 }

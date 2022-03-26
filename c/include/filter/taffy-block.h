@@ -15,6 +15,8 @@ typedef struct {
   int64_t ttl;
 } libfilter_taffy_block;
 
+libfilter_taffy_block libfilter_taffy_block_clone(const libfilter_taffy_block* b);
+
 void libfilter_taffy_block_destruct(libfilter_taffy_block* here);
 
 int libfilter_taffy_block_init(uint64_t ndv, double fpp, libfilter_taffy_block*);

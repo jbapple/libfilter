@@ -1,5 +1,7 @@
 package libfilter
 
+// TODO: union, intersection
+
 // #cgo CFLAGS: -march=native
 // #cgo LDFLAGS: -lfilter -lm
 // #include <filter/taffy-block.h>
@@ -25,4 +27,8 @@ func (b TaffyBlockFilter) AddHash(hash uint64) {
 
 func (b TaffyBlockFilter) FindHash(hash uint64) bool {
 	return bool(C.libfilter_taffy_block_find_hash(&b, C.uint64_t(hash)))
+}
+
+func (b TaffyBlockFilter) Clone() TaffyBlockFilter {
+	return C.libfilter_taffy_block_clone(&b)
 }
