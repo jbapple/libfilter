@@ -36,6 +36,7 @@ struct FrozenTaffyCuckoo {
 
   ~FrozenTaffyCuckoo() { libfilter_frozen_taffy_cuckoo_destruct(&b); }
   FrozenTaffyCuckoo(const FrozenTaffyCuckoo&) = delete;
+  FrozenTaffyCuckoo& operator=(const FrozenTaffyCuckoo&) = delete;
   FrozenTaffyCuckoo(FrozenTaffyCuckoo&& that) {
     b = that.b;
     for (int i = 0; i < 2; ++i) {
@@ -55,6 +56,11 @@ struct FrozenTaffyCuckoo {
 struct TaffyCuckooFilter {
   TaffyCuckooFilter(const TaffyCuckooFilter& that)
       : b(libfilter_taffy_cuckoo_clone(&that.b)) {}
+  TaffyCuckooFilter& operator=(const TaffyCuckooFilter& that) {
+    this->~TaffyCuckooFilter();
+    new (this) TaffyCuckooFilter(that);
+    return *this;
+  }
   TaffyCuckooFilter(TaffyCuckooFilter&& that) {
     b = that.b;
     for (int i = 0; i < 2; ++i) {

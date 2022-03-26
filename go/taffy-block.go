@@ -3,7 +3,7 @@ package libfilter
 // TODO: union, intersection
 
 // #cgo CFLAGS: -march=native
-// #cgo LDFLAGS: -lfilter -lm
+// #cgo LDFLAGS: lib/libfilter.a -lm
 // #include <filter/taffy-block.h>
 import "C"
 import "runtime"

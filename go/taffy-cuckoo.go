@@ -2,7 +2,7 @@ package libfilter
 
 // TODO: union
 
-// #cgo LDFLAGS: -lfilter -lm
+// #cgo LDFLAGS: lib/libfilter.a
 // #include <filter/taffy-cuckoo.h>
 import "C"
 import "runtime"

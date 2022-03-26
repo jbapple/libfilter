@@ -13,6 +13,11 @@ struct TaffyBlockFilter {
   libfilter_taffy_block data;
   TaffyBlockFilter(const TaffyBlockFilter& that)
       : data(libfilter_taffy_block_clone(&that.data)) {}
+  TaffyBlockFilter& operator=(const TaffyBlockFilter& that) {
+    this->~TaffyBlockFilter();
+    new (this) TaffyBlockFilter(that);
+    return *this;
+  }
   ~TaffyBlockFilter() { libfilter_taffy_block_destruct(&data); }
 
   static TaffyBlockFilter CreateWithNdvFpp(uint64_t ndv, double fpp) {
