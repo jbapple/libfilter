@@ -17,6 +17,8 @@ extern "C" {
 }
 
 #include <cstdint>
+#include <new>
+#include <utility>
 
 namespace filter {
 
@@ -37,6 +39,11 @@ struct FrozenTaffyCuckoo {
   ~FrozenTaffyCuckoo() { libfilter_frozen_taffy_cuckoo_destruct(&b); }
   FrozenTaffyCuckoo(const FrozenTaffyCuckoo&) = delete;
   FrozenTaffyCuckoo& operator=(const FrozenTaffyCuckoo&) = delete;
+  FrozenTaffyCuckoo& operator=(FrozenTaffyCuckoo&& that) {
+    this->~FrozenTaffyCuckoo();
+    new (this) FrozenTaffyCuckoo(std::move(that));
+    return *this;
+  }
   FrozenTaffyCuckoo(FrozenTaffyCuckoo&& that) {
     b = that.b;
     for (int i = 0; i < 2; ++i) {
@@ -59,6 +66,11 @@ struct TaffyCuckooFilter {
   TaffyCuckooFilter& operator=(const TaffyCuckooFilter& that) {
     this->~TaffyCuckooFilter();
     new (this) TaffyCuckooFilter(that);
+    return *this;
+  }
+  TaffyCuckooFilter& operator=(TaffyCuckooFilter&& that) {
+    this->~TaffyCuckooFilter();
+    new (this) TaffyCuckooFilter(std::move(that));
     return *this;
   }
   TaffyCuckooFilter(TaffyCuckooFilter&& that) {

@@ -1,7 +1,6 @@
-#include <algorithm>
-#include <cmath>
-#include <numeric>
 #include <cstdint>
+#include <new>
+#include <utility>
 
 extern "C" {
 #include "filter/taffy-block.h"
@@ -18,6 +17,16 @@ struct TaffyBlockFilter {
     new (this) TaffyBlockFilter(that);
     return *this;
   }
+  TaffyBlockFilter(TaffyBlockFilter&& that)
+      : data(that.data) {
+    for (int i = 0; i < 48; ++i) that.data.levels[i].block_.to_free = nullptr;
+  }
+  TaffyBlockFilter& operator=(TaffyBlockFilter&& that) {
+    this->~TaffyBlockFilter();
+    new (this) TaffyBlockFilter(std::move(that));
+    return *this;
+  }
+
   ~TaffyBlockFilter() { libfilter_taffy_block_destruct(&data); }
 
   static TaffyBlockFilter CreateWithNdvFpp(uint64_t ndv, double fpp) {
