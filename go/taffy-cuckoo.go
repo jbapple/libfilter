@@ -44,6 +44,10 @@ func (b FrozenTaffyCuckooFilter) FindHash(hash uint64) bool {
 	return bool(C.libfilter_frozen_taffy_cuckoo_find_hash(&b, C.uint64_t(hash)))
 }
 
-func (b TaffyCuckooFilter) Clone() TaffyCuckooFilter {
-	return C.libfilter_taffy_cuckoo_clone(&b)
+func (b TaffyCuckooFilter) Clone() *TaffyCuckooFilter {
+	result := new(TaffyCuckooFilter)
+	runtime.SetFinalizer(result, FreeTaffyCuckooFilter)
+	// TODO: handle error
+	C.libfilter_taffy_cuckoo_clone(&b, result)
+	return result;
 }

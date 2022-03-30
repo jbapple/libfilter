@@ -49,6 +49,8 @@ inline void libfilter_block_add_hash(uint64_t hash, libfilter_block *);
 // usage and the number of distinct hash values that have been added. As in
 // libfilter_block_add_hash, the hash value is expected to be pseudorandom.
 inline bool libfilter_block_find_hash(uint64_t hash, const libfilter_block *);
+// TODO: write docs for this
+int libfilter_block_clone(const libfilter_block *, libfilter_block*);
 
 // Lower-level operations:
 double libfilter_block_fpp(double ndv, double bytes);
@@ -85,9 +87,6 @@ struct libfilter_block_struct {
   uint64_t num_buckets_;
   libfilter_region block_;
 };
-
-// TODO: write docs for this
-libfilter_block libfilter_block_clone(const libfilter_block *);
 
 __attribute__((visibility("hidden")))
 __attribute__((always_inline)) inline uint64_t libfilter_block_index(

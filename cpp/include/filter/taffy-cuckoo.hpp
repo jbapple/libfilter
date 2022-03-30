@@ -61,8 +61,9 @@ struct FrozenTaffyCuckoo {
 };
 
 struct TaffyCuckooFilter {
-  TaffyCuckooFilter(const TaffyCuckooFilter& that)
-      : b(libfilter_taffy_cuckoo_clone(&that.b)) {}
+  TaffyCuckooFilter(const TaffyCuckooFilter& that) {
+    libfilter_taffy_cuckoo_clone(&that.b, &b);
+  }
   TaffyCuckooFilter& operator=(const TaffyCuckooFilter& that) {
     this->~TaffyCuckooFilter();
     new (this) TaffyCuckooFilter(that);

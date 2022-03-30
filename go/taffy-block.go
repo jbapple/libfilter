@@ -29,6 +29,10 @@ func (b TaffyBlockFilter) FindHash(hash uint64) bool {
 	return bool(C.libfilter_taffy_block_find_hash(&b, C.uint64_t(hash)))
 }
 
-func (b TaffyBlockFilter) Clone() TaffyBlockFilter {
-	return C.libfilter_taffy_block_clone(&b)
+func (b TaffyBlockFilter) Clone() *TaffyBlockFilter {
+	result := new(TaffyBlockFilter)
+	runtime.SetFinalizer(result, FreeTaffyBlockFilter)
+	// TODO: handle error
+	C.libfilter_taffy_block_clone(&b, result)
+	return result;
 }

@@ -33,6 +33,9 @@ func (b BlockFilter) FindHash(hash uint64) bool {
 	return bool(C.libfilter_block_find_hash(C.uint64_t(hash), &b))
 }
 
-func (b BlockFilter) Clone() BlockFilter {
-	return C.libfilter_block_clone(&b)
+func (b BlockFilter) Clone() *BlockFilter {
+	result := new(BlockFilter)
+	C.libfilter_block_clone(&b, result)
+	runtime.SetFinalizer(result, FreeBlockFilter)
+	return result
 }

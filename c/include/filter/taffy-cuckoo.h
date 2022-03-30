@@ -242,8 +242,7 @@ typedef struct libfilter_frozen_taffy_cuckoo_struct {
   size_t stash_size_[2];
 } libfilter_frozen_taffy_cuckoo;
 
-size_t libfilter_frozen_taffy_cuckoo_size_in_bytes(
-    const libfilter_frozen_taffy_cuckoo* b);
+size_t libfilter_frozen_taffy_cuckoo_size_in_bytes(const libfilter_frozen_taffy_cuckoo*);
 
 INLINE uint64_t libfilter_cuckoo_has_zero_10(uint64_t x) {
   return ((x)-0x40100401ULL) & (~(x)) & 0x8020080200ULL;
@@ -284,7 +283,8 @@ typedef struct libfilter_taffy_cuckoo_struct {
 } libfilter_taffy_cuckoo;
 
 void libfilter_taffy_cuckoo_swap(libfilter_taffy_cuckoo* x, libfilter_taffy_cuckoo* y);
-libfilter_taffy_cuckoo libfilter_taffy_cuckoo_clone(const libfilter_taffy_cuckoo* that);
+int libfilter_taffy_cuckoo_clone(const libfilter_taffy_cuckoo* that,
+                                 libfilter_taffy_cuckoo*);
 libfilter_taffy_cuckoo libfilter_taffy_cuckoo_create_with_bytes(uint64_t bytes);
 void libfilter_taffy_cuckoo_init(uint64_t bytes, libfilter_taffy_cuckoo* here);
 libfilter_frozen_taffy_cuckoo libfilter_taffy_cuckoo_freeze(

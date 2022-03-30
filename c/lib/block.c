@@ -50,13 +50,14 @@ void libfilter_block_zero_out(libfilter_block* const here) {
   libfilter_clear_region(&here->block_);
 }
 
-libfilter_block libfilter_block_clone(const libfilter_block * here) {
+int libfilter_block_clone(const libfilter_block* here, libfilter_block* to) {
   uint64_t new_request = libfilter_new_alloc_request(here->num_buckets_ * 32, 32);
   libfilter_region_alloc_result r = libfilter_alloc_at_most(new_request, 32);
   // TODO: check for failure here!
   memcpy(r.region.block, here->block_.block, here->num_buckets_ * 32);
-  libfilter_block result = {.num_buckets_ = here->num_buckets_, .block_ = r.region};
-  return result;
+  to->num_buckets_ = here->num_buckets_;
+  to->block_ = r.region;
+  return 0;
 }
 
 bool libfilter_block_equals(const libfilter_block* here, const libfilter_block* there) {

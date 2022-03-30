@@ -10,8 +10,9 @@ namespace filter {
 
 struct TaffyBlockFilter {
   libfilter_taffy_block data;
-  TaffyBlockFilter(const TaffyBlockFilter& that)
-      : data(libfilter_taffy_block_clone(&that.data)) {}
+  TaffyBlockFilter(const TaffyBlockFilter& that) {
+    if (0 != libfilter_taffy_block_clone(&that.data, &data)) throw std::bad_alloc();
+  }
   TaffyBlockFilter& operator=(const TaffyBlockFilter& that) {
     this->~TaffyBlockFilter();
     new (this) TaffyBlockFilter(that);
@@ -19,7 +20,7 @@ struct TaffyBlockFilter {
   }
   TaffyBlockFilter(TaffyBlockFilter&& that)
       : data(that.data) {
-    for (int i = 0; i < 48; ++i) that.data.levels[i].block_.to_free = nullptr;
+    for (int i = 0; i < 48; ++i) libfilter_block_zero_out(&that.data.levels[i]);
   }
   TaffyBlockFilter& operator=(TaffyBlockFilter&& that) {
     this->~TaffyBlockFilter();

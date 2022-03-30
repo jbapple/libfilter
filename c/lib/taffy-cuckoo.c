@@ -73,27 +73,27 @@ libfilter_taffy_cuckoo libfilter_taffy_cuckoo_create(int log_side_size,
   return here;
 }
 
-libfilter_taffy_cuckoo libfilter_taffy_cuckoo_clone(const libfilter_taffy_cuckoo* that) {
-  libfilter_taffy_cuckoo here;
-  here.sides[0] = libfilter_taffy_cuckoo_side_create(that->log_side_size, that->entropy);
-  here.sides[1] =
+int libfilter_taffy_cuckoo_clone(const libfilter_taffy_cuckoo* that, libfilter_taffy_cuckoo * here) {
+  here->sides[0] =
+      libfilter_taffy_cuckoo_side_create(that->log_side_size, that->entropy + 0);
+  here->sides[1] =
       libfilter_taffy_cuckoo_side_create(that->log_side_size, that->entropy + 4);
-  here.log_side_size = that->log_side_size;
-  here.rng = that->rng;
-  here.entropy = that->entropy;
-  here.occupied = that->occupied;
+  here->log_side_size = that->log_side_size;
+  here->rng = that->rng;
+  here->entropy = that->entropy;
+  here->occupied = that->occupied;
   for (int i = 0; i < 2; ++i) {
-    free(here.sides[i].stash);
-    here.sides[i].stash = (libfilter_taffy_cuckoo_path*)calloc(
+    free(here->sides[i].stash);
+    here->sides[i].stash = (libfilter_taffy_cuckoo_path*)calloc(
         that->sides[i].stash_capacity, sizeof(libfilter_taffy_cuckoo_path));
-    here.sides[i].stash_capacity = that->sides[i].stash_capacity;
-    here.sides[i].stash_size = that->sides[i].stash_size;
-    memcpy(&here.sides[i].stash[0], &that->sides[i].stash[0],
+    here->sides[i].stash_capacity = that->sides[i].stash_capacity;
+    here->sides[i].stash_size = that->sides[i].stash_size;
+    memcpy(&here->sides[i].stash[0], &that->sides[i].stash[0],
            that->sides[i].stash_size * sizeof(libfilter_taffy_cuckoo_path));
-    memcpy(&here.sides[i].data[0], &that->sides[i].data[0],
+    memcpy(&here->sides[i].data[0], &that->sides[i].data[0],
            sizeof(libfilter_taffy_cuckoo_bucket) << that->log_side_size);
   }
-  return here;
+  return 0;
 }
 
 void libfilter_taffy_cuckoo_init(uint64_t bytes, libfilter_taffy_cuckoo* here) {

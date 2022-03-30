@@ -8,6 +8,7 @@ extern "C" {
 
 #include <algorithm>
 #include <cstdint>
+#include <new>
 #include <stdexcept>
 
 namespace filter {
@@ -37,10 +38,12 @@ class GenericBF {
     }
   };
 
-  GenericBF(const GenericBF& that) : payload_(libfilter_block_clone(&that.payload_)) {}
+  GenericBF(const GenericBF& that) {
+    if (0 != libfilter_block_clone(&that.payload_, &payload_)) throw std::bad_alloc();
+  }
   GenericBF& operator=(const GenericBF& that) {
     this->~GenericBF();
-    payload_ = libfilter_block_clone(&that.payload_);
+    if (0 != libfilter_block_clone(&that.payload_, &payload_)) throw std::bad_alloc();
     return *this;
   }
 
