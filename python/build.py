@@ -96,6 +96,7 @@ uint64_t libfilter_taffy_cuckoo_size_in_bytes(const libfilter_taffy_cuckoo* here
 inline bool libfilter_taffy_cuckoo_find_hash(const libfilter_taffy_cuckoo* here, uint64_t k);
 void libfilter_taffy_cuckoo_destruct(libfilter_taffy_cuckoo* t);
 inline bool libfilter_taffy_cuckoo_add_hash(libfilter_taffy_cuckoo* here, uint64_t k);
+/* TODO: union */
 
 typedef struct {
   uint64_t zero : 10;
