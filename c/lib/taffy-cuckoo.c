@@ -334,11 +334,13 @@ static void UnionOne(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo*
 libfilter_taffy_cuckoo libfilter_taffy_cuckoo_union(const libfilter_taffy_cuckoo* x,
                                                     const libfilter_taffy_cuckoo* y) {
   if (x->occupied > y->occupied) {
-    libfilter_taffy_cuckoo result = libfilter_taffy_cuckoo_clone(x);
+    libfilter_taffy_cuckoo result;
+    libfilter_taffy_cuckoo_clone(x, &result);
     UnionOne(&result, y);
     return result;
   }
-  libfilter_taffy_cuckoo result = libfilter_taffy_cuckoo_clone(y);
+  libfilter_taffy_cuckoo result;
+  libfilter_taffy_cuckoo_clone(y, &result);
   UnionOne(&result, x);
   return result;
 }

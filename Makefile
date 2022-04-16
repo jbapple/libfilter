@@ -1,4 +1,4 @@
-.PHONY: default clean install uninstall lib world c-world cpp-world java-world go-world
+.PHONY: default clean install uninstall lib world c-world cpp-world java-world go-world python-world
 
 default: lib
 
@@ -21,7 +21,7 @@ clean:
 
 # TODO: clean up for java & gradle
 
-world: c-world cpp-world java-world go-world
+world: c-world cpp-world java-world go-world python-world
 
 c-world: lib
 	$(MAKE) -C c world
@@ -32,8 +32,11 @@ cpp-world: lib
 java-world:
 	mvn -f ./java/ package -Dmaven.test.skip=true
 
-go-world:
-	cd go && go build
+go-world: lib
+	cd go && go build -p 4
+
+python-world: lib
+	cd python && python3 build.py
 
 anonymous.zip: $(shell git ls-files)
 	git archive-all --prefix=libfilter/ anonymous.zip
