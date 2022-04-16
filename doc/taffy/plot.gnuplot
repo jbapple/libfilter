@@ -153,6 +153,7 @@ set datafile separator ",";
 set xlabel "Keys inserted";
 set ylabel "Average nanoseconds per key";
 #set title "Insert performance"
+set yrange [1:*]
 unset format;
 set format x "10^{%.1T}";
 plot "< python3 running-sum.py taffy-mins-with-ndv-finish.csv | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
@@ -173,6 +174,7 @@ set datafile separator ",";
 set xlabel "Keys inserted";
 set ylabel "Average nanoseconds per key";
 #set title "Insert performance"
+set yrange [1:*]
 unset format;
 set format x "10^{%.1T}";
 plot "< python3 running-sum.py m6g.medium.again-mins-wth-ndv-finish.csv | grep MinTaffy    | sort -n -t , -k 3" using 2:($3/$2) with lines lw 9 title "MTCF", \
