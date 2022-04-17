@@ -26,18 +26,19 @@ jobs:
       run: cpp/extras/test/block.exe
     - name: run Java tests
       run: mvn -f ./java/ test
-    - name: run golang tests
+    - name: run golang tests in Linux
       if: runner.os == 'Linux'
-        run: |
-          cd /tmp
-          curl -o go1.18.1.linux-amd64.tar.gz https://go.dev/dl/go1.18.1.linux-amd64.tar.gz
-          tar xzf go1.18.1.linux-amd64.tar.gz
-          cd -
-          cd go
-          /tmp/go/bin/go test
+      run: |
+        cd /tmp
+        curl -o go1.18.1.linux-amd64.tar.gz https://go.dev/dl/go1.18.1.linux-amd64.tar.gz
+        tar xzf go1.18.1.linux-amd64.tar.gz
+        cd -
+        cd go
+        /tmp/go/bin/go test
+    - name: run golang tests in macOS
       if: runner.os == 'macOS'
-        run: |
-          curl -o go1.18.1.darwin-amd64.pkg https://go.dev/dl/go1.18.1.darwin-amd64.pkg
-          sudo installer -pkg go1.18.1.darwin-amd64.pkg -target /tmp
-          cd go
-          /tmp/go/bin/go test
+      run: |
+        curl -o go1.18.1.darwin-amd64.pkg https://go.dev/dl/go1.18.1.darwin-amd64.pkg
+        sudo installer -pkg go1.18.1.darwin-amd64.pkg -target /tmp
+        cd go
+        /tmp/go/bin/go test
