@@ -23,6 +23,7 @@ install: lib include/filter/memory.h include/filter/block.h include/filter/minim
 	install lib/libfilter.a /usr/local/lib
 	install lib/libfilter.so /usr/local/lib
 	install -m 0644 include/filter/memory.h include/filter/block.h include/filter/minimal-taffy-cuckoo.h include/filter/paths.h include/filter/taffy-block.h include/filter/taffy-cuckoo.h include/filter/util.h /usr/local/include/filter
+	ldconfig
 
 uninstall:
 	rm -f /usr/local/filter/*.h
