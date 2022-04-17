@@ -26,3 +26,7 @@ jobs:
       run: cpp/extras/test/block.exe
     - name: run Java tests
       run: mvn -f ./java/ test
+    - name: run golang tests
+      run: |
+        cd go
+        go test
