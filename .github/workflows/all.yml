@@ -20,12 +20,6 @@ jobs:
         python3 -m pip install --upgrade pip
         python3 -m pip install cffi
         make world
-    - name: run C tests
-      run: c/extras/test/paths.exe
-    - name: run C++ tests
-      run: cpp/extras/test/block.exe
-    - name: run Java tests
-      run: mvn -f ./java/ test
     - name: run golang tests in Linux
       if: runner.os == 'Linux'
       run: |
@@ -39,6 +33,13 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         curl -o go1.18.1.darwin-amd64.pkg https://go.dev/dl/go1.18.1.darwin-amd64.pkg
-        sudo installer -pkg go1.18.1.darwin-amd64.pkg -target /tmp
+        ls -ltr
+        sudo installer -pkg ./go1.18.1.darwin-amd64.pkg -target /tmp
         cd go
         /tmp/go/bin/go test
+    - name: run C tests
+      run: c/extras/test/paths.exe
+    - name: run C++ tests
+      run: cpp/extras/test/block.exe
+    - name: run Java tests
+      run: mvn -f ./java/ test
