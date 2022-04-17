@@ -35,6 +35,7 @@ jobs:
         curl -L -o go1.18.1.darwin-amd64.pkg https://go.dev/dl/go1.18.1.darwin-amd64.pkg
         sudo installer -pkg ./go1.18.1.darwin-amd64.pkg -target /
         cd go
+        find / -name go -type f
         go test
     - name: run C tests
       run: c/extras/test/paths.exe
