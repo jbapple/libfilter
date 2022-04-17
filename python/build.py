@@ -11,7 +11,7 @@ ffibuilder.set_source("libfilter",
                       library_dirs=["../c/lib"],
                       libraries=["filter"],
                       extra_compile_args=["-march=native"],
-                      extra_link_args=["-Wl,-rpath=../c/lib"])
+                      extra_link_args=["-Wl,-rpath,../c/lib"])
 
 ffibuilder.cdef("""
 typedef struct {
