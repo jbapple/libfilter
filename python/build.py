@@ -8,6 +8,7 @@ ffibuilder.set_source("libfilter",
                       #include "filter/taffy-cuckoo.h"
                       """,
                       include_dirs=["../c/include"],
+                      library_dirs=["../c/lib"],
                       libraries=["filter"],
                       extra_compile_args=["-march=native"],
                       extra_link_args=["-Wl,-rpath,../c/lib"])
