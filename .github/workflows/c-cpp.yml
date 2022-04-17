@@ -16,7 +16,10 @@ jobs:
       with:
         submodules: 'recursive'
     - name: make
-      run: make world
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install cffi
+        make world
     - name: run C tests
       run: c/extras/test/paths.exe
     - name: run C++ tests
