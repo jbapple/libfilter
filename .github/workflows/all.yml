@@ -33,9 +33,9 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         curl -L -o go1.18.1.darwin-amd64.pkg https://go.dev/dl/go1.18.1.darwin-amd64.pkg
-        sudo installer -pkg ./go1.18.1.darwin-amd64.pkg -target /tmp
+        sudo installer -pkg ./go1.18.1.darwin-amd64.pkg -target /
         cd go
-        /tmp/go/bin/go test
+        go test
     - name: run C tests
       run: c/extras/test/paths.exe
     - name: run C++ tests
