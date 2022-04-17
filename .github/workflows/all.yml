@@ -32,11 +32,13 @@ jobs:
     - name: run golang tests in macOS
       if: runner.os == 'macOS'
       run: |
+        find / -name go -type f 2>/dev/null
         curl -L -o go1.18.1.darwin-amd64.pkg https://go.dev/dl/go1.18.1.darwin-amd64.pkg
         sudo installer -pkg ./go1.18.1.darwin-amd64.pkg -target /
         cd go
         find / -name go -type f 2>/dev/null
-        go test
+        /go/bin/go version
+        /go/bin/go test
     - name: run C tests
       run: c/extras/test/paths.exe
     - name: run C++ tests
