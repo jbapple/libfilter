@@ -33,8 +33,8 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         cd go
-        /System/Volumes/Data/Users/runner/hostedtoolcache/go/1.18.0/x64/bin/go version
-        /System/Volumes/Data/Users/runner/hostedtoolcache/go/1.18.0/x64/bin/go test
+        /Users/runner/hostedtoolcache/go/1.18.0/x64/bin/go version
+        /Users/runner/hostedtoolcache/go/1.18.0/x64/bin/go test
     - name: run C tests
       run: c/extras/test/paths.exe
     - name: run C++ tests
