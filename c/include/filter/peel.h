@@ -27,8 +27,8 @@ libfilter_edge* libfilter_init_edges(size_t n, size_t m, const uint64_t* hashes)
 }
 
 typedef struct {
-  uint64_t edges_xor_;
   size_t count_;
+  size_t* edges_;
 } libfilter_peel_node;
 
 libfilter_peel_node* libfilter_init_peel_nodes(size_t m) {
@@ -40,8 +40,10 @@ void libfilter_populate_peel_nodes(size_t n, const libfilter_edge* edges,
                                    libfilter_peel_node* nodes) {
   for (size_t i = 0; i < n; ++i) {
     for(int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
-      nodes[edges[i].vertex_[j]].edges_xor_ ^= i;
-      nodes[edges[i].vertex_[j]].count_++;
+      libfilter_peel_node * node = &nodes[edges[i].vertex_[j]];
+      node->count_++;
+      node->edges_ = realloc(node->edges_, node->count_ * sizeof(size_t));
+      node->edges_[node->count_ - 1] = i;
     }
   }
 }
@@ -52,12 +54,17 @@ size_t libfilter_peel_once(size_t n, uint64_t vertex_number, const libfilter_edg
                            libfilter_peel_node* nodes, uint64_t* vertex_out) {
   size_t result = 0;
   assert(nodes[vertex_number].count_ == 1);
-  const uint64_t edge_number = nodes[vertex_number].edges_xor_;
+  const uint64_t edge_number = nodes[vertex_number].edges_[0];
   assert (edge_number < n);
   for (int i = 0; i < LIBFILTER_EDGE_ARITY; ++i) {
     const size_t vertex = edges[edge_number].vertex_[i];
-    nodes[vertex].edges_xor_ ^= edge_number;
-    nodes[vertex].count_--;
+    for (size_t j = 0; j < nodes[vertex].count_; ++j) {
+      if (nodes[vertex].edges_[j] == edge_number) {
+        nodes[vertex].edges_[j] = nodes[vertex].edges_[nodes[vertex].count_ - 1];
+      }
+    }
+    nodes[vertex].edges_ =
+        realloc(nodes[vertex].edges_, (--nodes[vertex].count_) * sizeof(size_t));
     if (nodes[vertex].count_ == 1 && vertex != vertex_number) {
       // New peelable nodes
       vertex_out[result++] = vertex;

@@ -6,7 +6,7 @@ MAKEFLAGS += --no-builtin-rules
 all: paths.exe peel.exe
 
 WARN=-W -Wall -Wextra
-RELEASE=-march=native -mtune=native -O3
+RELEASE=-march=native -mtune=native -O3 -ggdb3
 CFLAGS=-std=c99 $(INCLUDES) $(WARN) $(RELEASE)
 
 include $(DEFAULT_RECIPE)
