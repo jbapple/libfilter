@@ -63,8 +63,9 @@ size_t libfilter_peel_once(size_t n, uint64_t vertex_number, const libfilter_edg
         nodes[vertex].edges_[j] = nodes[vertex].edges_[nodes[vertex].count_ - 1];
       }
     }
-    nodes[vertex].edges_ =
-        realloc(nodes[vertex].edges_, (--nodes[vertex].count_) * sizeof(size_t));
+    //nodes[vertex].edges_ =
+    //  realloc(nodes[vertex].edges_, (nodes[vertex].count_ - 1) * sizeof(size_t));
+    nodes[vertex].count_--;
     if (nodes[vertex].count_ == 1 && vertex != vertex_number) {
       // New peelable nodes
       vertex_out[result++] = vertex;
@@ -97,5 +98,21 @@ size_t libfilter_peel(size_t n, size_t m, const libfilter_edge* edges,
   }
   // nodes left include everything not in vertex_out[0, begin_stack). Those nodes are part
   // of the 2-core.
+  if (begin_stack + 1 == m) {
+    uint64_t everything = 0;
+    for (size_t i = 0; i < m; ++i) {
+      everything ^= i;
+    }
+    for (size_t i = 0; i < begin_stack; ++i) {
+      everything ^= vertex_out[i];
+    }
+    printf("remainder %lu\n", everything);
+    printf("first %lu\n", vertex_out[0]);
+    printf("last %lu\n", vertex_out[begin_stack]);
+    printf("count %lu\n", nodes[everything].count_);
+    for (size_t i = 0; i < nodes[everything].count_; ++i) {
+      printf("edge %lu\n", nodes[everything].edges_[i]);
+    }
+  }
   return begin_stack;
 }
