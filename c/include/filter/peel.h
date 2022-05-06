@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -8,6 +9,7 @@
 
 typedef struct {
   size_t vertex_[LIBFILTER_EDGE_ARITY];
+  uint8_t fingerprint_;
 } libfilter_edge;
 
 // Make random edges
@@ -22,8 +24,17 @@ libfilter_edge* libfilter_init_edges(size_t n, size_t m, const uint64_t* hashes)
       assert(result[i].vertex_[j] < m);
       hash = tmp;
     }
+    result[i].fingerprint_ = hash >> 56;
   }
   return result;
+}
+
+bool libfilter_find_edge(const libfilter_edge* edge, const uint8_t* xors) {
+  uint8_t fingerprint = edge->fingerprint_;
+  for (int i = 0; i < LIBFILTER_EDGE_ARITY; ++i) {
+    fingerprint ^= xors[edge->vertex_[i]];
+  }
+  return 0 == fingerprint;
 }
 
 typedef struct {
@@ -48,14 +59,19 @@ void libfilter_populate_peel_nodes(size_t n, const libfilter_edge* edges,
   }
 }
 
+typedef struct {
+  size_t edge_number_;
+  size_t peeled_vertex_;
+} libfilter_edge_peel;
+
 // returns number of new peelable vertexes uncovered. Always less than
 // LIBFILTER_EDGE_ARITY. Adds new peelable nodes to vertex_out.
 size_t libfilter_peel_once(size_t n, uint64_t vertex_number, const libfilter_edge* edges,
-                           libfilter_peel_node* nodes, uint64_t* vertex_out) {
+                           libfilter_peel_node* nodes, libfilter_edge_peel * to_peel) {
   size_t result = 0;
   assert(nodes[vertex_number].count_ == 1);
   const uint64_t edge_number = nodes[vertex_number].edges_[0];
-  assert (edge_number < n);
+  assert(edge_number < n);
   for (int i = 0; i < LIBFILTER_EDGE_ARITY; ++i) {
     const size_t vertex = edges[edge_number].vertex_[i];
     for (size_t j = 0; j < nodes[vertex].count_; ++j) {
@@ -63,20 +79,24 @@ size_t libfilter_peel_once(size_t n, uint64_t vertex_number, const libfilter_edg
         nodes[vertex].edges_[j] = nodes[vertex].edges_[nodes[vertex].count_ - 1];
       }
     }
-    //nodes[vertex].edges_ =
+    // nodes[vertex].edges_ =
     //  realloc(nodes[vertex].edges_, (nodes[vertex].count_ - 1) * sizeof(size_t));
     nodes[vertex].count_--;
     if (nodes[vertex].count_ == 1 && vertex != vertex_number) {
       // New peelable nodes
-      vertex_out[result++] = vertex;
+      to_peel[result].edge_number_ = nodes[vertex].edges_[0];
+      to_peel[result].peeled_vertex_ = vertex;
+      ++result;
     }
   }
   return result;
 }
 
+
 // returns number of nodes peeled
 size_t libfilter_peel(size_t n, size_t m, const libfilter_edge* edges,
-                      libfilter_peel_node* nodes, uint64_t* vertex_out) {
+                      libfilter_peel_node* nodes, uint64_t* vertex_out,
+                      uint64_t* edge_out) {
   uint64_t begin_stack = 0, end_stack = 0, to_see = 0;
   while (to_see < m) {
     if (nodes[to_see].count_ > 1) {
@@ -92,27 +112,24 @@ size_t libfilter_peel(size_t n, size_t m, const libfilter_edge* edges,
       ++begin_stack;
       continue;
     }
+    *edge_out++ = nodes[vertex_out[begin_stack]].edges_[0];
     end_stack += libfilter_peel_once(n, vertex_out[begin_stack], edges, nodes,
                                      &vertex_out[end_stack]);
     ++begin_stack;
   }
-  // nodes left include everything not in vertex_out[0, begin_stack). Those nodes are part
-  // of the 2-core.
-  if (begin_stack + 1 == m) {
-    uint64_t everything = 0;
-    for (size_t i = 0; i < m; ++i) {
-      everything ^= i;
-    }
-    for (size_t i = 0; i < begin_stack; ++i) {
-      everything ^= vertex_out[i];
-    }
-    printf("remainder %lu\n", everything);
-    printf("first %lu\n", vertex_out[0]);
-    printf("last %lu\n", vertex_out[begin_stack]);
-    printf("count %lu\n", nodes[everything].count_);
-    for (size_t i = 0; i < nodes[everything].count_; ++i) {
-      printf("edge %lu\n", nodes[everything].edges_[i]);
-    }
-  }
   return begin_stack;
+}
+
+void libfilter_unpeel(size_t m, const libfilter_edge* edges,
+                      const uint64_t* vertex_out, const uint64_t* edge_out,
+                      uint8_t* xors) {
+  xors[edges[edge_out[m - 1]].vertex_[0]] = edges[edge_out[m - 1]].fingerprint_;
+  for(size_t i = m-1;i != 0; --i) {
+    size_t j = i-1;
+    uint8_t xor_remainder = edges[edge_out[j]].fingerprint_;
+    for (int k = 0; k < LIBFILTER_EDGE_ARITY; ++k) {
+      xor_remainder ^= xors[edges[edge_out[j]].vertex_[k]];
+    }
+    //xors[
+  }
 }
