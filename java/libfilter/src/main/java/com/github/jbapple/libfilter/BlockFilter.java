@@ -199,7 +199,7 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
   private void MakeMask(long hash, int[] result) {
     // The loops are done individually for easier auto-vectorization by the JIT
     for (int i = 0; i < 8; ++i) {
-      result[0] = (int) hash * INTERNAL_HASH_SEEDS[i];
+      result[i] = (int) hash * INTERNAL_HASH_SEEDS[i];
     }
     for (int i = 0; i < 8; ++i) {
       result[i] = result[i] >>> (32 - 5);

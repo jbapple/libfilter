@@ -53,7 +53,28 @@ public class FilterTest {
   }
 
   @Test
-  public void StartEmptyHelp() {
+  public void BlockFpp() {
+    int ndv = 1000000;
+    Random r = new Random(0xdeadbeef);
+    BlockFilter bf = BlockFilter.CreateWithNdvFpp(ndv, 0.01);
+    for (int i = 0; i < ndv; ++i) {
+      bf.AddHash64(r.nextLong());
+    }
+    double fpp = FalsePositiveProbability(bf, r);
+    assertTrue(fpp < 0.02);
+  }
+
+  public <T extends Filter> double FalsePositiveProbability(T x, Random r) {
+    int ndv = 10000000;
+    double result = 0.0;
+    for (int i = 0; i < ndv; ++i) {
+      result += x.FindHash64(r.nextLong()) ? (1.0 / ndv) : 0;
+    }
+    return result;
+  }
+
+  @Test
+  public void StartEmpty() {
     StartEmptyHelp(TaffyCuckooFilter.CreateWithBytes(1));
     StartEmptyHelp(BlockFilter.CreateWithBytes(32000));
     StartEmptyHelp(TaffyBlockFilter.CreateWithNdvFpp(1, 0.001));
