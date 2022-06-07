@@ -33,6 +33,7 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         cd go
+        ls /Users/runner/hostedtoolcache/go
         /Users/runner/hostedtoolcache/go/1.18.0/x64/bin/go version
         /Users/runner/hostedtoolcache/go/1.18.0/x64/bin/go test
     - name: run C tests
