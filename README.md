@@ -1,10 +1,10 @@
 ![](https://github.com/jbapple/libfilter/workflows/unit-tests/badge.svg?branch=master)
 
-This repository provides implementations of blocked Bloom filters and
-taffy filters for C, C++, and Java. Blocked filters use slightly
-more space than traditional Bloom filters but are much faster, while
-taffy filters can scale to any size, even if the final size is not
-known in advance.
+This repository provides implementations of various Bloom filters and
+taffy filters for C, C++, Java, Python, and Go. Blocked filters use
+slightly more space than traditional Bloom filters but are much
+faster, while taffy filters can scale to any size, even if the final
+size is not known in advance.
 
 Example usage in C:
 
@@ -52,6 +52,31 @@ filter.AddHash64(hash);
 assert filter.FindHash64(hash)
 ```
 
+in Go
+
+```Go
+import ("github.com/jbapple/libfilter")
+
+b := NewBlockFilter(BlockBytesNeeded(1000000, 0.0065))
+var hash uint64
+hash = 0xfeedbadbee52b055
+b.AddHash(hash)
+if !b.FindHash(hash) {
+    panic("uhoh!")
+}
+```
+
+in Python
+
+```Python
+import block
+
+b = block.Block(1000000, 0.0065)
+hash = 0xfeedbadbee52b055
+b += hash
+assert (hash in b)
+```
+
 To install:
 
 ```shell
@@ -61,6 +86,8 @@ make install
 make java-world
 mvn -f ./java/ install -Dmaven.test.skip=true
 [optional: copy java/target/libfilter-*.jar to your classpath]
+make python-world
+make go-world
 ```
 
 The C and C++ libraries can also be installed with CMake:
@@ -79,9 +106,3 @@ target_link_libraries(mylib PRIVATE libfilter::c)
 # The C++ API:
 target_link_libraries(mylib PRIVATE libfilter::cxx)
 ```
-
-Block filters are most space-efficient at around 11.5 bits per
-distinct value, which produces a false positive probability of
-0.65%. A traditional Bloom filter would only need 10.5 bits per
-distinct value to achieve that same false positive probability, while
-a cuckoo filter would need 10.7 bits per distinct value.
