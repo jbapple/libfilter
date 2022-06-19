@@ -125,15 +125,14 @@ size_t libfilter_peel_once(size_t n, uint64_t vertex_number, const libfilter_edg
 // }
 
 void libfilter_unpeel(size_t edge_count, const libfilter_edge* edges,
-                      const uint64_t* edge_order, const uint64_t* edge_last_nodes,
-                      uint8_t* xors) {
+                      const libfilter_edge_peel* peel_order, uint8_t* xors) {
   for (size_t i = 0; i < edge_count; ++i) {
     size_t j = edge_count - 1 - i;
-    uint8_t xor_remainder = edges[edge_order[j]].fingerprint_;
-    assert(0 == xors[edge_last_nodes[j]]);
+    uint8_t xor_remainder = edges[peel_order[j].edge_number_].fingerprint_;
+    assert(0 == xors[peel_order[j].peeled_vertex_]);
     for (int k = 0; k < LIBFILTER_EDGE_ARITY; ++k) {
-      xor_remainder ^= xors[edges[edge_order[j]].vertex_[k]];
+      xor_remainder ^= xors[edges[peel_order[j].edge_number_].vertex_[k]];
     }
-    xors[edge_last_nodes[j]] = xor_remainder;
+    xors[peel_order[j].peeled_vertex_] = xor_remainder;
   }
 }
