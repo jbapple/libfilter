@@ -47,9 +47,57 @@
 //   return answer;
 // }
 
+void libfilter_unpeel_test_one(size_t edge_count, const libfilter_edge* edges,
+                               const uint64_t* edge_order,
+                               const uint64_t* edge_last_nodes, uint8_t* xors) {
+  libfilter_unpeel(edge_count, edges, edge_order, edge_last_nodes, xors);
+  for (size_t i = 0; i < edge_count; ++i) {
+    uint8_t xor_remainder = 0;
+    for (int k = 0; k < LIBFILTER_EDGE_ARITY; ++k) {
+      //if (edges[edge_order[j]].vertex_[k] == edge_last_nodes[j]) continue;
+      xor_remainder ^= xors[edges[edge_order[i]].vertex_[k]];
+    }
+    assert(edges[edge_order[i]].fingerprint_ == xor_remainder);
+  }
+}
+
+void libfilter_unpeel_test_0() {
+  libfilter_edge e0 = {.vertex_ = {0, 1, 2}, .fingerprint_ = 1};
+  libfilter_edge e1 = {.vertex_ = {1, 2, 3}, .fingerprint_ = 2};
+  libfilter_edge edges[] = {e0, e1};
+  uint64_t edge_order[] = {0, 1};
+  uint64_t edge_last_nodes[] = {0, 3};
+  uint8_t xors[] = {0, 0, 0, 0};
+  libfilter_unpeel_test_one(1, edges, edge_order, edge_last_nodes, xors);
+  xors[0] = xors[1] = xors[2] = xors[3] = 0;
+  libfilter_unpeel_test_one(2, edges, edge_order, edge_last_nodes, xors);
+}
+
+void libfilter_unpeel_test_1() {
+  libfilter_edge e0 = {.vertex_ = {0, 1, 2}, .fingerprint_ = 1};
+  libfilter_edge e1 = {.vertex_ = {1, 2, 3}, .fingerprint_ = 2};
+  libfilter_edge e2 = {.vertex_ = {2, 3, 4}, .fingerprint_ = 2};
+  libfilter_edge edges[] = {e0, e1, e2};
+  uint64_t edge_order[] = {0, 2, 1};
+  uint64_t edge_last_nodes[] = {0, 4, 2};
+  uint8_t xors[] = {0, 0, 0, 0, 0};
+  libfilter_unpeel_test_one(1, edges, edge_order, edge_last_nodes, xors);
+  xors[0] = xors[1] = xors[2] = xors[3] = xors[4] = 0;
+  libfilter_unpeel_test_one(2, edges, edge_order, edge_last_nodes, xors);
+  xors[0] = xors[1] = xors[2] = xors[3] = xors[4] = 0;
+  libfilter_unpeel_test_one(3, edges, edge_order, edge_last_nodes, xors);
+}
+
+void  libfilter_unpeel_test() {
+  libfilter_unpeel_test_0();
+  libfilter_unpeel_test_1();
+}
+
 int main() {
-  size_t n, m;
-  scanf("%ld", &n);
-  scanf("%ld", &m);
+  // size_t n, m;
+  // scanf("%ld", &n);
+  // scanf("%ld", &m);
+
+  libfilter_unpeel_test();
   // printf("%ld\n", libfilter_peel_test(n, m));
 }

@@ -12,45 +12,32 @@ typedef struct {
   uint8_t fingerprint_;
 } libfilter_edge;
 
+bool libfilter_in_edge(size_t v, int seen, const size_t vertex_[LIBFILTER_EDGE_ARITY]) {
+  for (int i = 0; i < seen; ++i) {
+    if (v == vertex_[i]) return true;
+  }
+  return false;
+}
 
-// void libfilter_make_edge(uint64_t hash, size_t m, libfilter_edge* result) {
-//     for (int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
-//       const unsigned __int128 tmp = (unsigned __int128)hash * (unsigned __int128)(m - j);
-//       result->vertex_[j] = tmp >> 64;
-//       for (int i = 0; i < j; ++i) {
-//         if (result->vertex_[j] >= result->vertex_[i]) ++result->vertex_[j];
-//       }
-//       assert(result->vertex_[j] < m);
-//       // insertion sort
-//       for (int i = 0; i < j; ++i) {
-//         if (result->vertex_[j] < result->vertex_[i]) {
-//           size_t 
-//           for (int k = i; k < k
-//           break;
-//         }
-//       }
-//       hash = tmp;
-//     }
-//     result->fingerprint_ = hash >> 56;
-
-
-// }
+void libfilter_make_edge(uint64_t hash, size_t m, libfilter_edge* result) {
+  for (int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
+    const unsigned __int128 tmp = (unsigned __int128)hash * (unsigned __int128)m;
+    result->vertex_[j] = tmp >> 64;
+    while (libfilter_in_edge(result->vertex_[j], j, result->vertex_)) {
+      ++result->vertex_[j];
+      result->vertex_[j] += (result->vertex_[j] == m) ? (-m) : 0;
+    }
+    assert(result->vertex_[j] < m);
+  }
+  result->fingerprint_ = hash >> (64 - 8);
+}
 
 // Make random edges
 // TODO: what if two nodes coincide
 libfilter_edge* libfilter_init_edges(size_t n, size_t m, const uint64_t* hashes) {
   libfilter_edge* result = malloc(n * sizeof(libfilter_edge));
   if (NULL == result) return result;
-  for(size_t i = 0; i < n; ++i) {
-    uint64_t hash = hashes[i];
-    for (int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
-      const unsigned __int128 tmp = (unsigned __int128)hash * (unsigned __int128)m;
-      result[i].vertex_[j] = tmp >> 64;
-      assert(result[i].vertex_[j] < m);
-      hash = tmp;
-    }
-    result[i].fingerprint_ = hash >> 56;
-  }
+  for (size_t i = 0; i < n; ++i) libfilter_make_edge(hashes[i], m, &result[i]);
   return result;
 }
 
@@ -88,34 +75,27 @@ typedef struct {
   size_t peeled_vertex_;
 } libfilter_edge_peel;
 
-// // returns number of new peelable vertexes uncovered. Always less than
-// // LIBFILTER_EDGE_ARITY. Adds new peelable nodes to vertex_out.
-// size_t libfilter_peel_once(size_t n, uint64_t vertex_number, const libfilter_edge* edges,
-//                            libfilter_peel_node* nodes, libfilter_edge_peel * to_peel) {
-//   size_t result = 0;
-//   assert(nodes[vertex_number].count_ == 1);
-//   const uint64_t edge_number = nodes[vertex_number].edges_[0];
-//   assert(edge_number < n);
-//   for (int i = 0; i < LIBFILTER_EDGE_ARITY; ++i) {
-//     const size_t vertex = edges[edge_number].vertex_[i];
-//     for (size_t j = 0; j < nodes[vertex].count_; ++j) {
-//       if (nodes[vertex].edges_[j] == edge_number) {
-//         nodes[vertex].edges_[j] = nodes[vertex].edges_[nodes[vertex].count_ - 1];
-//       }
-//     }
-//     // nodes[vertex].edges_ =
-//     //  realloc(nodes[vertex].edges_, (nodes[vertex].count_ - 1) * sizeof(size_t));
-//     nodes[vertex].count_--;
-//     if (nodes[vertex].count_ == 1 && vertex != vertex_number) {
-//       // New peelable nodes
-//       to_peel[result].edge_number_ = nodes[vertex].edges_[0];
-//       to_peel[result].peeled_vertex_ = vertex;
-//       ++result;
-//     }
-//   }
-//   return result;
-// }
-
+// returns number of new peelable vertexes uncovered. Always less than
+// LIBFILTER_EDGE_ARITY. Adds new peelable nodes to to_peel.
+size_t libfilter_peel_once(size_t n, uint64_t vertex_number, const libfilter_edge* edges,
+                           libfilter_peel_node* nodes, libfilter_edge_peel* to_peel) {
+  size_t result = 0;
+  assert(nodes[vertex_number].count_ == 1);
+  const uint64_t edge_number = nodes[vertex_number].edges_;
+  assert(edge_number < n);
+  for (int i = 0; i < LIBFILTER_EDGE_ARITY; ++i) {
+    const size_t vertex = edges[edge_number].vertex_[i];
+    nodes[vertex].edges_ ^= edge_number;
+    nodes[vertex].count_--;
+    if (nodes[vertex].count_ == 1 && vertex != vertex_number) {
+      // New peelable nodes
+      to_peel[result].edge_number_ = nodes[vertex].edges_;
+      to_peel[result].peeled_vertex_ = vertex;
+      ++result;
+    }
+  }
+  return result;
+}
 
 // // returns number of nodes peeled
 // size_t libfilter_peel(size_t n, size_t m, const libfilter_edge* edges,
@@ -144,16 +124,16 @@ typedef struct {
 //   return begin_stack;
 // }
 
-// void libfilter_unpeel(size_t m, const libfilter_edge* edges,
-//                       const uint64_t* vertex_out, const uint64_t* edge_out,
-//                       uint8_t* xors) {
-//   xors[edges[edge_out[m - 1]].vertex_[0]] = edges[edge_out[m - 1]].fingerprint_;
-//   for(size_t i = m-1;i != 0; --i) {
-//     size_t j = i-1;
-//     uint8_t xor_remainder = edges[edge_out[j]].fingerprint_;
-//     for (int k = 0; k < LIBFILTER_EDGE_ARITY; ++k) {
-//       xor_remainder ^= xors[edges[edge_out[j]].vertex_[k]];
-//     }
-//     //xors[
-//   }
-// }
+void libfilter_unpeel(size_t edge_count, const libfilter_edge* edges,
+                      const uint64_t* edge_order, const uint64_t* edge_last_nodes,
+                      uint8_t* xors) {
+  for (size_t i = 0; i < edge_count; ++i) {
+    size_t j = edge_count - 1 - i;
+    uint8_t xor_remainder = edges[edge_order[j]].fingerprint_;
+    assert(0 == xors[edge_last_nodes[j]]);
+    for (int k = 0; k < LIBFILTER_EDGE_ARITY; ++k) {
+      xor_remainder ^= xors[edges[edge_order[j]].vertex_[k]];
+    }
+    xors[edge_last_nodes[j]] = xor_remainder;
+  }
+}
