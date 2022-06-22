@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/random.h>
 
@@ -10,6 +11,9 @@ size_t libfilter_round_trip_test(size_t n, size_t m) {
 retry:;
   uint64_t* hashes = malloc(n * sizeof(uint64_t));
   size_t to_fill = n * sizeof(uint64_t);
+#if defined(__APPLE__)
+  arc4random_buf(hashes, to_fill);
+#elif defined(__linux__)
   while (to_fill > 0) {
     const size_t filled =
         getrandom(&((char*)hashes)[n * sizeof(uint64_t) - to_fill], to_fill, 0);
@@ -18,6 +22,9 @@ retry:;
            n * sizeof(uint64_t));
     // printf("%s\n", strerror(errno));
   }
+#else
+#error "TODO: non-unix RNG"
+#endif
 
   libfilter_edge* edges = libfilter_init_edges(n, m, hashes);
   free(hashes);
@@ -218,8 +225,8 @@ int main() {
   libfilter_peel_test();
   libfilter_full_test();
 
-  size_t n, m;
-  scanf("%ld", &n);
-  scanf("%ld", &m);
-  printf("%ld\n", libfilter_round_trip_test(n, m));
+  // size_t n, m;
+  // scanf("%ld", &n);
+  // scanf("%ld", &m);
+  // printf("%ld\n", libfilter_round_trip_test(n, m));
 }

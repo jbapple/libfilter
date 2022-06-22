@@ -37,6 +37,7 @@ jobs:
         /Users/runner/hostedtoolcache/go/1.18.*/x64/bin/go test
     - name: run C tests
       run: c/extras/test/paths.exe
+      run: c/extras/test/peel.exe
     - name: run C++ tests
       run: cpp/extras/test/block.exe
     - name: run Java tests
