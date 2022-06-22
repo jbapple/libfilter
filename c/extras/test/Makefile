@@ -7,7 +7,13 @@ all: paths.exe peel.exe
 
 WARN=-W -Wall -Wextra
 RELEASE=-march=native -mtune=native -O0 -ggdb3
-CFLAGS=-std=c99 $(INCLUDES) $(WARN) $(RELEASE) -fsanitize=memory
+CFLAGS=-std=c99 $(INCLUDES) $(WARN) $(RELEASE)
+
+COMPILER_VERSION := $(shell $(CC) --version)
+ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
+  CFLAGS += -fsanitize=memory
+endif
+
 
 include $(DEFAULT_RECIPE)
 
