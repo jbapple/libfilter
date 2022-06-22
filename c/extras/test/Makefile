@@ -7,7 +7,7 @@ all: paths.exe peel.exe
 
 WARN=-W -Wall -Wextra
 RELEASE=-march=native -mtune=native -O0 -ggdb3
-CFLAGS=-std=c99 $(INCLUDES) $(WARN) $(RELEASE)
+CFLAGS=-std=c99 $(INCLUDES) $(WARN) $(RELEASE) -fsanitize=memory
 
 include $(DEFAULT_RECIPE)
 
