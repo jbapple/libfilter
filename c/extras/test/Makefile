@@ -11,7 +11,9 @@ CFLAGS=-std=c99 $(INCLUDES) $(WARN) $(RELEASE)
 
 COMPILER_VERSION := $(shell $(CC) --version)
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
+ifeq '' '$(findstring apple-darwin,$(COMPILER_VERSION))'
   CFLAGS += -fsanitize=memory
+endif
 endif
 
 
