@@ -107,6 +107,7 @@ size_t libfilter_peel_once(uint64_t vertex_number, const libfilter_edge* edges,
 }
 
 // returns number of nodes peeled
+// TODO: multi-threading and SIMD
 size_t libfilter_peel(size_t num_nodes, const libfilter_edge* edges,
                       libfilter_peel_node* nodes, libfilter_edge_peel* to_peel) {
   uint64_t begin_stack = 0, end_stack = 0, to_see = 0;

@@ -225,8 +225,8 @@ int main() {
   libfilter_peel_test();
   libfilter_full_test();
 
-  // size_t n, m;
-  // scanf("%ld", &n);
-  // scanf("%ld", &m);
-  // printf("%ld\n", libfilter_round_trip_test(n, m));
+  size_t n, m;
+  scanf("%ld", &n);
+  scanf("%ld", &m);
+  printf("%ld\n", libfilter_round_trip_test(n, m));
 }
