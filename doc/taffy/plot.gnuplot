@@ -87,7 +87,7 @@ set key top left;
 set datafile separator ",";
 set xlabel "Keys inserted";
 set ylabel "Nanoseconds";
-set yrange [5:*]
+set yrange [5:*];
 #set title "Lookup performance (present)"
 unset format;
 set format x "10^{%.1T}";
@@ -96,6 +96,29 @@ plot "< grep find_missing taffy-mins.csv | grep MinTaffy        | sort -n -t , -
      "< grep find_missing taffy-mins.csv | grep TaffyBlock      | sort -n -t , -k 2,3" using 2:4 with lines  title "TBF", \
      "< grep find_missing taffy-mins.csv | grep \\\"Cuckoo\\\"  | sort -n -t , -k 2,3" using 2:4 with linespoints lw 1  title "CF", \
      "< grep find_missing taffy-mins.csv | grep Simd            | sort -n -t , -k 2,3" using 2:4 with lines lw 5  title "SBBF"
+
+
+set terminal postscript eps enhanced color size 3.333in,7cm  fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman19,19";
+# fontfile "/usr/share/texmf/fonts/type1/public/lm/lmr17.pfb" "LMRoman17,17";
+set output 'lookup-median-overage.eps';
+unset grid;
+unset logscale y;
+set logscale x;
+set key inside;
+set key top right;
+set datafile separator ",";
+set xlabel "Keys inserted";
+set ylabel "Percent slower (median over min)";
+set yrange [*:*];
+#set title "Lookup performance (present)"
+unset format;
+set format y "{%.0f}%%";
+set format x "10^{%.1T}";
+plot "< cat atc-median-deviation-percent.txt | grep MinTaffy        | sort -g -t , -k 2" using 2:3 with lines lw 9 title "MTCF", \
+     "< cat atc-median-deviation-percent.txt | grep TaffyCuckoo     | sort -g -t , -k 2" using 2:3 with linespoints  title "TCF", \
+     "< cat atc-median-deviation-percent.txt | grep TaffyBlock      | sort -g -t , -k 2" using 2:3 with lines  title "TBF", \
+     "< cat atc-median-deviation-percent.txt | grep \\\"Cuckoo\\\"  | sort -g -t , -k 2" using 2:3 with linespoints lw 1  title "CF", \
+     "< cat atc-median-deviation-percent.txt | grep Simd            | sort -g -t , -k 2" using 2:3 with lines lw 5  title "SBBF"
 
 # plot "< grep fpp all-bench-100000000-017.txt | grep MinTaffy    | sort -n -t , -k 3" using 3:4 with lines lw 9 title "MTCF", \
      "< grep fpp all-bench-100000000-017.txt | grep TaffyCuckoo | sort -n -t , -k 3" using 3:4 with linespoints title "TCF", \

@@ -117,7 +117,7 @@ struct Cuckoo32Shim {
   static Cuckoo32Shim CreateWithNdvFpp(uint64_t, double) { return Cuckoo32Shim(0); }
 };
 
-// Does the actual benchmarking work. Repeasts `reps` times, samples grow by
+// Does the actual benchmarking work. Repeats `reps` times, samples grow by
 // `growth_factor`.
 //
 // TODO: does all the printing. Why bother returning a value at all?
