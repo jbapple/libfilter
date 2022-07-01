@@ -160,7 +160,7 @@ void libfilter_full_test_1() {
   libfilter_edge e2 = {.vertex_ = {2, 3, 4}, .fingerprint_ = 2};
   const libfilter_edge edges[] = {e0, e1, e2};
   libfilter_edge_peel peel_order[5];
-  libfilter_peel_node* peel_nodes = libfilter_init_peel_nodes(5);
+  libfilter_peel_node peel_nodes[5] = {};
   libfilter_populate_peel_nodes(3, edges, peel_nodes);
   libfilter_peel(5, edges, peel_nodes, peel_order);
   uint8_t xors[5] = {};

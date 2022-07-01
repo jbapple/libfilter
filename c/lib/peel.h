@@ -24,11 +24,11 @@ typedef struct {
   uint64_t edges_; // xor of the remaining hyperedges incident to this node
 } libfilter_peel_node;
 
-// Allocate and zero-initialize libfilter_peel_node array of size m
-libfilter_peel_node* libfilter_init_peel_nodes(size_t m) {
-  libfilter_peel_node* result = calloc(m, sizeof(libfilter_peel_node));
-  return result;
-}
+// // Allocate and zero-initialize libfilter_peel_node array of size m
+// libfilter_peel_node* libfilter_init_peel_nodes(size_t m) {
+//   libfilter_peel_node* result = calloc(m, sizeof(libfilter_peel_node));
+//   return result;
+// }
 
 // take n edges and initialize nodes
 void libfilter_populate_peel_nodes(size_t num_edges, const libfilter_edge* edges,

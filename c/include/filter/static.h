@@ -5,12 +5,14 @@
 #include <stdbool.h>
 #include <assert.h>
 
+#include "memory.h"
+
 typedef struct {
   size_t length_;
-  uint8_t data_[];
+  libfilter_region region_;
 } libfilter_static;
 
-libfilter_static* libfilter_static_construct(size_t n, const uint64_t* hashes);
+libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes);
 
 #define LIBFILTER_EDGE_ARITY 3
 
@@ -56,5 +58,5 @@ bool libfilter_find_edge(const libfilter_edge* edge, const uint8_t* xors) {
 bool libfilter_static_lookup(const libfilter_static* filter, uint64_t hash) {
   libfilter_edge e;
   libfilter_make_edge(hash, filter->length_, &e);
-  return libfilter_find_edge(&e, filter->data_);
+  return libfilter_find_edge(&e, (const uint8_t*)filter->region_.block);
 }
