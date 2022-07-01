@@ -15,7 +15,11 @@ libfilter_static* libfilter_static_construct(size_t n, const uint64_t* hashes) {
    libfilter_static* result = (libfilter_static*)region_result.region.block;
    result->length_ = size;
 
-   libfilter_edge* edges = libfilter_init_edges(n, size, hashes);
+   libfilter_region_alloc_result edge_region_result = libfilter_alloc_at_most(
+       libfilter_new_alloc_request(n * sizeof(libfilter_edge), alignof(libfilter_edge)),
+       alignof(libfilter_edge));
+   libfilter_edge* edges = (libfilter_edge*)edge_region_result.region.block;
+   libfilter_init_edges(n, size, hashes, edges);
    libfilter_peel_node* nodes = libfilter_init_peel_nodes(size);
    libfilter_populate_peel_nodes(n, edges, nodes);
    libfilter_edge_peel* peel_result = malloc(size * sizeof(libfilter_edge_peel));
@@ -24,12 +28,14 @@ libfilter_static* libfilter_static_construct(size_t n, const uint64_t* hashes) {
    if (answer < size) {
      ++size;
      free(peel_result);
-     free(edges);
+     libfilter_do_free(edge_region_result.region, n * sizeof(libfilter_edge),
+                       alignof(libfilter_edge));
      libfilter_do_free(region_result.region, alloc_size, alignof(libfilter_static));
      goto retry;
   }
   libfilter_unpeel(size, edges, peel_result, result->data_);
   free(peel_result);
-  free(edges);
+  libfilter_do_free(edge_region_result.region, n * sizeof(libfilter_edge),
+                    alignof(libfilter_edge));
   return result;
 }

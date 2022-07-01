@@ -1,3 +1,5 @@
+#pragma once
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -7,14 +9,14 @@
 
 #include "filter/static.h"
 
-// Make n random edges from hashes with nodes less than m
-libfilter_edge* libfilter_init_edges(size_t n, size_t m, const uint64_t* hashes) {
-  libfilter_edge* result = malloc(n * sizeof(libfilter_edge));
-  if (NULL == result) return result;
-  for (size_t i = 0; i < n; ++i) libfilter_make_edge(hashes[i], m, &result[i]);
-  return result;
-}
+#include "memory-internal.h"
 
+// Make n random edges from hashes with nodes less than m
+void libfilter_init_edges(size_t n, size_t m, const uint64_t* hashes /* [n] */,
+                          libfilter_edge* result /* [n] */) {
+  if (NULL == result) return;
+  for (size_t i = 0; i < n; ++i) libfilter_make_edge(hashes[i], m, &result[i]);
+}
 
 // structure temporarily used for peeling a hypergraph
 typedef struct {

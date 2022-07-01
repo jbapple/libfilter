@@ -1,5 +1,6 @@
-#include "peel.h"
+#include "../peel.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
