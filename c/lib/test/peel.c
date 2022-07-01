@@ -1,57 +1,9 @@
-#include "filter/peel.h"
+#include "peel.h"
 
-#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/random.h>
-
-size_t libfilter_round_trip_test(size_t n, size_t m) {
-retry:;
-  uint64_t* hashes = malloc(n * sizeof(uint64_t));
-  size_t to_fill = n * sizeof(uint64_t);
-#if defined(__APPLE__)
-  arc4random_buf(hashes, to_fill);
-#elif defined(__linux__)
-  while (to_fill > 0) {
-    const size_t filled =
-        getrandom(&((char*)hashes)[n * sizeof(uint64_t) - to_fill], to_fill, 0);
-    to_fill = to_fill - filled;
-    printf("filled %lu out of %lu\n", n * sizeof(uint64_t) - to_fill,
-           n * sizeof(uint64_t));
-    // printf("%s\n", strerror(errno));
-  }
-#else
-#error "TODO: non-unix RNG"
-#endif
-
-  libfilter_edge* edges = libfilter_init_edges(n, m, hashes);
-  free(hashes);
-  libfilter_peel_node* nodes = libfilter_init_peel_nodes(m);
-  libfilter_populate_peel_nodes(n, edges, nodes);
-  libfilter_edge_peel* result = malloc(m * sizeof(libfilter_edge_peel));
-  uint8_t* xors = calloc(m, sizeof(uint8_t));
-  size_t answer = libfilter_peel(m, edges, nodes, result);
-  printf("peeled %ld\n", answer);
-  if (answer < m) {
-    free(xors);
-    free(result);
-    free(nodes);
-    free(edges);
-    goto retry;
-  }
-  libfilter_unpeel(m, edges, result, xors);
-  for (size_t i = 0; i < n; ++i) {
-    //printf("%ld\n", i);
-    assert(libfilter_find_edge(&edges[i], xors));
-  }
-  free(xors);
-  free(result);
-  free(nodes);
-  free(edges);
-  return answer;
-}
 
 void libfilter_unpeel_test_reverse(size_t edge_count, const libfilter_edge* edges,
                                    const libfilter_edge_peel* peel_order, uint8_t* xors) {
