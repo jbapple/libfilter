@@ -6,6 +6,7 @@ ffibuilder.set_source("libfilter",
                       #include "filter/block.h"
                       #include "filter/taffy-block.h"
                       #include "filter/taffy-cuckoo.h"
+                      #include "filter/static.h"
                       """,
                       include_dirs=["../c/include"],
                       library_dirs=["../c/lib"],
@@ -118,6 +119,16 @@ void libfilter_taffy_cuckoo_freeze_init(const libfilter_taffy_cuckoo*, libfilter
 size_t libfilter_frozen_taffy_cuckoo_size_in_bytes(const libfilter_frozen_taffy_cuckoo*);
 inline bool libfilter_frozen_taffy_cuckoo_find_hash(const libfilter_frozen_taffy_cuckoo*, uint64_t);
 void libfilter_frozen_taffy_cuckoo_destruct(libfilter_frozen_taffy_cuckoo*);
+
+typedef struct {
+  size_t length_;
+  libfilter_region region_;
+} libfilter_static;
+
+libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes);
+void libfilter_static_destroy(libfilter_static);
+libfilter_static libfilter_static_clone(libfilter_static);
+static inline bool libfilter_static_lookup(const libfilter_static filter, uint64_t hash);
 """)
 
 if __name__ == "__main__":
