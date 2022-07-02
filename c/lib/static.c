@@ -78,3 +78,14 @@ libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes) {
 void libfilter_static_destroy(libfilter_static input) {
   libfilter_do_free(input.region_, input.length_, sizeof(void*));
 }
+
+libfilter_static libfilter_static_clone(libfilter_static filter) {
+  libfilter_static result;
+  result.length_ = filter.length_;
+  result.region_ =
+      libfilter_alloc_at_most(libfilter_new_alloc_request(filter.length_, sizeof(void*)),
+                              sizeof(void*))
+          .region;
+  memcpy(result.region_.block, filter.region_.block, filter.length_);
+  return result;
+}

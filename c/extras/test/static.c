@@ -33,4 +33,3 @@ int main() {
   }
   libfilter_static_destroy(filter);
 }
-

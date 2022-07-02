@@ -14,6 +14,7 @@ typedef struct {
 
 libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes);
 void libfilter_static_destroy(libfilter_static);
+libfilter_static libfilter_static_clone(libfilter_static);
 static inline bool libfilter_static_lookup(const libfilter_static filter, uint64_t hash);
 
 #define LIBFILTER_EDGE_ARITY 3
