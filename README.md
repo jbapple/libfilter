@@ -4,7 +4,9 @@ This repository provides implementations of various Bloom filters and
 taffy filters for C, C++, Java, Python, and Go. Blocked filters use
 slightly more space than traditional Bloom filters but are much
 faster, while taffy filters can scale to any size, even if the final
-size is not known in advance.
+size is not known in advance. Static filters are smaller than both,
+but cannot be added to once initialized, so all keys must be known up
+front.
 
 Example usage in C:
 

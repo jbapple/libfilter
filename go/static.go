@@ -13,7 +13,7 @@ type StaticFilter = C.libfilter_static
 
 func NewStaticFilter(count uint64, hashes []uint64) *StaticFilter {
 	b := new(StaticFilter)
-	*b = C.libfilter_static_construct(C.uint64_t(count), (*C.uint64_t)(unsafe.Pointer(&hashes[0])))
+	*b = C.libfilter_static_construct(C.size_t(count), (*C.uint64_t)(unsafe.Pointer(&hashes[0])))
 	runtime.SetFinalizer(b, FreeStaticFilter)
 	return b
 }
