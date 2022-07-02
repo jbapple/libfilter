@@ -13,6 +13,8 @@ typedef struct {
 } libfilter_static;
 
 libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes);
+void libfilter_static_destroy(libfilter_static);
+static inline bool libfilter_static_lookup(const libfilter_static filter, uint64_t hash);
 
 #define LIBFILTER_EDGE_ARITY 3
 
@@ -22,7 +24,8 @@ typedef struct {
 } libfilter_edge;
 
 // return if v is among the first seen vertexes in vertex
-bool libfilter_in_edge(size_t v, int seen, const size_t vertex[LIBFILTER_EDGE_ARITY]) {
+static inline bool libfilter_in_edge(size_t v, int seen,
+                              const size_t vertex[LIBFILTER_EDGE_ARITY]) {
   for (int i = 0; i < seen; ++i) {
     if (v == vertex[i]) return true;
   }
@@ -30,7 +33,7 @@ bool libfilter_in_edge(size_t v, int seen, const size_t vertex[LIBFILTER_EDGE_AR
 }
 
 // makes a hyperedge from hash where each vertex is less than m
-void libfilter_make_edge(uint64_t hash, size_t m, libfilter_edge* result) {
+static inline void libfilter_make_edge(uint64_t hash, size_t m, libfilter_edge* result) {
   for (int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
     const unsigned __int128 tmp = (unsigned __int128)hash * (unsigned __int128)m;
     result->vertex_[j] = tmp >> 64;
@@ -47,7 +50,7 @@ void libfilter_make_edge(uint64_t hash, size_t m, libfilter_edge* result) {
 }
 
 // return true if the fingerprint of edge matches the expected fingerprint in xors
-bool libfilter_find_edge(const libfilter_edge* edge, const uint8_t* xors) {
+static inline bool libfilter_find_edge(const libfilter_edge* edge, const uint8_t* xors) {
   uint8_t fingerprint = edge->fingerprint_;
   for (int i = 0; i < LIBFILTER_EDGE_ARITY; ++i) {
     fingerprint ^= xors[edge->vertex_[i]];
@@ -55,8 +58,8 @@ bool libfilter_find_edge(const libfilter_edge* edge, const uint8_t* xors) {
   return 0 == fingerprint;
 }
 
-bool libfilter_static_lookup(const libfilter_static* filter, uint64_t hash) {
+static inline bool libfilter_static_lookup(const libfilter_static filter, uint64_t hash) {
   libfilter_edge e;
-  libfilter_make_edge(hash, filter->length_, &e);
-  return libfilter_find_edge(&e, (const uint8_t*)filter->region_.block);
+  libfilter_make_edge(hash, filter.length_, &e);
+  return libfilter_find_edge(&e, (const uint8_t*)filter.region_.block);
 }

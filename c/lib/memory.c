@@ -153,12 +153,12 @@ libfilter_alloc_at_most(uint64_t max_bytes, uint64_t alignment) {
 #ifdef ALIGNED_ALLOC
   // printf("aligned_alloc 0x%016zx\n", truncate(max_bytes, alignment));
   result.region.block =
-      aligned_alloc(alignment, libfilter_truncate(max_bytes, alignment));
+      aligned_alloc(alignment, result.block_bytes);  // libfilter_truncate(max_bytes, alignment));
   failed_alloc = result.region.block == NULL;
 #else
   // printf("posix_memalign 0x%016zx\n", truncate(max_bytes, alignment));
   failed_alloc = 0 != posix_memalign(&result.region.block, alignment,
-                                     libfilter_truncate(max_bytes, alignment));
+                                     result.block_bytes);
 #endif // ALIGNED_ALLOC
   if (failed_alloc) {
     result.region.block = NULL;
