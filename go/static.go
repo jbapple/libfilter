@@ -19,7 +19,7 @@ func NewStaticFilter(count uint64, hashes []uint64) *StaticFilter {
 }
 
 func FreeStaticFilter(b *StaticFilter) {
-	C.libfilter_static_destroy(*b)
+	C.libfilter_static_destruct(*b)
 }
 
 func (b StaticFilter) FindHash(hash uint64) bool {

@@ -75,7 +75,7 @@ libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes) {
 }
 
 // Free result with libfilter_do_free(result.region_, result.length_, 1);
-void libfilter_static_destroy(libfilter_static input) {
+void libfilter_static_destruct(libfilter_static input) {
   libfilter_do_free(input.region_, input.length_, sizeof(void*));
 }
 

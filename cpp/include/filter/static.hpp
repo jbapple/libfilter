@@ -16,7 +16,7 @@ struct StaticFilter {
   StaticFilter(size_t n, const uint64_t* hashes)
       : payload_(libfilter_static_construct(n, hashes)) {}
 
-  ~StaticFilter() { libfilter_static_destroy(payload_); }
+  ~StaticFilter() { libfilter_static_destruct(payload_); }
 
   bool FindHash(uint64_t hash) { return libfilter_static_lookup(payload_, hash); }
 
