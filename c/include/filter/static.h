@@ -15,7 +15,7 @@ typedef struct {
 libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes);
 void libfilter_static_destruct(libfilter_static);
 libfilter_static libfilter_static_clone(libfilter_static);
-static inline bool libfilter_static_lookup(const libfilter_static filter, uint64_t hash);
+static inline bool libfilter_static_find_hash(const libfilter_static filter, uint64_t hash);
 
 #define LIBFILTER_EDGE_ARITY 3
 
@@ -59,7 +59,7 @@ static inline bool libfilter_find_edge(const libfilter_edge* edge, const uint8_t
   return 0 == fingerprint;
 }
 
-static inline bool libfilter_static_lookup(const libfilter_static filter, uint64_t hash) {
+static inline bool libfilter_static_find_hash(const libfilter_static filter, uint64_t hash) {
   libfilter_edge e;
   libfilter_make_edge(hash, filter.length_, &e);
   return libfilter_find_edge(&e, (const uint8_t*)filter.region_.block);

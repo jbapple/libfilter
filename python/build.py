@@ -128,7 +128,7 @@ typedef struct {
 libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes);
 void libfilter_static_destruct(libfilter_static);
 libfilter_static libfilter_static_clone(libfilter_static);
-static inline bool libfilter_static_lookup(const libfilter_static filter, uint64_t hash);
+static inline bool libfilter_static_find_hash(const libfilter_static filter, uint64_t hash);
 """)
 
 if __name__ == "__main__":

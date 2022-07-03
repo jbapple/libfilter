@@ -6,7 +6,7 @@ class Static:
     self.b = ffi.gc(self.b, lib.libfilter_static_destruct, self.b.length_)
 
   def __contains__(self, hash):
-    return lib.libfilter_static_lookup(self.b, hash)
+    return lib.libfilter_static_find_hash(self.b, hash)
 
   def clone(self):
     result = lib.libfilter_static_clone(self.b)

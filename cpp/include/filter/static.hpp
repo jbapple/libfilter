@@ -18,7 +18,7 @@ struct StaticFilter {
 
   ~StaticFilter() { libfilter_static_destruct(payload_); }
 
-  bool FindHash(uint64_t hash) { return libfilter_static_lookup(payload_, hash); }
+  bool FindHash(uint64_t hash) { return libfilter_static_find_hash(payload_, hash); }
 
   StaticFilter(const StaticFilter& that)
       : payload_(libfilter_static_clone(that.payload_)) {}

@@ -23,7 +23,7 @@ func FreeStaticFilter(b *StaticFilter) {
 }
 
 func (b StaticFilter) FindHash(hash uint64) bool {
-	return bool(C.libfilter_static_lookup(b, C.uint64_t(hash)))
+	return bool(C.libfilter_static_find_hash(b, C.uint64_t(hash)))
 }
 
 func (b StaticFilter) Clone() *StaticFilter {

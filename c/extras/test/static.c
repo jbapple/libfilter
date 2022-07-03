@@ -29,7 +29,7 @@ int main() {
   }
   libfilter_static filter = libfilter_static_construct(size, hashes);
   for (unsigned i = 0; i < size; ++i) {
-    assert(libfilter_static_lookup(filter, hashes[i]));
+    assert(libfilter_static_find_hash(filter, hashes[i]));
   }
   libfilter_static_destruct(filter);
 }
