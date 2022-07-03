@@ -38,7 +38,8 @@ jobs:
     - name: run C tests
       run: |
         c/extras/test/paths.exe
-        c/extras/test/peel.exe
+        c/extras/test/static.exe
+        c/lib/test/peel.exe
     - name: run C++ tests
       run: cpp/extras/test/block.exe
     - name: run Java tests
