@@ -1,14 +1,15 @@
 ![](https://github.com/jbapple/libfilter/workflows/unit-tests/badge.svg?branch=master)
 
 This repository provides implementations of various Bloom filters and
-taffy filters for C, C++, Java, Python, and Go. Blocked filters use
-slightly more space than traditional Bloom filters but are much
-faster, while taffy filters can scale to any size, even if the final
-size is not known in advance. Static filters are smaller than both,
-but cannot be added to once initialized, so all keys must be known up
-front.
+taffy filters for C, C++, Java, Python, and Go.
 
-Example usage in C:
+If you need a basic filter and you know ahead of time which keys will be in it, use a static filter.
+
+If you don't know what the keys will be, but you know approximately how many there are, use a block filter.
+
+Otherwise, use a taffy filter.
+
+Example usage of block filter in C:
 
 ```C
 #include <filter/block.h>
