@@ -7,7 +7,7 @@ If you need a basic filter and you know ahead of time which keys will be in it, 
 
 If you don't know what the keys will be, but you know approximately how many there are, use a block filter.
 
-Otherwise, use a taffy filter.
+Otherwise, use a taffy filter, which can grow as you add more keys to it.
 
 Example usage of block filter in C:
 

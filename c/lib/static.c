@@ -1,6 +1,7 @@
 #include "filter/static.h"
 
 #include <assert.h>
+#include <math.h>
 #include <stdalign.h>
 #include <string.h>
 
@@ -9,7 +10,7 @@
 
 // Free result with libfilter_do_free(result.region_, result.length_, sizeof(void*));
 libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes) {
-  size_t size = 1.23 * n;
+  size_t size = ((n < 10) ? 2.0 : (0.75 + 1.0 / log(log(n)))) * n;
   size = (size + sizeof(void*) - 1) / sizeof(void*) * sizeof(void*);
  retry:;
    // initialize the fingerprints
@@ -57,7 +58,11 @@ libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes) {
    libfilter_do_free(nodes_region_result.region, size * sizeof(libfilter_peel_node),
                      alignof(libfilter_peel_node));
    if (answer < size) { // if peeling failed to peel all the way (found a 2-core)
-     size += sizeof(void*);
+     // printf("%zu\t", size - answer);
+     size *= 1.01;
+     size += 1;
+     size = (size + sizeof(void*) - 1) / sizeof(void*) * sizeof(void*);
+     // printf("%zu\n", size);
      libfilter_do_free(peel_results_region_result.region,
                        size * sizeof(libfilter_edge_peel), alignof(libfilter_edge_peel));
      libfilter_do_free(edge_region_result.region, n * sizeof(libfilter_edge),
@@ -65,6 +70,8 @@ libfilter_static libfilter_static_construct(size_t n, const uint64_t* hashes) {
      libfilter_do_free(result.region_, result.length_, sizeof(void*));
      goto retry;
   }
+  // printf("%f\n", 1.0 * size / n);
+
   // populate the fingerprints
   libfilter_unpeel(size, edges, peel_result, (uint8_t*)result.region_.block);
   libfilter_do_free(peel_results_region_result.region, size * sizeof(libfilter_edge_peel),

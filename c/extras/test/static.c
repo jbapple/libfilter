@@ -1,5 +1,7 @@
 #include "filter/static.h"
 
+#include <stdio.h>
+
 // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
 // Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
 
@@ -20,16 +22,19 @@ int main() {
   pcg32_random_t seed;
   seed.inc = 0xefc0fadcd6224213;
   seed.state = 0x99047d494c2fc45d;
-  size_t size = 1234567;
-  uint64_t *hashes = malloc(size * sizeof(uint64_t));
-  for (unsigned i = 0; i < size; ++i) {
-    hashes[i] = pcg32_random_r(&seed);
-    hashes[i] = hashes[i] << 32;
-    hashes[i] |= pcg32_random_r(&seed);
+  for (size_t size = 10; size < 1 * 1000 * 1000; size = 1 + size * 2) {
+    uint64_t* hashes = malloc(size * sizeof(uint64_t));
+    for (unsigned i = 0; i < size; ++i) {
+      hashes[i] = pcg32_random_r(&seed);
+      hashes[i] = hashes[i] << 32;
+      hashes[i] |= pcg32_random_r(&seed);
+    }
+    libfilter_static filter = libfilter_static_construct(size, hashes);
+    printf("%zu\t%f\n", size, 1.0 * filter.length_ / size);
+    fflush(stdout);
+    for (unsigned i = 0; i < size; ++i) {
+      assert(libfilter_static_find_hash(filter, hashes[i]));
+    }
+    libfilter_static_destruct(filter);
   }
-  libfilter_static filter = libfilter_static_construct(size, hashes);
-  for (unsigned i = 0; i < size; ++i) {
-    assert(libfilter_static_find_hash(filter, hashes[i]));
-  }
-  libfilter_static_destruct(filter);
 }

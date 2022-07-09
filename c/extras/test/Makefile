@@ -12,7 +12,7 @@ CFLAGS=-std=c99 $(INCLUDES) $(WARN) $(RELEASE)
 COMPILER_VERSION := $(shell $(CC) --version)
 ifneq '' '$(findstring clang,$(COMPILER_VERSION))'
 ifeq '' '$(findstring apple-darwin,$(COMPILER_VERSION))'
-  CFLAGS += -fsanitize=address # does not work with aligned_alloc
+  CFLAGS += -fsanitize=address
 endif
 endif
 

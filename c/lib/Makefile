@@ -25,7 +25,7 @@ test: lib Makefile
 WARN=-W -Wall -Wextra
 RELEASE=-fPIC -O3 -ggdb3
 CFLAGS=-std=gnu11 -march=native -mtune=native $(INCLUDES) $(WARN) $(RELEASE)
-LINKS=
+LINKS=-lm
 
 include $(DEFAULT_RECIPE)
 
