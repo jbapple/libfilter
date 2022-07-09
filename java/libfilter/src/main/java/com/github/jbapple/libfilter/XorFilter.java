@@ -1,5 +1,7 @@
 package com.github.jbapple.libfilter;
 
+import java.lang.Math;
+
 public class XorFilter implements StaticFilter {
   private static int LIBFILTER_EDGE_ARITY = 3;
   private byte[] fingerprints;
@@ -21,15 +23,21 @@ public class XorFilter implements StaticFilter {
   // makes a hyperedge from hash where each vertex is less than m
   private Edge MakeEdge(long hash) {
     Edge result = new Edge();
+    int window = LIBFILTER_EDGE_ARITY + (int)Math.pow(fingerprints.length, 2.0 / 3.0);
+    window = (window > fingerprints.length) ? fingerprints.length : window;
+    int start = (int) (hash % (fingerprints.length - window));
+    hash = hash / (fingerprints.length - window);
     for (int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
       result.vertex[j] =
           (int) (hash % fingerprints.length); // TODO: use Java 9's multiplyHigh to do
                                               // fast range reduction with 128 bits
-      while (InEdge(result.vertex[j], j, result.vertex)) {
+      while (InEdge(result.vertex[j] + start, j, result.vertex)) {
         ++result.vertex[j];
         result.vertex[j] +=
-            (result.vertex[j] == fingerprints.length) ? (-fingerprints.length) : 0;
+            (result.vertex[j] == window) ? (-window) : 0;
       }
+      assert (result.vertex[j] < window);
+      result.vertex[j] += start;
       assert (result.vertex[j] < fingerprints.length);
       hash = hash / fingerprints.length;
     }
