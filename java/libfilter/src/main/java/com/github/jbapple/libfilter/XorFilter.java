@@ -25,21 +25,25 @@ public class XorFilter implements StaticFilter {
     Edge result = new Edge();
     int window = LIBFILTER_EDGE_ARITY + (int)Math.pow(fingerprints.length, 2.0 / 3.0);
     window = (window > fingerprints.length) ? fingerprints.length : window;
-    int start = (int) (hash % (fingerprints.length - window));
-    hash = hash / (fingerprints.length - window);
+    int start = (window < fingerprints.length) ? (int) (hash % (fingerprints.length - window)) : 0;
+    if (start < 0) start += fingerprints.length - window;
+    assert (0 <= start);
+    hash = (window < fingerprints.length) ? (hash / (fingerprints.length - window)) : hash;
     for (int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
-      result.vertex[j] =
-          (int) (hash % fingerprints.length); // TODO: use Java 9's multiplyHigh to do
-                                              // fast range reduction with 128 bits
+      result.vertex[j] = (int) (hash % window); // TODO: use Java 9's multiplyHigh to do
+                                                // fast range reduction with 128 bits
+      if (result.vertex[j] < 0) result.vertex[j] += window;
       while (InEdge(result.vertex[j] + start, j, result.vertex)) {
         ++result.vertex[j];
         result.vertex[j] +=
             (result.vertex[j] == window) ? (-window) : 0;
       }
+      assert (0 <= result.vertex[j]);
       assert (result.vertex[j] < window);
       result.vertex[j] += start;
       assert (result.vertex[j] < fingerprints.length);
-      hash = hash / fingerprints.length;
+      assert (0 <= result.vertex[j]);
+      hash = hash / window;
     }
     result.fingerprint = (byte) (hash >>> (64 - 8));
     return result;
@@ -68,8 +72,17 @@ public class XorFilter implements StaticFilter {
   static private void PopulatePeelNodes(Edge[] edges, PeelNode[] nodes) {
     for (int i = 0; i < edges.length; ++i) {
       for (int j = 0; j < LIBFILTER_EDGE_ARITY; ++j) {
-        nodes[edges[i].vertex[j]].count++;
-        nodes[edges[i].vertex[j]].edges ^= i;
+        Edge e = edges[i];
+        assert (e != null);
+        assert (0 <= e.vertex[j]);
+        assert (e.vertex[j] < nodes.length);
+        if (null == nodes[e.vertex[j]]) {
+          nodes[e.vertex[j]] = new PeelNode();
+          nodes[e.vertex[j]].count = 0;
+          nodes[e.vertex[j]].edges = 0;
+        }
+        nodes[e.vertex[j]].count++;
+        nodes[e.vertex[j]].edges ^= i;
       }
     }
   }
@@ -93,6 +106,9 @@ public class XorFilter implements StaticFilter {
       nodes[vertex].count--;
       if (nodes[vertex].count == 1 && vertex != vertex_number) {
         // New peelable nodes
+        if (null == to_peel[edge_peel_start + result]) {
+          to_peel[edge_peel_start + result] = new EdgePeel();
+        }
         to_peel[edge_peel_start + result].edge_number = nodes[vertex].edges;
         to_peel[edge_peel_start + result].peeled_vertex = vertex;
         ++result;
@@ -106,19 +122,23 @@ public class XorFilter implements StaticFilter {
   private static int Peel(Edge[] edges, PeelNode[] nodes, EdgePeel[] to_peel) {
     int begin_stack = 0, end_stack = 0, to_see = 0;
     while (to_see < nodes.length) {
-      if (nodes[to_see].count > 1) {
+      if (nodes[to_see] != null && nodes[to_see].count > 1) {
         ++to_see;
         continue;
       }
-      to_peel[end_stack].edge_number = nodes[to_see].edges;
+      if (null == to_peel[end_stack]) {
+        to_peel[end_stack] = new EdgePeel();
+      }
+      to_peel[end_stack].edge_number = (nodes[to_see] != null) ? nodes[to_see].edges : 0;
       to_peel[end_stack].peeled_vertex = to_see;
       ++end_stack;
       ++to_see;
     }
     while (begin_stack < end_stack) {
       // invariant:
-      assert (nodes[to_peel[begin_stack].peeled_vertex].count < 2);
-      if (nodes[to_peel[begin_stack].peeled_vertex].count == 0) {
+      //assert (nodes[to_peel[begin_stack].peeled_vertex].count < 2);
+      if (nodes[to_peel[begin_stack].peeled_vertex] == null
+          || nodes[to_peel[begin_stack].peeled_vertex].count == 0) {
         ++begin_stack;
         continue;
       }
@@ -129,7 +149,7 @@ public class XorFilter implements StaticFilter {
     }
     if (begin_stack != nodes.length) {
       for (int i = 0; i < nodes.length; ++i) {
-        assert (nodes[i].count != 1);
+        assert (nodes[i] == null || nodes[i].count != 1);
       }
     }
     return begin_stack;
@@ -148,7 +168,10 @@ public class XorFilter implements StaticFilter {
   }
 
   public XorFilter(long[] hashes) {
-    int size = (int)(1.23 * hashes.length);
+    int size =
+        (int) (((hashes.length < 10) ? 2.0 :
+                                       (0.75 + 1.0 / Math.log(Math.log(hashes.length))))
+            * hashes.length);
     while (true) {
       // initialize the fingerprints
       fingerprints = new byte[size];
@@ -169,6 +192,7 @@ public class XorFilter implements StaticFilter {
       // Do the peeling
       int answer = Peel(edges, nodes, peel_results);
       if (answer < size) { // if peeling failed to peel all the way (found a 2-core)
+        size *= 1.01;
         size += 1;
         continue;
       }

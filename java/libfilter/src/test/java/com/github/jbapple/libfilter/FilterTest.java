@@ -13,6 +13,19 @@ public class FilterTest {
   public FilterTest() {}
 
   @Test
+  public void StaticFilter() {
+    Random r = new Random(0xdeadbeef);
+    long[] keys = new long[1000 * 1000];
+    for (int i = 0; i < keys.length; ++i) {
+      keys[i] = r.nextLong();
+    }
+    XorFilter filter = new XorFilter(keys);
+    for (int i = 0; i < keys.length; ++i) {
+      assert(filter.FindHash64(keys[i]));
+    }
+  }
+
+  @Test
   public void InsertPersists() {
     InsertPersistsHelp(TaffyCuckooFilter.CreateWithBytes(1));
     InsertPersistsHelp(BlockFilter.CreateWithBytes(32000));
