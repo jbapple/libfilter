@@ -58,6 +58,7 @@ public class XorFilter implements StaticFilter {
     return 0 == fingerprint;
   }
 
+  @Override
   public boolean FindHash64(long hash) {
     Edge e = MakeEdge(hash);
     return FindEdge(e);
@@ -202,6 +203,7 @@ public class XorFilter implements StaticFilter {
     }
   }
 
+  @Override
   public boolean FindHash32(int hash) { return false; }
 
 

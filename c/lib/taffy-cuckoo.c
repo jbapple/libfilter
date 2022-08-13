@@ -257,8 +257,9 @@ void libfilter_taffy_cuckoo_upsize(libfilter_taffy_cuckoo* here) {
   libfilter_taffy_cuckoo_destruct(&t);
 }
 
-static void UnionHelp(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo* that,
-                      int side, libfilter_taffy_cuckoo_path p) {
+static void libfilter_taffy_cuckoo_union_help(libfilter_taffy_cuckoo* here,
+                                              const libfilter_taffy_cuckoo* that,
+                                              int side, libfilter_taffy_cuckoo_path p) {
   uint64_t hashed = libfilter_taffy_cuckoo_from_path_no_tail(p, &that->sides[side].f,
                                                              that->log_side_size);
   // hashed is high that->log_side_size + libfilter_taffy_cuckoo_head_size, in high bits
@@ -311,12 +312,13 @@ static void UnionHelp(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo
   }
 }
 
-static void UnionOne(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo* that) {
+static void libfilter_taffy_cuckoo_union_one(libfilter_taffy_cuckoo* here,
+                                             const libfilter_taffy_cuckoo* that) {
   assert(that->log_side_size <= here->log_side_size);
   libfilter_taffy_cuckoo_path p;
   for (int side = 0; side < 2; ++side) {
     for (size_t i = 0; i < that->sides[side].stash_size; ++i) {
-      UnionHelp(here, that, side, that->sides[side].stash[i]);
+      libfilter_taffy_cuckoo_union_help(here, that, side, that->sides[side].stash[i]);
     }
     for (uint64_t bucket = 0; bucket < (1ul << that->log_side_size); ++bucket) {
       p.bucket = bucket;
@@ -324,7 +326,7 @@ static void UnionOne(libfilter_taffy_cuckoo* here, const libfilter_taffy_cuckoo*
         if (that->sides[side].data[bucket].data[slot].tail == 0) continue;
         p.slot.fingerprint = that->sides[side].data[bucket].data[slot].fingerprint;
         p.slot.tail = that->sides[side].data[bucket].data[slot].tail;
-        UnionHelp(here, that, side, p);
+        libfilter_taffy_cuckoo_union_help(here, that, side, p);
         continue;
       }
     }
@@ -336,11 +338,11 @@ libfilter_taffy_cuckoo libfilter_taffy_cuckoo_union(const libfilter_taffy_cuckoo
   if (x->occupied > y->occupied) {
     libfilter_taffy_cuckoo result;
     libfilter_taffy_cuckoo_clone(x, &result);
-    UnionOne(&result, y);
+    libfilter_taffy_cuckoo_union_one(&result, y);
     return result;
   }
   libfilter_taffy_cuckoo result;
   libfilter_taffy_cuckoo_clone(y, &result);
-  UnionOne(&result, x);
+  libfilter_taffy_cuckoo_union_one(&result, x);
   return result;
 }
