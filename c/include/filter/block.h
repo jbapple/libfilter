@@ -57,6 +57,10 @@ double libfilter_block_fpp(double ndv, double bytes);
 uint64_t libfilter_block_capacity(uint64_t bytes, double fpp);
 void libfilter_block_zero_out(libfilter_block *);
 bool libfilter_block_equals(const libfilter_block *, const libfilter_block *);
+void libfilter_block_serialize(const libfilter_block *, char *);
+// returns < 0 on error
+int libfilter_block_deserialize(uint64_t size_in_bytes, const char *from,
+                                libfilter_block *to);
 // Essentially the inverse operation of libfilter_block_bytes_needed: returns the heap
 // space used by the data in the filter
 inline uint64_t libfilter_block_size_in_bytes(const libfilter_block *);

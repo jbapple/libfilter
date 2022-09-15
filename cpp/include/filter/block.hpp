@@ -86,6 +86,17 @@ class GenericBF {
     const uint64_t bytes = libfilter_block_bytes_needed(ndv, fpp);
     return CreateWithBytes(bytes);
   }
+
+  void Serialize(char * to) const {
+    libfilter_block_serialize(&payload_, to);
+  }
+
+  static GenericBF Deserialize(uint64_t size_in_bytes, const char* from) {
+    GenericBF result{size_in_bytes};
+    result.~GenericBF();
+    libfilter_block_deserialize(size_in_bytes, from, &result.payload_);
+    return result;
+  }
 };
 
 template <void (*INSERT_HASH)(uint64_t, libfilter_block*),

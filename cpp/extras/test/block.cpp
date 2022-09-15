@@ -245,3 +245,15 @@ TEST(FreezeTest, FreezeTest) {
     EXPECT_TRUE(ftcf.FindHash(keys[i]));
   }
 }
+
+TEST(SerDeTest, SerDeTest) {
+  Rand r;
+  for (size_t size = 1; size < 1 << 20; size *= 2) {
+    BlockFilter f = BlockFilter::CreateWithNdvFpp(size, 0.01);
+    for (size_t i = 0; i < size; ++i) f.InsertHash(r());
+    vector<char> serialized(f.SizeInBytes());
+    f.Serialize(serialized.data());
+    auto g = BlockFilter::Deserialize(f.SizeInBytes(), serialized.data());
+    EXPECT_TRUE(f == g) << size << ", " << f.SizeInBytes() << ", " << g.SizeInBytes();
+  }
+}

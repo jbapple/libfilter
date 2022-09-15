@@ -17,6 +17,33 @@ uint64_t libfilter_block_bytes_needed(double ndv, double fpp) {
   return libfilter_block_bytes_needed_detail(ndv, fpp, 32, 8, 32);
 }
 
+void libfilter_block_serialize(const libfilter_block *from, char *to) {
+  for (uint64_t i = 0; i < from->num_buckets_; ++i) {
+    for (int j = 0; j < 8; ++j) {
+      uint32_t x = from->block_.block[8 * i + j];
+      for (int k = 0; k < 4; ++k) {
+        to[32 * i + 4 * j + k] = x >> (8 * k);
+      }
+    }
+  }
+}
+
+// returns < 0 on error
+int libfilter_block_deserialize(uint64_t size_in_bytes, const char* from,
+                                libfilter_block* to) {
+  const int result = libfilter_block_init(size_in_bytes, to);
+  if (result < 0) return result;
+  for (uint64_t i = 0; i < size_in_bytes / 32; ++i) {
+    for (int j = 0; j < 8; ++j) {
+      uint32_t *x = &to->block_.block[8 * i + j];
+      for (int k = 0; k < 4; ++k) {
+        *x |= ((uint32_t)(unsigned char)from[32 * i + 4 * j + k]) << (8 * k);
+      }
+    }
+  }
+  return result;
+}
+
 __attribute__((visibility("hidden"))) int libfilter_block_calloc(uint64_t heap_space,
                                                                  uint64_t bucket_bytes,
                                                                  libfilter_block* here) {
