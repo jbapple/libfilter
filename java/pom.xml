@@ -5,7 +5,7 @@
   <packaging>pom</packaging>
 
   <name>LibFilter</name>
-  <description>A Bloom filter alternative with faster operations</description>
+  <description>Bloom filter alternatives with smaller space, faster operations, and advanced features</description>
   <url>https://github.com/jbapple/libfilter</url>
   <licenses>
     <license>
@@ -25,7 +25,7 @@
 
   <groupId>com.github.jbapple.libfilter</groupId>
   <artifactId>parent</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0-SNAPSHOT</version>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
