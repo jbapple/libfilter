@@ -11,6 +11,8 @@ extern "C" {
 #include <new>
 #include <stdexcept>
 
+#include <jni.h>
+
 namespace filter {
 
 namespace detail {

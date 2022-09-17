@@ -164,6 +164,8 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
 
   private int[] payload;
 
+  public int[] getPayload() { return payload; }
+
   public long sizeInBytes() { return payload.length * 4L; }
 
   BlockFilter(int bytes) { payload = new int[Math.max(8, (bytes / 4) / 8 * 8)]; }

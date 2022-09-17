@@ -44,6 +44,18 @@ int libfilter_block_deserialize(uint64_t size_in_bytes, const char* from,
   return result;
 }
 
+int libfilter_block_deserialize_from_java(JNIEnv *env, jintArray arr,
+                                          libfilter_block *to) {
+  jsize size_in_ints = (*env)->GetArrayLength(env, arr);
+  jint* payload = (*env)->GetIntArrayElements(env, arr, 0);
+  const int result = libfilter_block_init(size_in_ints * sizeof(jint), to);
+  if (result < 0) return result;
+  memcpy(to->block_.block, payload, size_in_ints * sizeof(jint));
+  (*env)->ReleaseIntArrayElements(env, arr, payload, 0);
+  return result;
+}
+
+
 __attribute__((visibility("hidden"))) int libfilter_block_calloc(uint64_t heap_space,
                                                                  uint64_t bucket_bytes,
                                                                  libfilter_block* here) {

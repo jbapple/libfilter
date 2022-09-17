@@ -3,7 +3,7 @@
 default: lib
 
 export DEFAULT_RECIPE := $(CURDIR)/common.mk
-export INCLUDES := -I $(CURDIR)/include
+export INCLUDES := -I $(CURDIR)/include -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/linux -I ${JAVA_HOME}/include/win32 -I ${JAVA_HOME}/include/darwin
 export C_ROOT := $(CURDIR)
 
 world: default extras

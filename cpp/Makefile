@@ -5,7 +5,7 @@
 
 export CPP_ROOT := $(CURDIR)
 export PROJECT_ROOT ?= $(CPP_ROOT)/..
-export INCLUDES := -I $(PROJECT_ROOT)/c/include -I $(CPP_ROOT)/include
+export INCLUDES := -I $(PROJECT_ROOT)/c/include -I $(CPP_ROOT)/include -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/linux -I ${JAVA_HOME}/include/win32 -I ${JAVA_HOME}/include/darwin
 export LINKS := $(PROJECT_ROOT)/c/lib/libfilter.a -lm
 export DEFAULT_RECIPE := $(CURDIR)/common.mk
 

@@ -17,6 +17,7 @@
 #include <stdalign.h>           // for alignas
 #include <stdbool.h>            // for bool, false, true
 #include <stdint.h>             // for uint64_t
+#include <jni.h>
 
 #if defined (__x86_64)
 #include <immintrin.h>
@@ -61,6 +62,8 @@ void libfilter_block_serialize(const libfilter_block *, char *);
 // returns < 0 on error
 int libfilter_block_deserialize(uint64_t size_in_bytes, const char *from,
                                 libfilter_block *to);
+int libfilter_block_deserialize_from_java(JNIEnv *env, jintArray arr,
+                                          libfilter_block *to);
 // Essentially the inverse operation of libfilter_block_bytes_needed: returns the heap
 // space used by the data in the filter
 inline uint64_t libfilter_block_size_in_bytes(const libfilter_block *);
