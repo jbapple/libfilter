@@ -43,6 +43,8 @@ jobs:
         c/extras/test/static.exe
         c/lib/test/peel.exe
     - name: run C++ tests
-      run: cpp/extras/test/block.exe
+      run: |
+        ldd cpp/extras/test/block.exe
+        cpp/extras/test/block.exe
     - name: run Java tests
       run: mvn -f ./java/ test
