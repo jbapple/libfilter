@@ -30,13 +30,13 @@ jobs:
         tar xzf go1.18.1.linux-amd64.tar.gz
         cd -
         cd go
-        /tmp/go/bin/go test
+        CGO_CFLAGS="-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/linux -I ${JAVA_HOME}/include/win32 -I ${JAVA_HOME}/include/darwin" /tmp/go/bin/go test
     - name: run golang tests in macOS
       if: runner.os == 'macOS'
       run: |
         cd go
         /Users/runner/hostedtoolcache/go/1.18.*/x64/bin/go version
-        /Users/runner/hostedtoolcache/go/1.18.*/x64/bin/go test
+        CGO_CFLAGS="-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/linux -I ${JAVA_HOME}/include/win32 -I ${JAVA_HOME}/include/darwin" /Users/runner/hostedtoolcache/go/1.18.*/x64/bin/go test
     - name: run C tests
       run: |
         c/extras/test/paths.exe
