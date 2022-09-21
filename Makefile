@@ -18,6 +18,7 @@ uninstall:
 clean:
 	$(MAKE) -C c clean
 	$(MAKE) -C cpp clean
+	mvn -f ./java/ clean
 
 # TODO: clean up for java & gradle
 

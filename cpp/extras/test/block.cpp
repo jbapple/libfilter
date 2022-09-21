@@ -264,11 +264,10 @@ TEST(SerDeTest, JavaSerDeTest) {
   JavaVM* jvm = nullptr;
   JNIEnv* env = nullptr;
   JavaVMInitArgs vm_args;
-  unique_ptr<JavaVMOption[]> options{ new JavaVMOption[1]};
-  auto classpath =
-      string("-Djava.class.path=./java/libfilter/target/classes") + string(":") +
-      string(getenv("HOME")) +
-      "/.m2/repository/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar";
+  unique_ptr<JavaVMOption[]> options{new JavaVMOption[1]};
+  auto classpath = string(
+      "-Djava.class.path=./java/libfilter/target/"
+      "libfilter-0.3.0-SNAPSHOT-jar-with-dependencies.jar");
   unique_ptr<char []> classpath_c_str{new char[classpath.size()+1]};
   memcpy(classpath_c_str.get(), classpath.c_str(), classpath.size());
   classpath_c_str[classpath.size()] = 0;
@@ -283,8 +282,8 @@ TEST(SerDeTest, JavaSerDeTest) {
   jmethodID CreateWithNdvFpp = env->GetStaticMethodID(
       BlockFilter, "CreateWithNdvFpp", "(DD)Lcom/github/jbapple/libfilter/BlockFilter;");
   ASSERT_NE(CreateWithNdvFpp, nullptr);
-  jobject filter =
-    env->CallStaticObjectMethod(BlockFilter, CreateWithNdvFpp, (jdouble)1000 * 1000, 0.01);
+  jobject filter = env->CallStaticObjectMethod(BlockFilter, CreateWithNdvFpp,
+                                               static_cast<jdouble>(1000) * 1000, 0.01);
   ASSERT_NE(filter, nullptr);
   auto AddHash64 = env->GetMethodID(BlockFilter, "AddHash64", "(J)Z");
   ASSERT_NE(AddHash64, nullptr);
