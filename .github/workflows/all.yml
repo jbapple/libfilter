@@ -19,8 +19,6 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install cffi
-        find ${JAVA_HOME}
-        env | grep J
         make world
     - name: run golang tests in Linux
       if: runner.os == 'Linux'
@@ -46,7 +44,6 @@ jobs:
       run: |
         export LD_LIBRARY_PATH="${JAVA_HOME}/jre/lib/amd64/server:${JAVA_HOME}/lib/server:${JAVA_HOME}/jre/lib/server/:${LD_LIBRARY_PATH}"
         export DYLD_LIBRARY_PATH="${JAVA_HOME}/jre/lib/amd64/server:${JAVA_HOME}/lib/server:${JAVA_HOME}/jre/lib/server/:${DYLD_LIBRARY_PATH}"
-        ldd cpp/extras/test/block.exe
         cpp/extras/test/block.exe
     - name: run Java tests
       run: mvn -f ./java/ test
