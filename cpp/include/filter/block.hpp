@@ -99,6 +99,13 @@ class GenericBF {
     libfilter_block_deserialize(size_in_bytes, from, &result.payload_);
     return result;
   }
+
+  static GenericBF DeserializeFromJava(JNIEnv* env, jintArray arr) {
+    GenericBF result{sizeof(jint) * env->GetArrayLength(arr)};
+    result.~GenericBF();
+    libfilter_block_deserialize_from_java(env, arr, &result.payload_);
+    return result;
+  }
 };
 
 template <void (*INSERT_HASH)(uint64_t, libfilter_block*),

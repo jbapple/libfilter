@@ -191,8 +191,8 @@ public class BlockFilter implements Comparable<BlockFilter>, Cloneable, Filter {
     return new BlockFilter(bytes);
   }
 
-  private static final int[] INTERNAL_HASH_SEEDS = {0x47b6137b, 0x44974d91, 0x8824ad5b,
-      0xa2b7289d, 0x705495c7, 0x2df1424b, 0x9efc4947, 0x5c6bfb31};
+  private static final int[] INTERNAL_HASH_SEEDS = {0x44974d91, 0x47b6137b, 0xa2b7289d,
+      0x8824ad5b, 0x2df1424b, 0x705495c7, 0x5c6bfb31, 0x9efc4947};
 
   private int Index(long hash, int num_buckets) {
     return (int)(((hash >>> 32) * ((long) num_buckets)) >>> 32);

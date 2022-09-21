@@ -1,18 +1,20 @@
+#include <jni.h>
+
 #include <cstdint>  // for uint64_t
+#include <memory>
 #include <unordered_set>
 #include <vector>  // for allocator, vector
 
-#include "gtest/gtest.h"
-
-#include "util.hpp"  // for Rand
-
-#include "filter/block.hpp"
 #include "filter/minimal-taffy-cuckoo.hpp"
 #include "filter/taffy-block.hpp"
 #include "filter/taffy-cuckoo.hpp"
+#include "gtest/gtest.h"
+#include "util.hpp"  // for Rand
 #if defined(__x86_64)
 #include "filter/taffy-vector-quotient.hpp"
 #endif
+
+#include "filter/block.hpp"
 
 using namespace filter;
 using namespace std;
@@ -256,4 +258,44 @@ TEST(SerDeTest, SerDeTest) {
     auto g = BlockFilter::Deserialize(f.SizeInBytes(), serialized.data());
     EXPECT_TRUE(f == g) << size << ", " << f.SizeInBytes() << ", " << g.SizeInBytes();
   }
+}
+
+TEST(SerDeTest, JavaSerDeTest) {
+  JavaVM* jvm = nullptr;
+  JNIEnv* env = nullptr;
+  JavaVMInitArgs vm_args;
+  unique_ptr<JavaVMOption[]> options{ new JavaVMOption[1]};
+  auto classpath =
+      string("-Djava.class.path=./java/libfilter/target/classes") + string(":") +
+      string(getenv("HOME")) +
+      "/.m2/repository/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar";
+  unique_ptr<char []> classpath_c_str{new char[classpath.size()+1]};
+  memcpy(classpath_c_str.get(), classpath.c_str(), classpath.size());
+  classpath_c_str[classpath.size()] = 0;
+  options[0].optionString = classpath_c_str.get();
+  vm_args.version = JNI_VERSION_1_6;
+  vm_args.nOptions = 1;
+  vm_args.options = options.get();
+  jint rc = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args);
+  ASSERT_EQ(rc, JNI_OK);
+  jclass BlockFilter = env->FindClass("com/github/jbapple/libfilter/BlockFilter");
+    ASSERT_NE(BlockFilter, nullptr);
+  jmethodID CreateWithNdvFpp = env->GetStaticMethodID(
+      BlockFilter, "CreateWithNdvFpp", "(DD)Lcom/github/jbapple/libfilter/BlockFilter;");
+  ASSERT_NE(CreateWithNdvFpp, nullptr);
+  jobject filter =
+    env->CallStaticObjectMethod(BlockFilter, CreateWithNdvFpp, (jdouble)1000 * 1000, 0.01);
+  ASSERT_NE(filter, nullptr);
+  auto AddHash64 = env->GetMethodID(BlockFilter, "AddHash64", "(J)Z");
+  ASSERT_NE(AddHash64, nullptr);
+  env->CallBooleanMethod(filter, AddHash64, 867 + 5309);
+  auto GetPayload = env->GetMethodID(BlockFilter, "getPayload", "()[I");
+  ASSERT_NE(GetPayload, nullptr);
+  auto payload = (jintArray)env->CallObjectMethod(filter, GetPayload);
+  ASSERT_NE(payload, nullptr);
+  auto cpp_filter = BlockFilter::DeserializeFromJava(env, payload);
+  auto cpp_filter2 = BlockFilter::CreateWithNdvFpp(1000 * 1000, 0.01);
+  cpp_filter2.InsertHash(867 + 5309);
+  EXPECT_TRUE(cpp_filter == cpp_filter2) << cpp_filter.SizeInBytes() << " " << cpp_filter2.SizeInBytes();
+  jvm->DestroyJavaVM();
 }
