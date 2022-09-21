@@ -44,13 +44,20 @@ int libfilter_block_deserialize(uint64_t size_in_bytes, const char* from,
   return result;
 }
 
+int libfilter_block_deserialize_from_ints(size_t n, const int32_t * from,
+                                          libfilter_block *to) {
+  const int result = libfilter_block_init(n * sizeof(int32_t), to);
+  if (result < 0) return result;
+  memcpy(to->block_.block, from, n * sizeof(int32_t));
+  return result;
+}
+
+
 int libfilter_block_deserialize_from_java(JNIEnv *env, jintArray arr,
                                           libfilter_block *to) {
   jsize size_in_ints = (*env)->GetArrayLength(env, arr);
   jint* payload = (*env)->GetIntArrayElements(env, arr, 0);
-  const int result = libfilter_block_init(size_in_ints * sizeof(jint), to);
-  if (result < 0) return result;
-  memcpy(to->block_.block, payload, size_in_ints * sizeof(jint));
+  const int result = libfilter_block_deserialize_from_ints(size_in_ints, payload, to);
   (*env)->ReleaseIntArrayElements(env, arr, payload, 0);
   return result;
 }

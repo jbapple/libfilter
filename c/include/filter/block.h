@@ -64,6 +64,8 @@ int libfilter_block_deserialize(uint64_t size_in_bytes, const char *from,
                                 libfilter_block *to);
 int libfilter_block_deserialize_from_java(JNIEnv *env, jintArray arr,
                                           libfilter_block *to);
+int libfilter_block_deserialize_from_ints(size_t n, const int32_t * from,
+                                          libfilter_block *to);
 // Essentially the inverse operation of libfilter_block_bytes_needed: returns the heap
 // space used by the data in the filter
 inline uint64_t libfilter_block_size_in_bytes(const libfilter_block *);
