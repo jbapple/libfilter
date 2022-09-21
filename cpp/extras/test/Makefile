@@ -19,7 +19,6 @@ else
   LINKS += -ljvm
 endif
 
-
 include $(DEFAULT_RECIPE)
 
 include block.d

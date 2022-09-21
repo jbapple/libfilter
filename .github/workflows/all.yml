@@ -19,6 +19,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install cffi
+        find ${JAVA_HOME}
         make world
     - name: run golang tests in Linux
       if: runner.os == 'Linux'
