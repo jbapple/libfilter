@@ -19,6 +19,7 @@ clean:
 	$(MAKE) -C c clean
 	$(MAKE) -C cpp clean
 	mvn -f ./java/ clean
+	cd go && go clean
 
 # TODO: clean up for java & gradle
 
@@ -34,7 +35,7 @@ java-world:
 	mvn -f ./java/ package -Dmaven.test.skip=true
 
 go-world: lib
-	cd go && go build -p 4
+	cd go && CGO_CFLAGS="-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/linux -I ${JAVA_HOME}/include/win32 -I ${JAVA_HOME}/include/darwin" go build -p 4
 
 python-world: lib
 	cd python && python3 build.py
