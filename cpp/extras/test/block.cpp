@@ -292,9 +292,15 @@ TEST(SerDeTest, JavaSerDeTest) {
   ASSERT_NE(GetPayload, nullptr);
   auto payload = (jintArray)env->CallObjectMethod(filter, GetPayload);
   ASSERT_NE(payload, nullptr);
-  auto cpp_filter = BlockFilter::DeserializeFromJava(env, payload);
+
+  jsize size_in_ints = env->GetArrayLength(payload);
+  jint* raw_payload = env->GetIntArrayElements(payload, 0);
+  auto cpp_filter = BlockFilter::DeserializeFromInts(size_in_ints, raw_payload);
+
   auto cpp_filter2 = BlockFilter::CreateWithNdvFpp(1000 * 1000, 0.01);
   cpp_filter2.InsertHash(867 + 5309);
-  EXPECT_TRUE(cpp_filter == cpp_filter2) << cpp_filter.SizeInBytes() << " " << cpp_filter2.SizeInBytes();
+  EXPECT_TRUE(cpp_filter == cpp_filter2)
+      << cpp_filter.SizeInBytes() << " " << cpp_filter2.SizeInBytes();
+  env->ReleaseIntArrayElements(payload, raw_payload, 0);
   jvm->DestroyJavaVM();
 }

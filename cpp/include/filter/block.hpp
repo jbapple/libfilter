@@ -11,8 +11,6 @@ extern "C" {
 #include <new>
 #include <stdexcept>
 
-#include <jni.h>
-
 namespace filter {
 
 namespace detail {
@@ -100,10 +98,10 @@ class GenericBF {
     return result;
   }
 
-  static GenericBF DeserializeFromJava(JNIEnv* env, jintArray arr) {
-    GenericBF result{sizeof(jint) * env->GetArrayLength(arr)};
+  static GenericBF DeserializeFromInts(uint64_t size_in_ints, const int32_t* from) {
+    GenericBF result{size_in_ints * sizeof(int32_t)};
     result.~GenericBF();
-    libfilter_block_deserialize_from_java(env, arr, &result.payload_);
+    libfilter_block_deserialize_from_ints(size_in_ints, from, &result.payload_);
     return result;
   }
 };

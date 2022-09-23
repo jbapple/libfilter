@@ -1,6 +1,4 @@
 from cffi import FFI
-import os
-
 ffibuilder = FFI()
 
 ffibuilder.set_source("libfilter",
@@ -10,11 +8,7 @@ ffibuilder.set_source("libfilter",
                       #include "filter/taffy-cuckoo.h"
                       #include "filter/static.h"
                       """,
-                      include_dirs=["../c/include",
-                                    os.environ["JAVA_HOME"] + "/include",
-                                    os.environ["JAVA_HOME"] + "/include/linux",
-                                    os.environ["JAVA_HOME"] + "/include/win32",
-                                    os.environ["JAVA_HOME"] + "/include/darwin"],
+                      include_dirs=["../c/include"],
                       library_dirs=["../c/lib"],
                       libraries=["filter"],
                       extra_compile_args=["-march=native"],

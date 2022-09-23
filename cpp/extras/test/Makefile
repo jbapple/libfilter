@@ -9,15 +9,8 @@ clean:
 	rm -rf googletest/build
 
 LINKS += googletest/build/lib/libgtest_main.a googletest/build/lib/libgtest.a -lpthread -L${JAVA_HOME}/jre/lib/amd64/server -L${JAVA_HOME}/lib/server -L ${JAVA_HOME}/jre/lib/server/ -ljvm
-INCLUDES += -I googletest/googletest/include
+INCLUDES += -I googletest/googletest/include -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/linux -I ${JAVA_HOME}/include/win32 -I ${JAVA_HOME}/include/darwin
 export CXXFLAGS := -std=c++17 $(INCLUDES) $(WARN) $(RELEASE) -ggdb3 # -UNDEBUG  -O0 -march=x86-64 -fsanitize=undefined #-fsanitize=address
-
-# COMPILER_VERSION := $(shell $(CC) --version)
-# ifneq '' '$(findstring apple-darwin,$(COMPILER_VERSION))'
-#   LINKS += -ljli
-# else
-#   LINKS += -ljvm
-# endif
 
 include $(DEFAULT_RECIPE)
 

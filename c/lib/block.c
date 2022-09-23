@@ -52,17 +52,6 @@ int libfilter_block_deserialize_from_ints(size_t n, const int32_t * from,
   return result;
 }
 
-
-int libfilter_block_deserialize_from_java(JNIEnv *env, jintArray arr,
-                                          libfilter_block *to) {
-  jsize size_in_ints = (*env)->GetArrayLength(env, arr);
-  jint* payload = (*env)->GetIntArrayElements(env, arr, 0);
-  const int result = libfilter_block_deserialize_from_ints(size_in_ints, payload, to);
-  (*env)->ReleaseIntArrayElements(env, arr, payload, 0);
-  return result;
-}
-
-
 __attribute__((visibility("hidden"))) int libfilter_block_calloc(uint64_t heap_space,
                                                                  uint64_t bucket_bytes,
                                                                  libfilter_block* here) {
@@ -76,7 +65,7 @@ __attribute__((visibility("hidden"))) int libfilter_block_calloc(uint64_t heap_s
   return 0;
 }
 
-// TODO: intersection, union, serialize, deserialize
+// TODO: intersection, union
 
 __attribute__((visibility("hidden"))) int libfilter_block_free(uint64_t bucket_bytes,
                                                                libfilter_block* here) {
