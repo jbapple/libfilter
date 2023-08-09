@@ -53,9 +53,9 @@ struct PcgRandom {
   }
 };
 
-// Given non-zero x and y, consider eash as a sequence of up to 15 [sic] bits. The length
+// Given non-zero x and y, consider each as a sequence of up to 15 [sic] bits. The length
 // of the sequence is encoded in the lower order bits. specifically, if the lowest n bits
-// are zero and the next higher bit is one, then the sequence encoded has length15 - n. It
+// are zero and the next higher bit is one, then the sequence encoded has length 15 - n. It
 // is stored in the high-order bits of the uint16_t. Examples, using 8 bits:
 //
 // 01010101 is the sequence 0101010
